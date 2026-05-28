@@ -165,8 +165,11 @@ def generate_packet(request, pk):
     if request.method != "POST":
         return redirect("candidates:detail", pk=pk)
     c = get_object_or_404(Candidate, pk=pk)
-    make_client_packet(c, by=request.user)
-    messages.success(request, "Client-safe PDF generated.")
+    try:
+        make_client_packet(c, by=request.user)
+        messages.success(request, "Client-safe PDF generated.")
+    except Exception as exc:
+        messages.error(request, f"Could not generate PDF packet: {exc}")
     return redirect("candidates:detail", pk=pk)
 
 
@@ -175,7 +178,11 @@ def submit_view(request, pk):
     c = get_object_or_404(Candidate, pk=pk)
     form = SubmitToClientForm(request.POST or None, candidate=c)
     if request.method == "POST" and form.is_valid():
-        sub = submit_to_client(c, job=form.cleaned_data["job"], by=request.user, note=form.cleaned_data.get("note", ""))
+        try:
+            sub = submit_to_client(c, job=form.cleaned_data["job"], by=request.user, note=form.cleaned_data.get("note", ""))
+        except Exception as exc:
+            messages.error(request, f"Could not submit candidate: {exc}")
+            return render(request, "candidates/submit.html", {"c": c, "form": form, "nav_items": nav_for(request)})
         messages.success(request, f"Submitted to {sub.client.name}.")
         return redirect("submissions:detail", pk=sub.pk)
     return render(request, "candidates/submit.html", {"c": c, "form": form, "nav_items": nav_for(request)})
