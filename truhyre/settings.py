@@ -23,6 +23,17 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = [h.strip() for h in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 
+# When running on Vercel, accept *.vercel.app so preview and production URLs
+# both work without manual ALLOWED_HOSTS plumbing. Set DJANGO_ALLOWED_HOSTS for
+# any custom domain.
+if env("VERCEL") or env("VERCEL_URL"):
+    ALLOWED_HOSTS.append(".vercel.app")
+    CSRF_TRUSTED_ORIGINS = ["https://*.vercel.app"]
+    # Vercel terminates TLS at the edge and forwards as HTTP. Tell Django to
+    # trust the proxy so request.is_secure() and SECURE_SSL_REDIRECT work.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+
 SITE_NAME = env("SITE_NAME", "Tru Hyre")
 SITE_TAGLINE = env("SITE_TAGLINE", "An Allianz HR Platform - Project by Kris")
 
