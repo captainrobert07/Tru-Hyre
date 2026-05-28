@@ -102,6 +102,72 @@ DATABASE_URL=postgres://user:password@host:5432/dbname
 
 ---
 
+## Deploy
+
+> **TL;DR.** Tru Hyre is a stateful Django app with file uploads, sessions, and a relational DB. The cleanest hosts are **Render**, **Railway**, **Fly.io**, or any Docker target. **Vercel** works too, but its serverless filesystem is read-only — use it only with a managed Postgres and accept that resume/packet uploads must go to S3 (or live in `/tmp` per request).
+
+In every case, set these environment variables on the host:
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `DJANGO_SECRET_KEY` | yes | 50+ random chars |
+| `DJANGO_DEBUG` | yes | `False` in production |
+| `DJANGO_ALLOWED_HOSTS` | yes | comma-sep. e.g. `tru-hyre.example.com,.onrender.com` |
+| `DATABASE_URL` | yes (prod) | `postgres://user:pw@host:5432/db` |
+| `EMAIL_BACKEND` | optional | `smtp` for real email |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` | optional | only when `EMAIL_BACKEND=smtp` |
+| `DEFAULT_FROM_EMAIL` | optional | `Tru Hyre <noreply@yourdomain>` |
+| `MEDIA_ROOT` | optional | set to `/tmp/media` on serverless |
+
+### Render (one-click, recommended)
+
+1. Push your repo to GitHub (already done).
+2. In Render → **New** → **Blueprint** → point at this repo.
+3. Render reads `render.yaml` and provisions a Postgres + web service. Build runs `migrate` and `seed_users` automatically.
+4. After the first deploy, log in at `https://tru-hyre.onrender.com/auth/login/` with the seeded credentials. **Change the password immediately.**
+
+### Railway
+
+1. New Project → Deploy from GitHub → pick the repo.
+2. Railway uses `railway.toml` + `nixpacks.toml`. Add a Postgres plugin; Railway injects `DATABASE_URL`.
+3. Set the env vars from the table above. Deploy.
+
+### Fly.io / Docker / any container host
+
+```bash
+fly launch                       # uses the included Dockerfile
+fly postgres create              # provision Postgres
+fly postgres attach <db-name>    # injects DATABASE_URL
+fly secrets set DJANGO_SECRET_KEY=$(python -c "import secrets;print(secrets.token_urlsafe(50))") \
+                DJANGO_DEBUG=False \
+                DJANGO_ALLOWED_HOSTS=.fly.dev
+fly deploy
+```
+
+The `Dockerfile` at the repo root runs `migrate` + `seed_users` + `gunicorn` on every container start.
+
+### Vercel (workable, with caveats)
+
+`vercel.json` and `build_files.sh` are included so the auto-detected Python runtime serves the app. **You must:**
+
+1. Create a managed Postgres (Vercel Postgres / Neon / Supabase) and copy the `DATABASE_URL`.
+2. In Vercel project → Settings → Environment Variables, add: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=False`, `DATABASE_URL`, `MEDIA_ROOT=/tmp/media`. (`*.vercel.app` is allowed automatically.)
+3. **Run migrations and seed users locally pointed at the remote DB** — Vercel's build sandbox can't reach your DB:
+   ```bash
+   DATABASE_URL="postgres://..."  python manage.py migrate
+   DATABASE_URL="postgres://..."  python manage.py seed_users
+   ```
+4. Redeploy. Login should work.
+
+**Vercel limitations to plan around:**
+- The Lambda filesystem is read-only — resume uploads will fail unless you set `MEDIA_ROOT=/tmp/media` (lost between requests) or wire S3.
+- Long-running PDF parsing may exceed serverless timeouts.
+- Real-time HTMX SSE won't work.
+
+If any of these matter to you, switch to Render / Railway / Fly. The included configs make that a 5-minute job.
+
+---
+
 ## Tech stack
 
 - **Backend:** Django 5.x, Python 3.11+ (tested on 3.14)

@@ -95,21 +95,16 @@ WSGI_APPLICATION = "truhyre.wsgi.application"
 
 
 # --- Database ---
-DATABASE_URL = env("DATABASE_URL", "")
-if DATABASE_URL:
-    # Lightweight DSN parser to avoid an extra dependency.
-    from urllib.parse import urlparse
+# Honor common env-var names (DATABASE_URL, POSTGRES_URL — Vercel/Neon ship one
+# of these). Falls back to local SQLite for development.
+import dj_database_url
 
-    parsed = urlparse(DATABASE_URL)
+_db_url = env("DATABASE_URL") or env("POSTGRES_URL") or env("POSTGRES_PRISMA_URL")
+if _db_url:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": parsed.path.lstrip("/"),
-            "USER": parsed.username or "",
-            "PASSWORD": parsed.password or "",
-            "HOST": parsed.hostname or "",
-            "PORT": str(parsed.port or 5432),
-        }
+        "default": dj_database_url.parse(
+            _db_url, conn_max_age=600, ssl_require=not DEBUG,
+        )
     }
 else:
     DATABASES = {
@@ -142,10 +137,17 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# On Vercel /var/task is read-only — uploads must go to /tmp (ephemeral) or S3.
+MEDIA_ROOT = Path(env("MEDIA_ROOT", str(BASE_DIR / "media")))
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

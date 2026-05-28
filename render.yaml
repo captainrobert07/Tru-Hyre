@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: tru-hyre
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate --noinput
+      python manage.py seed_users
+    startCommand: gunicorn truhyre.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tru-hyre-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+
+databases:
+  - name: tru-hyre-db
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
