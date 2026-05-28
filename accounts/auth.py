@@ -1,0 +1,19 @@
+"""Email + password authentication backend (case-insensitive email match)."""
+from django.contrib.auth.backends import ModelBackend
+
+from .models import User
+
+
+class EmailBackend(ModelBackend):
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        # Django's LoginView passes the value as ``username``. Treat it as email.
+        email = (username or kwargs.get("email") or "").strip().lower()
+        if not email or not password:
+            return None
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+        if user.check_password(password) and self.user_can_authenticate(user):
+            return user
+        return None

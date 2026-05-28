@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}My open jobs{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900 mb-4">Your jobs</h1>
+<ul class="grid grid-cols-1 md:grid-cols-2 gap-3 list-none">
+  {% for j in jobs %}
+    <li class="card card-hover p-4">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <h3 class="font-semibold text-slate-900">{{ j.title }}</h3>
+        <span class="stage-pill status-{{ j.status }}">{{ j.get_status_display }}</span>
+      </div>
+      <div class="text-xs text-slate-500 mt-1">{{ j.role|default:'—' }} · {{ j.location|default:'—' }} · {{ j.openings }} opening{{ j.openings|pluralize }}</div>
+      {% if j.budget_display %}<div class="text-xs text-slate-500 mt-1">{{ j.budget_display }}</div>{% endif %}
+      <div class="text-xs text-slate-500 mt-1">Pipeline: {{ j.pipeline_count }}</div>
+    </li>
+  {% empty %}<li class="card p-8 text-center col-span-2 text-slate-500">No jobs yet.</li>{% endfor %}
+</ul>
+{% endblock %}

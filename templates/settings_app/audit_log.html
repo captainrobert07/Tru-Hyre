@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<header class="mb-4">
+  <a href="{% url 'settings_app:home' %}" class="text-xs text-slate-500 no-underline">← Settings</a>
+  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Audit log</h1>
+</header>
+
+<form method="get" class="card mb-4">
+  <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+    <div>
+      <label class="field-label">Action</label>
+      <input type="search" name="action" value="{{ action }}" class="input" placeholder="e.g. candidate.submitted"/>
+    </div>
+    <div>
+      <label class="field-label">Actor email</label>
+      <input type="search" name="actor" value="{{ actor }}" class="input"/>
+    </div>
+    <div class="text-right">
+      <button class="btn btn-primary btn-sm">Filter</button>
+    </div>
+  </div>
+</form>
+
+<div class="card overflow-x-auto">
+  <table class="t responsive">
+    <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Summary</th><th>IP</th></tr></thead>
+    <tbody>
+      {% for a in page.object_list %}
+        <tr>
+          <td data-label="When" class="whitespace-nowrap text-xs">{{ a.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td data-label="Actor">{{ a.actor.email|default:"system" }}</td>
+          <td data-label="Action"><code class="text-xs">{{ a.action }}</code></td>
+          <td data-label="Target" class="text-xs text-slate-500">{{ a.target_type }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</td>
+          <td data-label="Summary">{{ a.summary|default:"—" }}</td>
+          <td data-label="IP" class="text-xs text-slate-500">{{ a.ip|default:"—" }}</td>
+        </tr>
+      {% empty %}<tr><td colspan="6" class="text-center text-slate-500 py-6">No audit events match.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page.has_other_pages %}
+  <nav class="flex items-center justify-between mt-4 text-sm">
+    <div class="text-slate-500">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} events</div>
+    <div class="flex gap-2">
+      {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}{% if action %}&action={{ action }}{% endif %}{% if actor %}&actor={{ actor }}{% endif %}" class="btn btn-ghost btn-sm">← Prev</a>
+      {% endif %}
+      {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}{% if action %}&action={{ action }}{% endif %}{% if actor %}&actor={{ actor }}{% endif %}" class="btn btn-ghost btn-sm">Next →</a>
+      {% endif %}
+    </div>
+  </nav>
+{% endif %}
+{% endblock %}

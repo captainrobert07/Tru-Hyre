@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Pipeline{% endblock %}
+{% block content %}
+<header class="mb-4 sm:mb-6">
+  <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Recruiting workspace</h1>
+  <p class="text-slate-600 text-sm">Hi {{ user.full_name|default:user.email }} · {{ SITE_TAGLINE }}</p>
+</header>
+
+<section class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+  {% include "partials/_stat_card.html" with label="My candidates" value=metrics.my_candidates tone="brand" %}
+  {% include "partials/_stat_card.html" with label="Needs review" value=metrics.needs_review tone="amber" %}
+  {% include "partials/_stat_card.html" with label="Pending feedback" value=metrics.pending_feedback %}
+  {% include "partials/_stat_card.html" with label="My submissions (30d)" value=metrics.my_submissions_30d %}
+  {% include "partials/_stat_card.html" with label="Open jobs" value=metrics.open_jobs %}
+  {% include "partials/_stat_card.html" with label="Duplicates flagged" value=metrics.duplicates tone="rose" %}
+</section>
+
+<section class="mb-6">
+  <h2 class="text-lg font-semibold text-slate-900 mb-3">Pipeline</h2>
+  {% include "partials/_stage_pipeline.html" %}
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">HR review queue</h3>
+      <a href="{% url 'candidates:list' %}?stage=hr_review" class="text-sm text-brand">All →</a>
+    </div>
+    <ul class="divide-y list-none">
+      {% for c in review_queue %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">{{ c.initials }}</span>
+          <div class="flex-1 min-w-0">
+            <a href="{{ c.get_absolute_url }}" class="font-medium text-slate-900 truncate block">{{ c.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">
+              {{ c.current_title|default:'—' }} · {% if c.vendor %}{{ c.vendor.name }}{% else %}Direct{% endif %}
+            </div>
+          </div>
+          {% if c.duplicate_status != 'unique' %}
+            <span class="badge badge-rose">Duplicate</span>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">Inbox zero.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">Recent submissions</h3>
+      <a href="{% url 'submissions:list' %}" class="text-sm text-brand">All →</a>
+    </div>
+    <ul class="divide-y list-none">
+      {% for sub in recent_submissions %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'submissions:detail' sub.pk %}" class="font-medium text-slate-900 truncate block">{{ sub.candidate.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">{{ sub.job.title }} · {{ sub.client.name }} · {{ sub.submitted_at|naturaltime }}</div>
+          </div>
+          <span class="badge badge-slate whitespace-nowrap">{{ sub.get_status_display }}</span>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">No submissions yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3 class="font-semibold">Pending client feedback</h3></div>
+    <ul class="divide-y list-none">
+      {% for sub in pending_feedback_list %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'submissions:detail' sub.pk %}" class="font-medium text-slate-900 truncate block">{{ sub.candidate.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">{{ sub.client.name }} · {{ sub.submitted_at|naturaltime }}</div>
+          </div>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">All caught up.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">Notifications</h3>
+      <a href="{% url 'notifications:list' %}" class="text-sm text-brand">All →</a>
+    </div>
+    <ul class="divide-y list-none">
+      {% for n in recent_notifications %}
+        <li class="px-4 py-3 flex items-start gap-3 {% if not n.is_read %}bg-brand-50{% endif %}">
+          <div class="flex-1">
+            <a href="{{ n.get_target_url }}" class="font-medium text-slate-900 block">{{ n.title }}</a>
+            {% if n.body %}<div class="text-sm text-slate-600">{{ n.body }}</div>{% endif %}
+            <div class="text-xs text-slate-500 mt-1">{{ n.created_at|naturaltime }}</div>
+          </div>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">Nothing new.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header"><h3 class="font-semibold">Quick actions</h3></div>
+  <div class="card-body grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <a href="{% url 'candidates:upload' %}" class="btn btn-primary">Upload Resume</a>
+    <a href="{% url 'candidates:create' %}" class="btn btn-secondary">Add Candidate</a>
+    <a href="{% url 'jobs:create' %}" class="btn btn-secondary">Create Job</a>
+    <a href="{% url 'submissions:list' %}" class="btn btn-secondary">All Submissions</a>
+  </div>
+</section>
+{% endblock %}

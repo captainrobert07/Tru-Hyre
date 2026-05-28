@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ c.full_name }}{% endblock %}
+{% block content %}
+<a href="{% url 'candidates:list' %}" class="text-sm text-slate-500 mb-3 inline-block">← Back to candidates</a>
+
+<header class="card mb-4">
+  <div class="card-body flex items-start gap-4 flex-col sm:flex-row">
+    <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-200 text-xl font-semibold text-slate-700">{{ c.initials }}</span>
+    <div class="flex-1">
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-2xl font-bold text-slate-900">{{ c.full_name }}</h1>
+        <span class="stage-pill {{ c.stage_css }}">{{ c.stage_label }}</span>
+        {% if c.duplicate_status != 'unique' %}
+          <span class="badge badge-rose">Duplicate · {{ c.get_duplicate_status_display }}</span>
+        {% endif %}
+        <span class="badge badge-slate">{{ c.get_parse_status_display }}</span>
+      </div>
+      <div class="text-sm text-slate-600 mt-1">
+        {{ c.current_title|default:'—' }}{% if c.current_company %} · {{ c.current_company }}{% endif %}
+        {% if c.location %} · {{ c.location }}{% endif %}
+      </div>
+      <div class="mt-2 flex flex-wrap gap-3 text-sm text-slate-500">
+        {% if user.role in 'admin,hr' %}
+          {% if c.email %}<span>📧 {{ c.email }}</span>{% endif %}
+          {% if c.phone %}<span>📞 {{ c.phone }}</span>{% endif %}
+        {% endif %}
+        {% if c.source %}<span>Source: {{ c.source }}</span>{% endif %}
+        {% if c.vendor and user.role in 'admin,hr' %}<span>Vendor: {{ c.vendor.name }}</span>{% endif %}
+        {% if c.client %}<span>Client: {{ c.client.name }}</span>{% endif %}
+      </div>
+    </div>
+    {% if user.role in 'admin,hr' %}
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'candidates:edit' c.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+        <form method="post" action="{% url 'candidates:packet' c.pk %}">{% csrf_token %}
+          <button class="btn btn-secondary btn-sm">Generate packet</button>
+        </form>
+        <a href="{% url 'candidates:submit' c.pk %}" class="btn btn-primary btn-sm">Submit to client</a>
+      </div>
+    {% endif %}
+  </div>
+</header>
+
+{% if c.duplicate_of and user.role in 'admin,hr' %}
+  <div class="card border-rose-200 bg-rose-50 p-4 mb-4 text-sm text-rose-900">
+    <strong>Duplicate alert:</strong> Likely matches existing candidate
+    <a href="{{ c.duplicate_of.get_absolute_url }}" class="underline">{{ c.duplicate_of.full_name }}</a>.
+  </div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+  <section class="lg:col-span-2 space-y-4 sm:space-y-6">
+    <div class="card">
+      <div class="card-header"><h2 class="font-semibold">Profile</h2></div>
+      <div class="card-body grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+        <div><div class="text-xs uppercase tracking-wide text-slate-500">Experience</div><div>{{ c.total_experience_years|default:'—' }} yrs</div></div>
+        <div><div class="text-xs uppercase tracking-wide text-slate-500">Notice</div><div>{{ c.notice_period_days|default:'—' }} days</div></div>
+        <div><div class="text-xs uppercase tracking-wide text-slate-500">Owner</div><div>{{ c.owner|default:'—' }}</div></div>
+        <div><div class="text-xs uppercase tracking-wide text-slate-500">Current CTC</div><div>{% if c.current_ctc %}{{ c.ctc_currency }} {{ c.current_ctc|floatformat:0|intcomma }}{% else %}—{% endif %}</div></div>
+        <div><div class="text-xs uppercase tracking-wide text-slate-500">Expected CTC</div><div>{% if c.expected_ctc %}{{ c.ctc_currency }} {{ c.expected_ctc|floatformat:0|intcomma }}{% else %}—{% endif %}</div></div>
+        <div><div class="text-xs uppercase tracking-wide text-slate-500">Created</div><div>{{ c.created_at|naturaltime }}</div></div>
+      </div>
+    </div>
+
+    {% if c.summary %}
+      <div class="card">
+        <div class="card-header"><h2 class="font-semibold">Summary</h2></div>
+        <div class="card-body whitespace-pre-line text-sm text-slate-700">{{ c.summary }}</div>
+      </div>
+    {% endif %}
+
+    {% if c.skills_list %}
+      <div class="card">
+        <div class="card-header"><h2 class="font-semibold">Skills</h2></div>
+        <div class="card-body flex flex-wrap gap-2">
+          {% for s in c.skills_list %}<span class="badge badge-brand">{{ s }}</span>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if user.role in 'admin,hr' %}
+      <div class="card">
+        <div class="card-header flex items-center justify-between">
+          <h2 class="font-semibold">Stage</h2>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'candidates:stage' c.pk %}" class="flex items-end gap-3 flex-wrap">
+            {% csrf_token %}
+            <div class="flex-1 min-w-[180px]">
+              <label class="field-label">Move to</label>
+              <select name="stage" class="input">
+                {% for value, label in stage_choices %}
+                  <option value="{{ value }}" {% if value == c.stage %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="flex-1 min-w-[200px]">
+              <label class="field-label">Note (optional)</label>
+              <input name="note" class="input" maxlength="300" placeholder="Why this stage?" />
+            </div>
+            <button class="btn btn-primary">Update</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2 class="font-semibold">Internal notes</h2></div>
+        <div class="card-body">
+          <form method="post" class="space-y-3 mb-4">
+            {% csrf_token %}
+            <input type="hidden" name="add_note" value="1" />
+            {{ note_form.body }}
+            <button class="btn btn-primary btn-sm">Add note</button>
+          </form>
+          <ul class="divide-y list-none">
+            {% for n in notes %}
+              <li class="py-2">
+                <div class="text-sm text-slate-700">{{ n.body }}</div>
+                <div class="text-xs text-slate-500 mt-1">{{ n.author|default:'—' }} · {{ n.created_at|naturaltime }}</div>
+              </li>
+            {% empty %}
+              <li class="text-sm text-slate-500">No notes yet.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <aside class="space-y-4 sm:space-y-6">
+    <div class="card">
+      <div class="card-header"><h2 class="font-semibold">Files</h2></div>
+      <div class="card-body space-y-2">
+        {% if user.role in 'admin,hr,vendor' %}
+          {% for r in resumes %}
+            <a href="{% url 'candidates:download_resume' r.pk %}" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 no-underline">
+              <span class="text-sm truncate">📄 {{ r.original_filename|default:"resume.pdf" }}</span>
+              <span class="text-xs text-slate-500 whitespace-nowrap">{{ r.uploaded_at|naturaltime }}</span>
+            </a>
+          {% empty %}
+            <p class="text-sm text-slate-500">No resume on file yet.</p>
+          {% endfor %}
+        {% endif %}
+        {% if user.role in 'admin,hr,client' %}
+          <div class="text-xs uppercase tracking-wide text-slate-500 mt-3">Client-safe packets</div>
+          {% for p in packets %}
+            <a href="{% url 'candidates:download_packet' p.pk %}" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 no-underline">
+              <span class="text-sm truncate">📋 Packet · {{ p.generated_at|date:"d M Y" }}</span>
+              <span class="text-xs text-slate-500 whitespace-nowrap">{{ p.generated_at|naturaltime }}</span>
+            </a>
+          {% empty %}
+            <p class="text-sm text-slate-500">No packets generated.</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="font-semibold">Submissions</h2></div>
+      <ul class="divide-y list-none">
+        {% for s in submissions %}
+          <li class="px-4 py-3">
+            <a href="{% url 'submissions:detail' s.pk %}" class="font-medium text-slate-900 block">{{ s.job.title }}</a>
+            <div class="text-xs text-slate-500">{{ s.client.name }} · {{ s.submitted_at|naturaltime }}</div>
+            <span class="badge badge-slate mt-1 inline-block">{{ s.get_status_display }}</span>
+          </li>
+        {% empty %}
+          <li class="px-4 py-4 text-sm text-slate-500">No submissions yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if user.role in 'admin,hr' %}
+      <div class="card">
+        <div class="card-header"><h2 class="font-semibold">Stage history</h2></div>
+        <ul class="divide-y list-none">
+          {% for h in stage_history %}
+            <li class="px-4 py-2 text-sm">
+              <div><span class="text-slate-500">{{ h.from_stage }}</span> → <strong>{{ h.to_stage }}</strong></div>
+              <div class="text-xs text-slate-500">{{ h.changed_by|default:'—' }} · {{ h.changed_at|naturaltime }}</div>
+              {% if h.note %}<div class="text-xs text-slate-600 italic mt-0.5">{{ h.note }}</div>{% endif %}
+            </li>
+          {% empty %}
+            <li class="px-4 py-3 text-sm text-slate-500">No history.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ vendor.name }}{% endblock %}
+{% block content %}
+<a href="{% url 'vendors:list' %}" class="text-sm text-slate-500 mb-3 inline-block">← Back</a>
+<header class="card mb-4"><div class="card-body flex items-start justify-between gap-3 flex-wrap">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">{{ vendor.name }}</h1>
+    <div class="text-sm text-slate-600 mt-1">{{ vendor.country|default:'—' }} · {{ vendor.contact_name }} · {{ vendor.contact_email }}</div>
+  </div>
+  <a href="{% url 'vendors:edit' vendor.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+</div></header>
+
+<section class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+  {% include "partials/_stat_card.html" with label="Submissions" value=quality.total %}
+  {% include "partials/_stat_card.html" with label="Duplicates" value=quality.duplicates tone="rose" %}
+  {% include "partials/_stat_card.html" with label="Interviews" value=quality.interviews %}
+  {% include "partials/_stat_card.html" with label="Offers" value=quality.offers tone="emerald" %}
+  {% include "partials/_stat_card.html" with label="Joined" value=quality.joins tone="brand" %}
+</section>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+  <div class="card"><div class="card-header"><h2 class="font-semibold">Recent candidates</h2></div>
+    <ul class="divide-y list-none">
+      {% for c in candidates %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <div class="flex-1 min-w-0"><a href="{{ c.get_absolute_url }}" class="font-medium text-slate-900 truncate block">{{ c.full_name }}</a><div class="text-xs text-slate-500 truncate">{{ c.current_title|default:'—' }} · {{ c.created_at|naturaltime }}</div></div>
+          <span class="stage-pill {{ c.stage_css }}">{{ c.stage_label }}</span>
+        </li>
+      {% empty %}<li class="px-4 py-4 text-sm text-slate-500">No candidates yet.</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="card"><div class="card-header"><h2 class="font-semibold">Assigned jobs</h2></div>
+    <ul class="divide-y list-none">
+      {% for j in jobs %}<li class="px-4 py-3"><a href="{% url 'jobs:detail' j.pk %}" class="font-medium text-slate-900">{{ j.title }}</a><div class="text-xs text-slate-500">{{ j.client.name }} · {{ j.get_status_display }}</div></li>{% empty %}<li class="px-4 py-4 text-sm text-slate-500">No jobs assigned.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

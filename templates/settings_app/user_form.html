@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<header class="mb-4">
+  <a href="{% url 'settings_app:users' %}" class="text-xs text-slate-500 no-underline">← Users</a>
+  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">{{ title }}</h1>
+</header>
+
+<form method="post" class="card max-w-2xl">
+  {% csrf_token %}
+  <div class="card-body space-y-4">
+    {% if form.non_field_errors %}
+      <div class="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="field-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>{% endif %}
+        {% for err in field.errors %}<p class="text-xs text-rose-700 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+
+    {% if edit_user %}
+      <p class="text-xs text-slate-500">To reset this user's password, use the Django admin or share new credentials directly.</p>
+    {% endif %}
+  </div>
+  <div class="card-footer flex gap-2 justify-end">
+    <a href="{% url 'settings_app:users' %}" class="btn btn-ghost btn-sm">Cancel</a>
+    <button class="btn btn-primary btn-sm">Save</button>
+  </div>
+</form>
+{% endblock %}

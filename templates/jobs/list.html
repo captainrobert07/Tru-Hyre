@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<header class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Jobs</h1>
+    <p class="text-sm text-slate-500">{{ total }} requirement{{ total|pluralize }}</p>
+  </div>
+  {% if user.role in 'admin,hr' %}
+    <a href="{% url 'jobs:create' %}" class="btn btn-primary btn-sm">Create</a>
+  {% endif %}
+</header>
+
+<form method="get" class="card mb-4">
+  <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="sm:col-span-2"><label class="field-label">Search</label><input type="search" name="q" value="{{ q }}" class="input" placeholder="Title, role, location, client…" /></div>
+    <div><label class="field-label">Status</label>
+      <select name="status" class="input">
+        <option value="">All</option>
+        {% for v, l in statuses %}<option value="{{ v }}" {% if v == status %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="sm:col-span-3 flex justify-end gap-2">
+      <a href="{% url 'jobs:list' %}" class="btn btn-ghost btn-sm">Reset</a>
+      <button class="btn btn-primary btn-sm">Filter</button>
+    </div>
+  </div>
+</form>
+
+{% if jobs %}
+  <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 list-none">
+    {% for j in jobs %}
+      <li class="card card-hover">
+        <a href="{% url 'jobs:detail' j.pk %}" class="block p-4 no-underline">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold text-slate-900 truncate">{{ j.title }}</h3>
+            <span class="stage-pill status-{{ j.status }}">{{ j.get_status_display }}</span>
+          </div>
+          <div class="text-xs text-slate-500 mt-1 truncate">{{ j.client.name }} · {{ j.role|default:'—' }}</div>
+          <div class="text-xs text-slate-500 truncate">{% if j.is_remote %}Remote{% else %}{{ j.location|default:'—' }}{% endif %} · {{ j.openings }} opening{{ j.openings|pluralize }} · {{ j.get_priority_display }}</div>
+          {% if j.budget_display %}<div class="text-xs text-slate-500 mt-1">{{ j.budget_display }}</div>{% endif %}
+          <div class="mt-2 flex items-center gap-2 text-xs">
+            <span class="badge badge-slate">Pipeline: {{ j.pipeline_count }}</span>
+            {% if j.target_close_date %}<span class="badge badge-amber">Close by {{ j.target_close_date|date:"d M" }}</span>{% endif %}
+          </div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="card p-8 text-center text-slate-500">No jobs match your filters.</div>
+{% endif %}
+{% endblock %}

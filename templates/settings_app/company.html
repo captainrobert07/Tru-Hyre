@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Company profile{% endblock %}
+{% block content %}
+<header class="mb-4">
+  <a href="{% url 'settings_app:home' %}" class="text-xs text-slate-500 no-underline">← Settings</a>
+  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Company profile</h1>
+  <p class="text-sm text-slate-500 mt-1">Branding, contact, and parsing toggles. Last updated {{ profile.updated_at|date:"M j, Y H:i" }}.</p>
+</header>
+
+<form method="post" enctype="multipart/form-data" class="card max-w-3xl">
+  {% csrf_token %}
+  <div class="card-body grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {% if form.non_field_errors %}
+      <div class="sm:col-span-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="sm:col-span-2">
+      <label for="{{ form.name.id_for_label }}" class="field-label">{{ form.name.label }}</label>
+      {{ form.name }}
+    </div>
+    <div class="sm:col-span-2">
+      <label for="{{ form.tagline.id_for_label }}" class="field-label">{{ form.tagline.label }}</label>
+      {{ form.tagline }}
+    </div>
+    <div>
+      <label for="{{ form.contact_email.id_for_label }}" class="field-label">{{ form.contact_email.label }}</label>
+      {{ form.contact_email }}
+    </div>
+    <div>
+      <label for="{{ form.contact_phone.id_for_label }}" class="field-label">{{ form.contact_phone.label }}</label>
+      {{ form.contact_phone }}
+    </div>
+    <div class="sm:col-span-2">
+      <label for="{{ form.address.id_for_label }}" class="field-label">{{ form.address.label }}</label>
+      {{ form.address }}
+    </div>
+
+    <div class="sm:col-span-2 pt-3 border-t border-slate-100">
+      <h3 class="font-semibold text-slate-900 mb-2">Resume parsing</h3>
+      <div class="space-y-2 text-sm">
+        <label class="flex items-center gap-2">{{ form.enable_pdf_parsing }} <span>Enable PDF text extraction</span></label>
+        <label class="flex items-center gap-2">{{ form.enable_ocr }} <span>Enable OCR (image-only PDFs) — requires Tesseract</span></label>
+        <label class="flex items-center gap-2">{{ form.enable_ai_parsing }} <span>Enable AI-assisted parsing — requires API key</span></label>
+      </div>
+    </div>
+
+    <div class="sm:col-span-2">
+      <label for="{{ form.notes.id_for_label }}" class="field-label">Internal notes</label>
+      {{ form.notes }}
+    </div>
+  </div>
+  <div class="card-footer flex gap-2 justify-end">
+    <button class="btn btn-primary btn-sm">Save profile</button>
+  </div>
+</form>
+{% endblock %}

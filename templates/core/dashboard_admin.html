@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<header class="mb-4 sm:mb-6">
+  <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Welcome back, {{ user.full_name|default:user.email }}</h1>
+  <p class="text-slate-600 text-sm">Platform overview · {{ SITE_TAGLINE }}</p>
+</header>
+
+<section class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+  {% include "partials/_stat_card.html" with label="Candidates" value=metrics.candidates_total meta="Total profiles" tone="brand" %}
+  {% include "partials/_stat_card.html" with label="Open Jobs" value=metrics.open_jobs meta="Currently hiring" %}
+  {% include "partials/_stat_card.html" with label="Pending Feedback" value=metrics.pending_feedback meta="Submissions awaiting client" tone="amber" %}
+  {% include "partials/_stat_card.html" with label="Duplicates" value=metrics.duplicates meta="Flagged profiles" tone="rose" %}
+  {% include "partials/_stat_card.html" with label="New (30d)" value=metrics.candidates_30d meta="New candidates" %}
+  {% include "partials/_stat_card.html" with label="Submissions (30d)" value=metrics.submissions_30d %}
+  {% include "partials/_stat_card.html" with label="Active Clients" value=metrics.active_clients %}
+  {% include "partials/_stat_card.html" with label="Active Vendors" value=metrics.active_vendors %}
+</section>
+
+<section class="mb-6">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-lg font-semibold text-slate-900">Pipeline overview</h2>
+    <a href="{% url 'candidates:list' %}" class="text-sm text-brand">View candidates →</a>
+  </div>
+  {% include "partials/_stage_pipeline.html" %}
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">Recent submissions</h3>
+      <a href="{% url 'submissions:list' %}" class="text-sm text-brand">All →</a>
+    </div>
+    <ul class="divide-y list-none">
+      {% for sub in recent_submissions %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">{{ sub.candidate.initials }}</span>
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'submissions:detail' sub.pk %}" class="font-medium text-slate-900 truncate block">{{ sub.candidate.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">{{ sub.job.title }} · {{ sub.client.name }}</div>
+          </div>
+          <span class="badge badge-slate whitespace-nowrap">{{ sub.get_status_display }}</span>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">No submissions yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">Pending client feedback</h3>
+      <span class="badge badge-amber">{{ metrics.pending_feedback }}</span>
+    </div>
+    <ul class="divide-y list-none">
+      {% for sub in pending_feedback_list %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'submissions:detail' sub.pk %}" class="font-medium text-slate-900 truncate block">{{ sub.candidate.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">{{ sub.job.title }} · {{ sub.client.name }} · {{ sub.submitted_at|naturaltime }}</div>
+          </div>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">All caught up.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">Vendor review queue</h3>
+      <a href="{% url 'candidates:list' %}?stage=hr_review" class="text-sm text-brand">All →</a>
+    </div>
+    <ul class="divide-y list-none">
+      {% for c in vendor_queue %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">{{ c.initials }}</span>
+          <div class="flex-1 min-w-0">
+            <a href="{{ c.get_absolute_url }}" class="font-medium text-slate-900 truncate block">{{ c.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">{{ c.vendor.name|default:'—' }} · {{ c.current_title|default:'No title' }}</div>
+          </div>
+          <span class="stage-pill {{ c.stage_css }}">{{ c.stage_label }}</span>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">No vendor submissions in review.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <h3 class="font-semibold">Notifications</h3>
+      <a href="{% url 'notifications:list' %}" class="text-sm text-brand">All →</a>
+    </div>
+    <ul class="divide-y list-none">
+      {% for n in recent_notifications %}
+        <li class="px-4 py-3 flex items-start gap-3 {% if not n.is_read %}bg-brand-50{% endif %}">
+          <div class="flex-1">
+            <a href="{{ n.get_target_url }}" class="font-medium text-slate-900 block">{{ n.title }}</a>
+            {% if n.body %}<div class="text-sm text-slate-600">{{ n.body }}</div>{% endif %}
+            <div class="text-xs text-slate-500 mt-1">{{ n.created_at|naturaltime }}</div>
+          </div>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-sm text-slate-500 text-center">Nothing new.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header"><h3 class="font-semibold">Quick actions</h3></div>
+  <div class="card-body grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <a href="{% url 'candidates:upload' %}" class="btn btn-primary">Upload Resume</a>
+    <a href="{% url 'jobs:create' %}" class="btn btn-secondary">Create Job</a>
+    <a href="{% url 'clients:create' %}" class="btn btn-secondary">Add Client</a>
+    <a href="{% url 'vendors:create' %}" class="btn btn-secondary">Add Vendor</a>
+  </div>
+</section>
+{% endblock %}

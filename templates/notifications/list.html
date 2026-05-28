@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<header class="flex items-center justify-between mb-4 flex-wrap gap-2">
+  <h1 class="text-2xl font-bold text-slate-900">Notifications</h1>
+  <div class="flex gap-2">
+    <a href="?show=all" class="btn btn-ghost btn-sm {% if show == 'all' %}bg-slate-100{% endif %}">All</a>
+    <a href="?show=unread" class="btn btn-ghost btn-sm {% if show == 'unread' %}bg-slate-100{% endif %}">Unread</a>
+    <form method="post" action="{% url 'notifications:mark_all_read' %}">{% csrf_token %}<button class="btn btn-secondary btn-sm">Mark all read</button></form>
+  </div>
+</header>
+
+<ul class="divide-y card list-none">
+  {% for n in items %}
+    <li class="px-4 py-3 flex items-start gap-3 {% if not n.is_read %}bg-brand-50{% endif %}">
+      <div class="flex-1 min-w-0">
+        <form method="post" action="{% url 'notifications:mark_read' n.pk %}" class="inline">{% csrf_token %}
+          <button class="font-medium text-slate-900 text-left">{{ n.title }}</button>
+        </form>
+        {% if n.body %}<div class="text-sm text-slate-600 mt-1">{{ n.body }}</div>{% endif %}
+        <div class="text-xs text-slate-500 mt-1">{{ n.get_kind_display }} · {{ n.created_at|naturaltime }}</div>
+      </div>
+      {% if not n.is_read %}<span class="badge badge-brand">New</span>{% endif %}
+    </li>
+  {% empty %}<li class="px-4 py-8 text-center text-slate-500">Nothing here.</li>{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Candidates{% endblock %}
+{% block content %}
+<header class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Candidates</h1>
+    <p class="text-sm text-slate-500">{{ total }} profile{{ total|pluralize }}</p>
+  </div>
+  {% if user.role in 'admin,hr' %}
+    <div class="flex items-center gap-2">
+      <a href="{% url 'candidates:upload' %}" class="btn btn-primary btn-sm">Upload</a>
+      <a href="{% url 'candidates:create' %}" class="btn btn-secondary btn-sm hidden sm:inline-flex">Add</a>
+    </div>
+  {% endif %}
+</header>
+
+<form method="get" class="card mb-4">
+  <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="sm:col-span-2">
+      <label class="field-label">Search</label>
+      <input type="search" name="q" value="{{ q }}" placeholder="Name, email, skill, title…" class="input" autocomplete="off" />
+    </div>
+    <div>
+      <label class="field-label">Stage</label>
+      <select name="stage" class="input">
+        <option value="">All stages</option>
+        {% for value, label in stages %}
+          <option value="{{ value }}" {% if value == stage %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex items-end gap-2 sm:col-span-3">
+      <label class="inline-flex items-center gap-2 text-sm">
+        <input type="checkbox" name="dup" value="1" {% if duplicate == '1' %}checked{% endif %}> Only duplicates
+      </label>
+      <div class="ml-auto flex gap-2">
+        <a href="{% url 'candidates:list' %}" class="btn btn-ghost btn-sm">Reset</a>
+        <button class="btn btn-primary btn-sm">Filter</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if candidates %}
+  <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 list-none">
+    {% for c in candidates %}
+      <li class="card card-hover">
+        <a href="{{ c.get_absolute_url }}" class="block p-4 no-underline">
+          <div class="flex items-start gap-3">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">{{ c.initials }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-semibold text-slate-900 truncate">{{ c.full_name }}</h3>
+                <span class="stage-pill {{ c.stage_css }}">{{ c.stage_label }}</span>
+                {% if c.duplicate_status != 'unique' %}<span class="badge badge-rose">Duplicate</span>{% endif %}
+              </div>
+              <div class="text-xs text-slate-500 mt-0.5 truncate">
+                {{ c.current_title|default:'No title' }}{% if c.current_company %} · {{ c.current_company }}{% endif %}
+              </div>
+              <div class="text-xs text-slate-500 mt-0.5 truncate">
+                {{ c.location|default:'—' }}
+                {% if c.total_experience_years %} · {{ c.total_experience_years }} yrs{% endif %}
+                {% if c.vendor %} · via {{ c.vendor.name }}{% endif %}
+              </div>
+              {% if c.skills_list %}
+                <div class="mt-2 flex flex-wrap gap-1">
+                  {% for s in c.skills_list|slice:":4" %}
+                    <span class="badge badge-slate">{{ s }}</span>
+                  {% endfor %}
+                  {% if c.skills_list|length > 4 %}<span class="badge badge-slate">+{{ c.skills_list|length|add:'-4' }}</span>{% endif %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="card p-8 text-center">
+    <p class="text-slate-500">No candidates match your filters.</p>
+    {% if user.role in 'admin,hr' %}
+      <a href="{% url 'candidates:upload' %}" class="btn btn-primary mt-4">Upload a resume</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<header class="flex items-center justify-between mb-4 flex-wrap gap-2">
+  <div>
+    <a href="{% url 'settings_app:home' %}" class="text-xs text-slate-500 no-underline">← Settings</a>
+    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Users</h1>
+  </div>
+  <a href="{% url 'settings_app:user_create' %}" class="btn btn-primary btn-sm">Add user</a>
+</header>
+
+<form method="get" class="card mb-4">
+  <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+    <div class="sm:col-span-2">
+      <label class="field-label">Search</label>
+      <input type="search" name="q" value="{{ q }}" class="input" placeholder="Email or name"/>
+    </div>
+    <div>
+      <label class="field-label">Role</label>
+      <select name="role" class="input">
+        <option value="">All roles</option>
+        {% for val, label in roles %}
+          <option value="{{ val }}" {% if role == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+</form>
+
+<div class="card overflow-x-auto">
+  <table class="t responsive">
+    <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Org</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+    <tbody>
+      {% for u in users %}
+        <tr>
+          <td data-label="Email"><span class="font-medium text-slate-900">{{ u.email }}</span></td>
+          <td data-label="Name">{{ u.full_name|default:"—" }}</td>
+          <td data-label="Role"><span class="badge">{{ u.get_role_display }}</span></td>
+          <td data-label="Org">{% if u.client_account %}{{ u.client_account.name }}{% elif u.vendor_account %}{{ u.vendor_account.name }}{% else %}—{% endif %}</td>
+          <td data-label="Status">
+            {% if u.is_active %}<span class="badge badge-emerald">Active</span>
+            {% else %}<span class="badge badge-rose">Disabled</span>{% endif %}
+          </td>
+          <td data-label="Last login">{{ u.last_login_at|date:"M j, H:i"|default:"—" }}</td>
+          <td data-label="" class="text-right whitespace-nowrap">
+            <a href="{% url 'settings_app:user_edit' u.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+            {% if u != request.user %}
+              <form method="post" action="{% url 'settings_app:user_toggle' u.pk %}" class="inline">
+                {% csrf_token %}
+                <button class="btn btn-ghost btn-sm">{{ u.is_active|yesno:"Disable,Enable" }}</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}<tr><td colspan="7" class="text-center text-slate-500 py-6">No users match your filters.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

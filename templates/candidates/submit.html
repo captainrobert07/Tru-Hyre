@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Submit {{ c.full_name }}{% endblock %}
+{% block content %}
+<a href="{{ c.get_absolute_url }}" class="text-sm text-slate-500 mb-3 inline-block">← Back to candidate</a>
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Submit candidate to client</h1>
+<p class="text-slate-600 text-sm mb-4">{{ c.full_name }} — a sanitized client packet will be generated automatically if one doesn't already exist.</p>
+
+<div class="card max-w-xl">
+  <div class="card-body">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="field-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex gap-2 justify-end">
+        <a href="{{ c.get_absolute_url }}" class="btn btn-secondary">Cancel</a>
+        <button class="btn btn-primary">Submit to client</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ client.name }} portal{% endblock %}
+{% block content %}
+<header class="mb-4">
+  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">{{ client.name }}</h1>
+  <p class="text-slate-600 text-sm">Welcome to your hiring portal · {{ SITE_TAGLINE }}</p>
+</header>
+
+<section class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+  {% include "partials/_stat_card.html" with label="Awaiting your feedback" value=open_submissions|length tone="amber" %}
+  {% include "partials/_stat_card.html" with label="Open jobs" value=open_jobs|length %}
+  {% include "partials/_stat_card.html" with label="Recent submissions" value=recent_submissions|length tone="brand" %}
+</section>
+
+<section class="card mb-6">
+  <div class="card-header flex items-center justify-between">
+    <h2 class="font-semibold">Awaiting your feedback</h2>
+    <a href="{% url 'clients:submissions' %}?status=pending" class="text-sm text-brand">View all →</a>
+  </div>
+  <ul class="divide-y list-none">
+    {% for s in open_submissions %}
+      <li class="px-4 py-3 flex items-center gap-3">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">{{ s.candidate.initials }}</span>
+        <div class="flex-1 min-w-0">
+          <a href="{% url 'clients:submission_detail' s.pk %}" class="font-medium text-slate-900 truncate block">{{ s.candidate.full_name }}</a>
+          <div class="text-xs text-slate-500 truncate">{{ s.job.title }} · {{ s.submitted_at|naturaltime }}</div>
+        </div>
+        <a href="{% url 'clients:submission_detail' s.pk %}" class="btn btn-primary btn-sm">Review</a>
+      </li>
+    {% empty %}
+      <li class="px-4 py-6 text-sm text-slate-500 text-center">All caught up — nothing new from your recruiters.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+  <div class="card">
+    <div class="card-header flex items-center justify-between"><h2 class="font-semibold">Recent activity</h2></div>
+    <ul class="divide-y list-none">
+      {% for s in recent_submissions %}
+        <li class="px-4 py-3 flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'clients:submission_detail' s.pk %}" class="font-medium text-slate-900 truncate block">{{ s.candidate.full_name }}</a>
+            <div class="text-xs text-slate-500 truncate">{{ s.job.title }} · {{ s.last_status_at|naturaltime }}</div>
+          </div>
+          <span class="badge badge-slate">{{ s.get_status_display }}</span>
+        </li>
+      {% empty %}<li class="px-4 py-4 text-sm text-slate-500">Nothing here yet.</li>{% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header flex items-center justify-between"><h2 class="font-semibold">Open requirements</h2><a href="{% url 'clients:jobs' %}" class="text-sm text-brand">All →</a></div>
+    <ul class="divide-y list-none">
+      {% for j in open_jobs %}
+        <li class="px-4 py-3"><div class="font-medium text-slate-900">{{ j.title }}</div>
+          <div class="text-xs text-slate-500">{{ j.role|default:'—' }} · {{ j.openings }} opening{{ j.openings|pluralize }} · {{ j.get_priority_display }}</div>
+        </li>
+      {% empty %}<li class="px-4 py-4 text-sm text-slate-500">No open jobs.</li>{% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

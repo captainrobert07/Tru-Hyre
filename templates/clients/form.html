@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<a href="{% url 'clients:list' %}" class="text-sm text-slate-500 mb-3 inline-block">← Cancel</a>
+<h1 class="text-2xl font-bold text-slate-900 mb-4">{{ title }}</h1>
+<div class="card"><div class="card-body">
+<form method="post" class="grid grid-cols-1 sm:grid-cols-2 gap-4">{% csrf_token %}
+  {% for field in form %}
+    <div class="{% if field.name == 'notes' or field.name == 'address' %}sm:col-span-2{% endif %}">
+      <label class="field-label">{{ field.label }}</label>{{ field }}
+      {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+  {% endfor %}
+  <div class="sm:col-span-2 flex gap-2 justify-end"><a href="{% url 'clients:list' %}" class="btn btn-secondary">Cancel</a><button class="btn btn-primary">Save</button></div>
+</form>
+</div></div>
+{% endblock %}
