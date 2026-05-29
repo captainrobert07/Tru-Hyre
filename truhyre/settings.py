@@ -34,6 +34,15 @@ if env("VERCEL") or env("VERCEL_URL"):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
 
+if env("RENDER") or env("RENDER_EXTERNAL_URL") or env("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(".onrender.com")
+    _render_host = env("RENDER_EXTERNAL_HOSTNAME")
+    if _render_host:
+        ALLOWED_HOSTS.append(_render_host)
+    CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com"]
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+
 SITE_NAME = env("SITE_NAME", "Tru Hyre")
 SITE_TAGLINE = env("SITE_TAGLINE", "An Allianz HR Platform - Project by Kris")
 
