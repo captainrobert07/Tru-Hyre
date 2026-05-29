@@ -2,9 +2,9 @@
 {% load humanize %}
 {% block title %}{{ vendor.name }} portal{% endblock %}
 {% block content %}
-<header class="mb-4">
-  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">{{ vendor.name }}</h1>
-  <p class="text-slate-600 text-sm">Vendor workspace · {{ SITE_TAGLINE }}</p>
+<header class="page-header">
+  <h1 class="page-title">{{ vendor.name }}</h1>
+  <p class="page-subtitle">Vendor workspace · {{ SITE_TAGLINE }}</p>
 </header>
 
 <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -15,31 +15,43 @@
 </section>
 
 <section class="card mb-6">
-  <div class="card-header flex items-center justify-between"><h2 class="font-semibold">Open jobs</h2><a href="{% url 'vendors:jobs' %}" class="text-sm text-brand">All →</a></div>
-  <ul class="divide-y list-none">
+  <div class="card-header flex items-center justify-between">
+    <h2 class="card-title">Open jobs</h2>
+    <a href="{% url 'vendors:jobs' %}" class="text-[13px] text-brand hover:underline">All →</a>
+  </div>
+  <ul class="list-none">
     {% for j in open_jobs %}
-      <li class="px-4 py-3"><div class="flex items-center justify-between gap-2">
-        <div class="min-w-0"><a href="{% url 'jobs:detail' j.pk %}" class="font-medium text-slate-900 truncate block">{{ j.title }}</a>
-        <div class="text-xs text-slate-500 truncate">{{ j.client.name }} · {{ j.location|default:'—' }} · {{ j.openings }} opening{{ j.openings|pluralize }}</div></div>
+      <li class="list-row">
+        <div class="list-row-body">
+          <a href="{% url 'jobs:detail' j.pk %}" class="list-row-title">{{ j.title }}</a>
+          <div class="list-row-sub">{{ j.client.name }} · {% if j.is_remote %}Remote{% else %}{{ j.location|default:'—' }}{% endif %} · {{ j.openings }} opening{{ j.openings|pluralize }}</div>
+        </div>
         <a href="{% url 'candidates:upload' %}" class="btn btn-primary btn-sm">Upload</a>
-      </div></li>
-    {% empty %}<li class="px-4 py-6 text-sm text-slate-500 text-center">No open jobs assigned right now.</li>{% endfor %}
+      </li>
+    {% empty %}
+      <li class="px-4 py-8 text-[13px] text-soft text-center">No open jobs assigned right now.</li>
+    {% endfor %}
   </ul>
 </section>
 
 <section class="card">
-  <div class="card-header flex items-center justify-between"><h2 class="font-semibold">Your recent submissions</h2><a href="{% url 'vendors:submissions' %}" class="text-sm text-brand">All →</a></div>
-  <ul class="divide-y list-none">
+  <div class="card-header flex items-center justify-between">
+    <h2 class="card-title">Your recent submissions</h2>
+    <a href="{% url 'vendors:submissions' %}" class="text-[13px] text-brand hover:underline">All →</a>
+  </div>
+  <ul class="list-none">
     {% for c in candidates %}
-      <li class="px-4 py-3 flex items-center gap-3">
-        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">{{ c.initials }}</span>
-        <div class="flex-1 min-w-0">
-          <a href="{{ c.get_absolute_url }}" class="font-medium text-slate-900 truncate block">{{ c.full_name }}</a>
-          <div class="text-xs text-slate-500 truncate">{{ c.current_title|default:'—' }} · {{ c.created_at|naturaltime }}</div>
+      <li class="list-row">
+        <span class="avatar">{{ c.initials }}</span>
+        <div class="list-row-body">
+          <a href="{{ c.get_absolute_url }}" class="list-row-title">{{ c.full_name }}</a>
+          <div class="list-row-sub">{{ c.current_title|default:'—' }} · {{ c.created_at|naturaltime }}</div>
         </div>
         <span class="stage-pill {{ c.stage_css }}">{{ c.stage_label }}</span>
       </li>
-    {% empty %}<li class="px-4 py-6 text-sm text-slate-500 text-center">No submissions yet.</li>{% endfor %}
+    {% empty %}
+      <li class="px-4 py-8 text-[13px] text-soft text-center">No submissions yet.</li>
+    {% endfor %}
   </ul>
 </section>
 {% endblock %}

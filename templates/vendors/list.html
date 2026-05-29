@@ -1,16 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Vendors{% endblock %}
 {% block content %}
-<header class="flex items-center justify-between mb-4"><h1 class="text-2xl font-bold text-slate-900">Vendors</h1><a href="{% url 'vendors:create' %}" class="btn btn-primary btn-sm">Add</a></header>
-<form method="get" class="card mb-4"><div class="card-body flex gap-3 items-end"><div class="flex-1"><label class="field-label">Search</label><input type="search" name="q" value="{{ q }}" class="input"/></div><button class="btn btn-primary btn-sm">Filter</button></div></form>
-<ul class="grid grid-cols-1 md:grid-cols-2 gap-3 list-none">
-  {% for v in vendors %}
-    <li class="card card-hover">
-      <a href="{% url 'vendors:detail' v.pk %}" class="block p-4 no-underline">
-        <h3 class="font-semibold text-slate-900">{{ v.name }}</h3>
-        <div class="text-xs text-slate-500 mt-1">{{ v.country|default:'—' }} · {{ v.contact_name|default:'No contact' }}</div>
+<header class="page-header">
+  <div class="page-header-row">
+    <div class="min-w-0">
+      <h1 class="page-title">Vendors</h1>
+      <p class="page-subtitle">{{ vendors|length }} sourcing partner{{ vendors|length|pluralize }}</p>
+    </div>
+    {% if user.role == 'admin' or user.role == 'hr' %}
+      <a href="{% url 'vendors:create' %}" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add vendor
       </a>
-    </li>
-  {% empty %}<li class="card p-8 text-center col-span-2 text-slate-500">No vendors yet.</li>{% endfor %}
-</ul>
+    {% endif %}
+  </div>
+</header>
+
+<form method="get" class="mb-4">
+  <div class="toolbar">
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" name="q" value="{{ q }}" placeholder="Vendor name, country, contact…" autocomplete="off">
+    </label>
+    <div class="ml-auto flex gap-2">
+      <a href="{% url 'vendors:list' %}" class="btn btn-ghost btn-sm">Reset</a>
+      <button class="btn btn-primary btn-sm">Search</button>
+    </div>
+  </div>
+</form>
+
+{% if vendors %}
+  <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 list-none">
+    {% for v in vendors %}
+      <li class="card card-hover">
+        <a href="{% url 'vendors:detail' v.pk %}" class="block p-4 no-underline">
+          <div class="flex items-center gap-3">
+            <span class="avatar">{{ v.name|slice:":2"|upper }}</span>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-slate-900 truncate tracking-tight">{{ v.name }}</h3>
+              <div class="text-[13px] text-soft truncate">{{ v.country|default:'—' }}</div>
+            </div>
+          </div>
+          <div class="text-[13px] text-soft mt-3 truncate">{{ v.contact_name|default:'No contact' }}</div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  {% include "partials/_empty.html" with title="No vendors yet" sub="Bring on a sourcing partner to start receiving submissions." %}
+{% endif %}
 {% endblock %}

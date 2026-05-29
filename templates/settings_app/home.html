@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<header class="mb-4">
-  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Settings</h1>
-  <p class="text-sm text-slate-500 mt-1">Platform configuration · admin only</p>
+<header class="page-header">
+  <h1 class="page-title">Settings</h1>
+  <p class="page-subtitle">Platform configuration · admin only</p>
 </header>
 
 <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-  <div class="stat-card"><div class="text-xs uppercase tracking-wide text-slate-500">Total users</div><div class="text-2xl font-bold mt-1">{{ total_users }}</div></div>
-  <div class="stat-card"><div class="text-xs uppercase tracking-wide text-slate-500">Active</div><div class="text-2xl font-bold mt-1">{{ active_users }}</div></div>
-  <div class="stat-card"><div class="text-xs uppercase tracking-wide text-slate-500">Pending invites</div><div class="text-2xl font-bold mt-1">{{ pending_invites }}</div></div>
-  <div class="stat-card"><div class="text-xs uppercase tracking-wide text-slate-500">Roles</div>
-    <div class="text-xs mt-1 space-y-0.5">
+  {% include "partials/_stat_card.html" with label="Total users" value=total_users %}
+  {% include "partials/_stat_card.html" with label="Active" value=active_users tone="emerald" %}
+  {% include "partials/_stat_card.html" with label="Pending invites" value=pending_invites tone="amber" %}
+  <div class="stat-card">
+    <div class="stat-label">Roles</div>
+    <div class="text-[12px] mt-2 space-y-0.5 text-medium tabular-nums">
       <div>Admin · {{ roles.admin|default:0 }}</div>
       <div>HR · {{ roles.hr|default:0 }}</div>
       <div>Client · {{ roles.client|default:0 }}</div>
@@ -22,59 +23,61 @@
 
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
   <a href="{% url 'settings_app:users' %}" class="card card-hover block p-4 no-underline">
-    <h3 class="font-semibold text-slate-900">Users &amp; roles</h3>
-    <p class="text-sm text-slate-500 mt-1">Add, edit, deactivate accounts. Assign roles.</p>
+    <h3 class="font-semibold text-slate-900 tracking-tight">Users &amp; roles</h3>
+    <p class="text-[13px] text-soft mt-1">Add, edit, deactivate accounts. Assign roles.</p>
   </a>
   <a href="{% url 'settings_app:invitations' %}" class="card card-hover block p-4 no-underline">
-    <h3 class="font-semibold text-slate-900">Invitations</h3>
-    <p class="text-sm text-slate-500 mt-1">Invite clients, vendors, or HR teammates.</p>
+    <h3 class="font-semibold text-slate-900 tracking-tight">Invitations</h3>
+    <p class="text-[13px] text-soft mt-1">Invite clients, vendors, or HR teammates.</p>
   </a>
   <a href="{% url 'settings_app:company' %}" class="card card-hover block p-4 no-underline">
-    <h3 class="font-semibold text-slate-900">Company profile</h3>
-    <p class="text-sm text-slate-500 mt-1">Branding, contact details, parsing toggles.</p>
+    <h3 class="font-semibold text-slate-900 tracking-tight">Company profile</h3>
+    <p class="text-[13px] text-soft mt-1">Branding, contact details, parsing toggles.</p>
   </a>
   <a href="{% url 'settings_app:audit_log' %}" class="card card-hover block p-4 no-underline">
-    <h3 class="font-semibold text-slate-900">Audit log</h3>
-    <p class="text-sm text-slate-500 mt-1">Every consequential action, recorded.</p>
+    <h3 class="font-semibold text-slate-900 tracking-tight">Audit log</h3>
+    <p class="text-[13px] text-soft mt-1">Every consequential action, recorded.</p>
   </a>
   <div class="card p-4">
-    <h3 class="font-semibold text-slate-900">Email &amp; storage</h3>
-    <p class="text-sm text-slate-500 mt-1">Configured via environment variables.</p>
-    <ul class="text-xs text-slate-600 mt-2 space-y-0.5">
+    <h3 class="font-semibold text-slate-900 tracking-tight">Email &amp; storage</h3>
+    <p class="text-[13px] text-soft mt-1">Configured via environment variables.</p>
+    <ul class="text-[12px] text-medium mt-2 space-y-0.5 tabular-nums">
       <li>EMAIL_BACKEND</li>
       <li>FILE_STORAGE_BACKEND</li>
       <li>DATABASE_URL</li>
     </ul>
   </div>
   <div class="card p-4">
-    <h3 class="font-semibold text-slate-900">Resume parsing</h3>
-    <p class="text-sm text-slate-500 mt-1">Toggle PDF / OCR / AI extraction.</p>
-    <div class="mt-2 text-xs space-y-0.5">
-      <div>PDF · <span class="{% if profile.enable_pdf_parsing %}text-emerald-700{% else %}text-slate-400{% endif %}">{{ profile.enable_pdf_parsing|yesno:"On,Off" }}</span></div>
-      <div>OCR · <span class="{% if profile.enable_ocr %}text-emerald-700{% else %}text-slate-400{% endif %}">{{ profile.enable_ocr|yesno:"On,Off" }}</span></div>
-      <div>AI · <span class="{% if profile.enable_ai_parsing %}text-emerald-700{% else %}text-slate-400{% endif %}">{{ profile.enable_ai_parsing|yesno:"On,Off" }}</span></div>
+    <h3 class="font-semibold text-slate-900 tracking-tight">Resume parsing</h3>
+    <p class="text-[13px] text-soft mt-1">Toggle PDF / OCR / AI extraction.</p>
+    <div class="mt-2 text-[12px] space-y-0.5">
+      <div>PDF · <span class="{% if profile.enable_pdf_parsing %}text-emerald-700{% else %}text-soft{% endif %}">{{ profile.enable_pdf_parsing|yesno:"On,Off" }}</span></div>
+      <div>OCR · <span class="{% if profile.enable_ocr %}text-emerald-700{% else %}text-soft{% endif %}">{{ profile.enable_ocr|yesno:"On,Off" }}</span></div>
+      <div>AI · <span class="{% if profile.enable_ai_parsing %}text-emerald-700{% else %}text-soft{% endif %}">{{ profile.enable_ai_parsing|yesno:"On,Off" }}</span></div>
     </div>
   </div>
 </section>
 
 <section class="card">
   <div class="card-header flex items-center justify-between">
-    <h2 class="font-semibold">Recent activity</h2>
-    <a href="{% url 'settings_app:audit_log' %}" class="text-sm text-brand">View all →</a>
+    <h2 class="card-title">Recent activity</h2>
+    <a href="{% url 'settings_app:audit_log' %}" class="text-[13px] text-brand hover:underline">View all →</a>
   </div>
-  <ul class="list-none divide-y divide-slate-100">
+  <ul class="list-none">
     {% for a in recent_audit %}
-      <li class="px-4 py-3 flex items-center justify-between gap-3">
-        <div>
-          <div class="text-sm font-medium text-slate-900">{{ a.action }}</div>
-          <div class="text-xs text-slate-500">{{ a.summary|default:"—" }}</div>
+      <li class="list-row">
+        <div class="list-row-body">
+          <div class="list-row-title">{{ a.action }}</div>
+          <div class="list-row-sub">{{ a.summary|default:"—" }}</div>
         </div>
-        <div class="text-xs text-slate-500 text-right shrink-0">
+        <div class="text-[11px] text-soft text-right shrink-0 tabular-nums">
           <div>{{ a.actor.email|default:"system" }}</div>
           <div>{{ a.created_at|date:"M j, H:i" }}</div>
         </div>
       </li>
-    {% empty %}<li class="p-6 text-center text-slate-500">No activity yet.</li>{% endfor %}
+    {% empty %}
+      <li class="px-4 py-8 text-[13px] text-soft text-center">No activity yet.</li>
+    {% endfor %}
   </ul>
 </section>
 {% endblock %}

@@ -1,23 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Audit log{% endblock %}
 {% block content %}
-<header class="mb-4">
-  <a href="{% url 'settings_app:home' %}" class="text-xs text-slate-500 no-underline">← Settings</a>
-  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Audit log</h1>
+<a href="{% url 'settings_app:home' %}" class="text-[13px] text-soft hover:text-brand inline-flex items-center gap-1 mb-3">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Settings
+</a>
+<header class="page-header">
+  <h1 class="page-title">Audit log</h1>
+  <p class="page-subtitle">{{ page.paginator.count }} event{{ page.paginator.count|pluralize }}</p>
 </header>
 
-<form method="get" class="card mb-4">
-  <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-    <div>
-      <label class="field-label">Action</label>
-      <input type="search" name="action" value="{{ action }}" class="input" placeholder="e.g. candidate.submitted"/>
-    </div>
-    <div>
-      <label class="field-label">Actor email</label>
-      <input type="search" name="actor" value="{{ actor }}" class="input"/>
-    </div>
-    <div class="text-right">
-      <button class="btn btn-primary btn-sm">Filter</button>
+<form method="get" class="mb-4">
+  <div class="toolbar">
+    <input type="search" name="action" value="{{ action }}" class="input" placeholder="Action (e.g. candidate.submitted)" style="min-width:240px">
+    <input type="search" name="actor" value="{{ actor }}" class="input" placeholder="Actor email" style="min-width:200px">
+    <div class="ml-auto flex gap-2">
+      <a href="{% url 'settings_app:audit_log' %}" class="btn btn-ghost btn-sm">Reset</a>
+      <button class="btn btn-primary btn-sm">Apply</button>
     </div>
   </div>
 </form>
@@ -28,21 +27,23 @@
     <tbody>
       {% for a in page.object_list %}
         <tr>
-          <td data-label="When" class="whitespace-nowrap text-xs">{{ a.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td data-label="When" class="whitespace-nowrap text-[12px] tabular-nums">{{ a.created_at|date:"Y-m-d H:i:s" }}</td>
           <td data-label="Actor">{{ a.actor.email|default:"system" }}</td>
-          <td data-label="Action"><code class="text-xs">{{ a.action }}</code></td>
-          <td data-label="Target" class="text-xs text-slate-500">{{ a.target_type }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</td>
+          <td data-label="Action"><code class="text-[12px]">{{ a.action }}</code></td>
+          <td data-label="Target" class="text-[12px] text-soft">{{ a.target_type }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</td>
           <td data-label="Summary">{{ a.summary|default:"—" }}</td>
-          <td data-label="IP" class="text-xs text-slate-500">{{ a.ip|default:"—" }}</td>
+          <td data-label="IP" class="text-[12px] text-soft">{{ a.ip|default:"—" }}</td>
         </tr>
-      {% empty %}<tr><td colspan="6" class="text-center text-slate-500 py-6">No audit events match.</td></tr>{% endfor %}
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-soft py-8">No audit events match.</td></tr>
+      {% endfor %}
     </tbody>
   </table>
 </div>
 
 {% if page.has_other_pages %}
-  <nav class="flex items-center justify-between mt-4 text-sm">
-    <div class="text-slate-500">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} events</div>
+  <nav class="flex items-center justify-between mt-4 text-[13px]">
+    <div class="text-soft tabular-nums">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} events</div>
     <div class="flex gap-2">
       {% if page.has_previous %}
         <a href="?page={{ page.previous_page_number }}{% if action %}&action={{ action }}{% endif %}{% if actor %}&actor={{ actor }}{% endif %}" class="btn btn-ghost btn-sm">← Prev</a>

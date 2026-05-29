@@ -1,23 +1,24 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Sign in{% endblock %}
-{% block body %}
-<div class="login-bg flex items-center justify-center px-4 py-8">
-  <div class="w-full max-w-md">
-    <div class="text-center mb-6">
-      <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-white text-xl font-bold shadow-md">T</div>
-      <h1 class="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{{ SITE_NAME }}</h1>
-      <p class="text-slate-600 text-sm mt-1">{{ SITE_TAGLINE }}</p>
-    </div>
+{% block guest_content %}
+<div class="login-bg">
+  <div class="relative flex items-center justify-center min-h-screen px-4 py-10">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-7">
+        <span class="brand-tile" style="width:44px;height:44px;border-radius:14px;font-size:1.125rem">T</span>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight text-slate-900">{{ SITE_NAME }}</h1>
+        <p class="text-soft text-sm mt-1.5">{{ SITE_TAGLINE }}</p>
+      </div>
 
-    <div class="card shadow-md">
-      <div class="card-body">
-        <h2 class="text-lg font-semibold text-slate-900 mb-1">Sign in</h2>
-        <p class="text-sm text-slate-500 mb-4">Use your Tru Hyre email and password.</p>
+      <div class="login-card p-6 sm:p-7">
+        <h2 class="text-xl font-semibold text-slate-900 mb-1 tracking-tight">Welcome back</h2>
+        <p class="text-sm text-soft mb-5">Sign in to your Tru Hyre workspace.</p>
 
         {% if form.non_field_errors %}
-          <div class="rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm p-3 mb-3">
-            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+          <div class="toast toast-error mb-4">
+            <svg class="toast-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><line x1="10" y1="6" x2="10" y2="11"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg>
+            <div>{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
           </div>
         {% endif %}
 
@@ -33,15 +34,15 @@
             {{ form.password }}
             {% if form.password.errors %}<p class="form-error">{{ form.password.errors.0 }}</p>{% endif %}
           </div>
-          <button type="submit" class="btn btn-primary w-full">Sign in</button>
+          <button type="submit" class="btn btn-primary btn-lg btn-block">Sign in</button>
         </form>
       </div>
-    </div>
 
-    <p class="text-center text-xs text-slate-500 mt-6">
-      Need an account? Contact your administrator. <br>
-      &copy; Tru Hyre · {{ SITE_TAGLINE }}
-    </p>
+      <p class="text-center text-xs text-soft mt-6 leading-relaxed">
+        Need an account? Contact your administrator.<br>
+        &copy; Tru Hyre · {{ SITE_TAGLINE }}
+      </p>
+    </div>
   </div>
 </div>
 {% endblock %}

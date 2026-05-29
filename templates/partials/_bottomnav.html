@@ -1,35 +1,14 @@
-{% load static %}
-<nav class="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t border-slate-200 bg-white/95 backdrop-blur"
-     style="padding-bottom: env(safe-area-inset-bottom)">
-  <ul class="grid grid-cols-5 text-[11px]">
+{% if nav_items %}
+<nav class="shell-bottomnav">
+  <ul class="bottomnav-list list-none">
     {% for item in nav_items %}
       <li>
-        <a href="{{ item.url }}" class="flex flex-col items-center gap-0.5 py-2.5 {% if item.active %}text-brand{% else %}text-slate-500 hover:text-slate-900{% endif %}">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            {{ item.icon|safe }}
-          </svg>
+        <a href="{{ item.url }}" class="bottomnav-item {% if item.active %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{{ item.icon|safe }}</svg>
           <span>{{ item.label }}</span>
         </a>
       </li>
     {% endfor %}
   </ul>
 </nav>
-
-<aside class="hidden sm:block">
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-    <ul class="flex gap-1 border-b border-slate-200">
-      {% for item in nav_items %}
-        <li>
-          <a href="{{ item.url }}"
-             class="inline-flex items-center gap-2 px-3 py-2.5 text-sm rounded-t-lg
-                    {% if item.active %}bg-white border border-b-white border-slate-200 text-brand font-medium{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              {{ item.icon|safe }}
-            </svg>
-            {{ item.label }}
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
-</aside>
+{% endif %}

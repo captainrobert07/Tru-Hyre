@@ -1,15 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Upload Resume{% endblock %}
+{% block title %}Upload resume{% endblock %}
 {% block content %}
-<a href="{% url 'candidates:list' %}" class="text-sm text-slate-500 mb-3 inline-block">← Cancel</a>
-<h1 class="text-2xl font-bold text-slate-900 mb-4">Upload Resume</h1>
+<a href="{% url 'candidates:list' %}" class="text-[13px] text-soft hover:text-brand inline-flex items-center gap-1 mb-3">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Candidates
+</a>
+<header class="page-header">
+  <h1 class="page-title">Upload a resume</h1>
+  <p class="page-subtitle">We'll parse name, email, phone, skills, summary and check for duplicates.</p>
+</header>
 
 <div class="card max-w-xl">
   <div class="card-body">
-    <p class="text-sm text-slate-600 mb-4">
-      We'll store your resume privately, extract the candidate's details, and place them in the HR review queue.
-      A duplicate check runs automatically.
-    </p>
     <form method="post" enctype="multipart/form-data" class="space-y-4">
       {% csrf_token %}
       {% for field in form %}
@@ -22,7 +24,10 @@
           </div>
         {% endif %}
       {% endfor %}
-      <button class="btn btn-primary w-full sm:w-auto">Upload &amp; parse</button>
+      <div class="flex gap-2 pt-2">
+        <button class="btn btn-primary">Upload &amp; parse</button>
+        <a href="{% url 'candidates:list' %}" class="btn btn-ghost">Cancel</a>
+      </div>
     </form>
   </div>
 </div>

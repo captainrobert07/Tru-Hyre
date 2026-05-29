@@ -1,7 +1,16 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm as DjangoPasswordChangeForm
 
 from .models import Role, User
+
+
+class PasswordChangeForm(DjangoPasswordChangeForm):
+    """Self-service password change — styled inputs."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for f in ("old_password", "new_password1", "new_password2"):
+            self.fields[f].widget.attrs.update({"class": "input"})
 
 
 class TruHyreAuthForm(AuthenticationForm):

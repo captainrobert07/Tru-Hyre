@@ -1,28 +1,37 @@
 {% extends "base.html" %}
 {% block title %}Users{% endblock %}
 {% block content %}
-<header class="flex items-center justify-between mb-4 flex-wrap gap-2">
-  <div>
-    <a href="{% url 'settings_app:home' %}" class="text-xs text-slate-500 no-underline">← Settings</a>
-    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Users</h1>
+<a href="{% url 'settings_app:home' %}" class="text-[13px] text-soft hover:text-brand inline-flex items-center gap-1 mb-3">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Settings
+</a>
+
+<header class="page-header">
+  <div class="page-header-row">
+    <div class="min-w-0">
+      <h1 class="page-title">Users</h1>
+      <p class="page-subtitle">{{ users|length }} member{{ users|length|pluralize }}</p>
+    </div>
+    <a href="{% url 'settings_app:user_create' %}" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add user
+    </a>
   </div>
-  <a href="{% url 'settings_app:user_create' %}" class="btn btn-primary btn-sm">Add user</a>
 </header>
 
-<form method="get" class="card mb-4">
-  <div class="card-body grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-    <div class="sm:col-span-2">
-      <label class="field-label">Search</label>
-      <input type="search" name="q" value="{{ q }}" class="input" placeholder="Email or name"/>
-    </div>
-    <div>
-      <label class="field-label">Role</label>
-      <select name="role" class="input">
-        <option value="">All roles</option>
-        {% for val, label in roles %}
-          <option value="{{ val }}" {% if role == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
+<form method="get" class="mb-4">
+  <div class="toolbar">
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" name="q" value="{{ q }}" placeholder="Email or name" autocomplete="off">
+    </label>
+    <select name="role" class="input" style="width:auto;min-width:170px">
+      <option value="">All roles</option>
+      {% for val, label in roles %}<option value="{{ val }}" {% if role == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <div class="ml-auto flex gap-2">
+      <a href="{% url 'settings_app:users' %}" class="btn btn-ghost btn-sm">Reset</a>
+      <button class="btn btn-primary btn-sm">Apply</button>
     </div>
   </div>
 </form>
@@ -41,7 +50,7 @@
             {% if u.is_active %}<span class="badge badge-emerald">Active</span>
             {% else %}<span class="badge badge-rose">Disabled</span>{% endif %}
           </td>
-          <td data-label="Last login">{{ u.last_login_at|date:"M j, H:i"|default:"—" }}</td>
+          <td data-label="Last login" class="tabular-nums">{{ u.last_login_at|date:"M j, H:i"|default:"—" }}</td>
           <td data-label="" class="text-right whitespace-nowrap">
             <a href="{% url 'settings_app:user_edit' u.pk %}" class="btn btn-ghost btn-sm">Edit</a>
             {% if u != request.user %}
@@ -52,7 +61,9 @@
             {% endif %}
           </td>
         </tr>
-      {% empty %}<tr><td colspan="7" class="text-center text-slate-500 py-6">No users match your filters.</td></tr>{% endfor %}
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-soft py-8">No users match your filters.</td></tr>
+      {% endfor %}
     </tbody>
   </table>
 </div>

@@ -3,45 +3,61 @@
 {% block title %}Candidate · {{ sub.candidate.full_name }}{% endblock %}
 {% block content %}
 {% with c=sub.candidate %}
-<a href="{% url 'clients:portal' %}" class="text-sm text-slate-500 mb-3 inline-block">← Back</a>
+<a href="{% url 'clients:portal' %}" class="text-[13px] text-soft hover:text-brand inline-flex items-center gap-1 mb-3">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Portal
+</a>
 
 <header class="card mb-4">
-  <div class="card-body flex items-start justify-between gap-3 flex-wrap">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">{{ c.full_name }}</h1>
-      <div class="text-sm text-slate-600 mt-1">{{ c.current_title|default:'—' }}{% if c.current_company %} · {{ c.current_company }}{% endif %}{% if c.location %} · {{ c.location }}{% endif %}</div>
-      <div class="text-xs text-slate-500 mt-1">For job: <a href="#" class="text-brand">{{ sub.job.title }}</a> · submitted {{ sub.submitted_at|naturaltime }}</div>
+  <div class="card-body flex items-start gap-4 flex-col sm:flex-row">
+    <span class="avatar avatar-lg">{{ c.initials }}</span>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="page-title" style="font-size:1.5rem">{{ c.full_name }}</h1>
+        <span class="stage-pill status-{{ sub.status }}">{{ sub.get_status_display }}</span>
+      </div>
+      <div class="text-[14px] text-medium mt-1.5">
+        {{ c.current_title|default:'—' }}{% if c.current_company %} · {{ c.current_company }}{% endif %}{% if c.location %} · {{ c.location }}{% endif %}
+      </div>
+      <div class="text-[13px] text-soft mt-1">
+        For job: <span class="text-brand">{{ sub.job.title }}</span> · submitted {{ sub.submitted_at|naturaltime }}
+      </div>
     </div>
-    <span class="stage-pill status-{{ sub.status }}">{{ sub.get_status_display }}</span>
   </div>
 </header>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-  <section class="lg:col-span-2 space-y-4 sm:space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+  <section class="lg:col-span-2 space-y-4">
     {% if c.summary %}
-    <div class="card"><div class="card-header"><h2 class="font-semibold">Summary</h2></div>
-      <div class="card-body whitespace-pre-line text-sm text-slate-700">{{ c.summary }}</div>
-    </div>
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Summary</h2></div>
+        <div class="card-body whitespace-pre-line text-[14px] leading-relaxed text-medium">{{ c.summary }}</div>
+      </div>
     {% endif %}
 
     {% if c.skills_list %}
-    <div class="card"><div class="card-header"><h2 class="font-semibold">Skills</h2></div>
-      <div class="card-body flex flex-wrap gap-2">{% for s in c.skills_list %}<span class="badge badge-brand">{{ s }}</span>{% endfor %}</div>
-    </div>
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Skills</h2></div>
+        <div class="card-body flex flex-wrap gap-2">
+          {% for s in c.skills_list %}<span class="badge badge-brand">{{ s }}</span>{% endfor %}
+        </div>
+      </div>
     {% endif %}
 
-    <div class="card"><div class="card-header"><h2 class="font-semibold">Profile</h2></div>
-      <div class="card-body grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-        <div><div class="text-xs uppercase tracking-wide text-slate-500">Experience</div><div>{{ c.total_experience_years|default:'—' }} yrs</div></div>
-        <div><div class="text-xs uppercase tracking-wide text-slate-500">Notice</div><div>{{ c.notice_period_days|default:'—' }} days</div></div>
-        <div><div class="text-xs uppercase tracking-wide text-slate-500">Expected CTC</div><div>{% if c.expected_ctc %}{{ c.ctc_currency }} {{ c.expected_ctc|floatformat:0|intcomma }}{% else %}—{% endif %}</div></div>
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Profile</h2></div>
+      <div class="card-body grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div><div class="stat-label">Experience</div><div class="text-[15px] font-medium tabular-nums mt-0.5">{{ c.total_experience_years|default:'—' }} yrs</div></div>
+        <div><div class="stat-label">Notice</div><div class="text-[15px] font-medium tabular-nums mt-0.5">{{ c.notice_period_days|default:'—' }} days</div></div>
+        <div><div class="stat-label">Expected CTC</div><div class="text-[15px] font-medium tabular-nums mt-0.5">{% if c.expected_ctc %}{{ c.ctc_currency }} {{ c.expected_ctc|floatformat:0|intcomma }}{% else %}—{% endif %}</div></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><h2 class="font-semibold">Your decision</h2></div>
+      <div class="card-header"><h2 class="card-title">Your decision</h2></div>
       <div class="card-body">
-        <form method="post" class="space-y-3">{% csrf_token %}
+        <form method="post" class="space-y-4">
+          {% csrf_token %}
           <div>
             <label class="field-label">Action</label>
             {{ form.action }}
@@ -50,34 +66,43 @@
             <label class="field-label">Comment (optional)</label>
             {{ form.comment }}
           </div>
-          <button class="btn btn-primary">Send feedback</button>
+          <div class="flex justify-end pt-2">
+            <button class="btn btn-primary">Send feedback</button>
+          </div>
         </form>
       </div>
     </div>
   </section>
 
-  <aside class="space-y-4 sm:space-y-6">
+  <aside class="space-y-4">
     {% if sub.packet %}
-    <div class="card"><div class="card-header"><h2 class="font-semibold">Documents</h2></div>
-      <div class="card-body space-y-2">
-        <a href="{% url 'candidates:download_packet' sub.packet.pk %}" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 no-underline">
-          <span class="text-sm">📋 Candidate packet (PDF)</span>
-          <span class="text-xs text-slate-500">{{ sub.packet.generated_at|date:"d M" }}</span>
-        </a>
-        <p class="form-help">Sanitized — contact details and sourcing info are intentionally hidden.</p>
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Documents</h2></div>
+        <div class="card-body space-y-2">
+          <a href="{% url 'candidates:download_packet' sub.packet.pk %}" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 no-underline">
+            <span class="text-[13px] truncate flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+              Candidate packet (PDF)
+            </span>
+            <span class="text-[11px] text-soft whitespace-nowrap">{{ sub.packet.generated_at|date:"d M" }}</span>
+          </a>
+          <p class="form-help">Sanitized — contact details and sourcing info are intentionally hidden.</p>
+        </div>
       </div>
-    </div>
     {% endif %}
 
-    <div class="card"><div class="card-header"><h2 class="font-semibold">History</h2></div>
-      <ul class="divide-y list-none">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">History</h2></div>
+      <ul class="list-none">
         {% for f in feedback_events %}
-          <li class="px-4 py-3 text-sm">
+          <li class="px-4 py-3 text-[13px] border-b border-hairline">
             <div><strong>{{ f.get_action_display }}</strong></div>
-            {% if f.comment %}<div class="text-slate-600 mt-1">{{ f.comment }}</div>{% endif %}
-            <div class="text-xs text-slate-500 mt-1">{{ f.by|default:'—' }} · {{ f.created_at|naturaltime }}</div>
+            {% if f.comment %}<div class="text-medium mt-1">{{ f.comment }}</div>{% endif %}
+            <div class="text-[11px] text-soft mt-1">{{ f.by|default:'—' }} · {{ f.created_at|naturaltime }}</div>
           </li>
-        {% empty %}<li class="px-4 py-3 text-sm text-slate-500">No feedback yet.</li>{% endfor %}
+        {% empty %}
+          <li class="px-4 py-3 text-[13px] text-soft">No feedback yet.</li>
+        {% endfor %}
       </ul>
     </div>
   </aside>

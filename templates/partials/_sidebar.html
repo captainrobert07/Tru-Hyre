@@ -1,0 +1,34 @@
+{% if nav_items %}
+<aside class="shell-sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Workspace</div>
+    {% for item in nav_items %}
+      <a href="{{ item.url }}" class="sidebar-link {% if item.active %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{{ item.icon|safe }}</svg>
+        <span>{{ item.label }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  {% if user.is_admin %}
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Admin</div>
+      <a href="{% url 'settings_app:users' %}" class="sidebar-link {% if '/settings/users' in request.path %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Users</span>
+      </a>
+      <a href="{% url 'settings_app:invitations' %}" class="sidebar-link {% if '/settings/invitations' in request.path %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><polyline points="4 6 12 13 20 6"/></svg>
+        <span>Invitations</span>
+      </a>
+      <a href="{% url 'settings_app:audit_log' %}" class="sidebar-link {% if '/settings/audit' in request.path %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        <span>Audit log</span>
+      </a>
+      <a href="{% url 'settings_app:company' %}" class="sidebar-link {% if '/settings/company' in request.path %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4 8 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+        <span>Company</span>
+      </a>
+    </div>
+  {% endif %}
+</aside>
+{% endif %}

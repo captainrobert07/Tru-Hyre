@@ -1,17 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Company profile{% endblock %}
 {% block content %}
-<header class="mb-4">
-  <a href="{% url 'settings_app:home' %}" class="text-xs text-slate-500 no-underline">← Settings</a>
-  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Company profile</h1>
-  <p class="text-sm text-slate-500 mt-1">Branding, contact, and parsing toggles. Last updated {{ profile.updated_at|date:"M j, Y H:i" }}.</p>
+<a href="{% url 'settings_app:home' %}" class="text-[13px] text-soft hover:text-brand inline-flex items-center gap-1 mb-3">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Settings
+</a>
+<header class="page-header">
+  <h1 class="page-title">Company profile</h1>
+  <p class="page-subtitle">Branding, contact, and parsing toggles. Last updated {{ profile.updated_at|date:"M j, Y H:i" }}.</p>
 </header>
 
 <form method="post" enctype="multipart/form-data" class="card max-w-3xl">
   {% csrf_token %}
   <div class="card-body grid grid-cols-1 sm:grid-cols-2 gap-4">
     {% if form.non_field_errors %}
-      <div class="sm:col-span-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">{{ form.non_field_errors }}</div>
+      <div class="sm:col-span-2 toast toast-error">
+        <svg class="toast-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><line x1="10" y1="6" x2="10" y2="11"/><line x1="10" y1="14" x2="10" y2="14.01"/></svg>
+        <div>{{ form.non_field_errors }}</div>
+      </div>
     {% endif %}
 
     <div class="sm:col-span-2">
@@ -35,9 +41,9 @@
       {{ form.address }}
     </div>
 
-    <div class="sm:col-span-2 pt-3 border-t border-slate-100">
-      <h3 class="font-semibold text-slate-900 mb-2">Resume parsing</h3>
-      <div class="space-y-2 text-sm">
+    <div class="sm:col-span-2 pt-3 border-t border-hairline">
+      <h3 class="section-title mb-3">Resume parsing</h3>
+      <div class="space-y-3 text-[14px]">
         <label class="flex items-center gap-2">{{ form.enable_pdf_parsing }} <span>Enable PDF text extraction</span></label>
         <label class="flex items-center gap-2">{{ form.enable_ocr }} <span>Enable OCR (image-only PDFs) — requires Tesseract</span></label>
         <label class="flex items-center gap-2">{{ form.enable_ai_parsing }} <span>Enable AI-assisted parsing — requires API key</span></label>
@@ -50,7 +56,7 @@
     </div>
   </div>
   <div class="card-footer flex gap-2 justify-end">
-    <button class="btn btn-primary btn-sm">Save profile</button>
+    <button class="btn btn-primary">Save profile</button>
   </div>
 </form>
 {% endblock %}
