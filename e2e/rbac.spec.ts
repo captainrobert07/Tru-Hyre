@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { login, SEEDS } from "./helpers";
 
 const FORBIDDEN_FOR_CLIENT = [
-  "/",
+  "/dashboard",
   "/candidates",
   "/jobs",
   "/clients",
@@ -15,7 +15,7 @@ const FORBIDDEN_FOR_CLIENT = [
 ];
 
 const FORBIDDEN_FOR_VENDOR = [
-  "/",
+  "/dashboard",
   "/candidates",
   "/jobs",
   "/clients",
@@ -58,14 +58,13 @@ test.describe("RBAC negative checks", () => {
     await login(page, SEEDS.hr);
     for (const path of FORBIDDEN_FOR_HR) {
       await page.goto(path);
-      // hr gets redirected to "/" (dashboard) per requireAdmin().
-      await expect(page).toHaveURL(/\/(\?.*)?$|\/login/, { timeout: 15_000 });
+      await expect(page).toHaveURL(/\/dashboard|\/login/, { timeout: 15_000 });
     }
   });
 
   test("logged-out user is sent to /login from any protected path", async ({ page }) => {
     await page.context().clearCookies();
-    for (const path of ["/", "/candidates", "/jobs", "/settings"]) {
+    for (const path of ["/dashboard", "/candidates", "/jobs", "/settings"]) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/login/);
     }

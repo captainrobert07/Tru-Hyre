@@ -18,10 +18,10 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
+    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-sm text-ink-soft mt-1">{subtitle}</p>}
+        <h1 className="display text-display">{title}</h1>
+        {subtitle && <p className="text-base text-ink-soft mt-2">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
@@ -32,27 +32,37 @@ export function StatCard({
   label,
   value,
   hint,
+  tone = "default",
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
+  tone?: "default" | "good" | "attention" | "info";
 }) {
+  const pillClass =
+    tone === "good" ? "pill-good" : tone === "attention" ? "pill-attention" : tone === "info" ? "pill-info" : "pill-normal";
+  const pillText = tone === "good" ? "GOOD" : tone === "attention" ? "ATTENTION" : tone === "info" ? "NORMAL" : null;
   return (
-    <div className="card p-4">
-      <div className="text-xs uppercase tracking-wide text-ink-muted">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-      {hint && <div className="mt-1 text-xs text-ink-soft">{hint}</div>}
+    <div className="card p-5 md:p-6">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm text-ink-soft">{label}</div>
+        {pillText && <span className={pillClass}>{pillText}</span>}
+      </div>
+      <div className="stat-big">{value}</div>
+      {hint && <div className="mt-2 text-xs text-ink-soft">{hint}</div>}
     </div>
   );
 }
 
 const BADGE_STYLES: Record<string, string> = {
   default: "bg-canvas text-ink-soft",
-  blue: "bg-brand-50 text-brand-700",
-  green: "bg-emerald-50 text-emerald-700",
+  blue: "bg-blue-50 text-blue-700",
+  green: "bg-brand-50 text-brand-700",
   amber: "bg-amber-50 text-amber-700",
   red: "bg-red-50 text-red-700",
   gray: "bg-slate-100 text-slate-600",
+  brand: "bg-brand-500 text-white",
+  ink: "bg-ink_inverted text-white",
 };
 
 export function Badge({
@@ -65,7 +75,7 @@ export function Badge({
   className?: string;
 }) {
   return (
-    <span className={cn("inline-flex items-center px-2 h-6 text-xs font-medium rounded-full", BADGE_STYLES[tone], className)}>
+    <span className={cn("inline-flex items-center px-2.5 h-6 text-xs font-medium rounded-full", BADGE_STYLES[tone], className)}>
       {children}
     </span>
   );
@@ -83,9 +93,9 @@ export function EmptyState({
   return (
     <div className="card flex flex-col items-center justify-center text-center p-12 gap-2">
       <div className="text-base font-medium">{title}</div>
-      {description && <div className="text-sm text-ink-soft">{description}</div>}
+      {description && <div className="text-sm text-ink-soft max-w-sm">{description}</div>}
       {cta && (
-        <Link href={cta.href} className="btn-primary mt-2">
+        <Link href={cta.href} className="btn-primary mt-3">
           {cta.label}
         </Link>
       )}
@@ -107,7 +117,7 @@ export function ListRow({
   return (
     <Link
       href={href}
-      className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-canvas transition-colors"
+      className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-canvas transition-colors"
     >
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium truncate">{primary}</div>

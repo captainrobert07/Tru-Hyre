@@ -4,7 +4,7 @@ import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 
 export async function loginAction(formData: FormData): Promise<{ ok: false; error: string } | void> {
-  const next = (formData.get("next") as string) || "/";
+  const next = (formData.get("next") as string) || "/dashboard";
   try {
     await signIn("credentials", {
       email: formData.get("email"),

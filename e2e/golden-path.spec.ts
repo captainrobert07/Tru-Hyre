@@ -5,6 +5,7 @@ test.describe.configure({ mode: "serial" });
 
 test("admin lands on dashboard", async ({ page }) => {
   await login(page, SEEDS.admin);
+  await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByText(/Pipeline at a glance/i)).toBeVisible();
 });

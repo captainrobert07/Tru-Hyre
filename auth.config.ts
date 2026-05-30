@@ -11,6 +11,7 @@ export const authConfig = {
       const path = nextUrl.pathname;
 
       const isPublic =
+        path === "/" ||
         path === "/login" ||
         path.startsWith("/invite/") ||
         path.startsWith("/api/auth") ||
@@ -33,13 +34,17 @@ export const authConfig = {
       const clientOnly = path.startsWith("/portal/client");
       const vendorOnly = path.startsWith("/portal/vendor");
 
-      if (adminOnly && role !== "admin") return Response.redirect(new URL("/", nextUrl));
+      const homeForRole = role === "client" ? "/portal/client" : role === "vendor" ? "/portal/vendor" : "/dashboard";
+
+      if (adminOnly && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
       if (staffOnly && role !== "admin" && role !== "hr") {
-        const dest = role === "client" ? "/portal/client" : role === "vendor" ? "/portal/vendor" : "/";
-        return Response.redirect(new URL(dest, nextUrl));
+        return Response.redirect(new URL(homeForRole, nextUrl));
       }
-      if (clientOnly && role !== "client" && role !== "admin") return Response.redirect(new URL("/", nextUrl));
-      if (vendorOnly && role !== "vendor" && role !== "admin") return Response.redirect(new URL("/", nextUrl));
+      if (path === "/dashboard" && role !== "admin" && role !== "hr") {
+        return Response.redirect(new URL(homeForRole, nextUrl));
+      }
+      if (clientOnly && role !== "client" && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
+      if (vendorOnly && role !== "vendor" && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
 
       return true;
     },

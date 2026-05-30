@@ -46,9 +46,12 @@ export function LoginForm({ next, error }: { next?: string; error?: string }) {
           {message}
         </div>
       )}
-      <button type="submit" disabled={pending} className="btn-primary w-full">
+      <button type="submit" disabled={pending} className="btn-brand w-full">
         {pending ? "Signing in…" : "Sign in"}
       </button>
+      <p className="text-[11px] text-ink-muted text-center">
+        Demo: <span className="font-mono">admin@truhyre.app</span> · <span className="font-mono">Kris@35193</span>
+      </p>
     </form>
   );
 }
