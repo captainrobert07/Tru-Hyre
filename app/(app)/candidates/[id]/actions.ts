@@ -91,8 +91,6 @@ const INLINE_FIELDS = [
   "notes",
 ] as const;
 
-type InlineField = (typeof INLINE_FIELDS)[number];
-
 const inlineSchema = z.object({
   field: z.enum(INLINE_FIELDS),
   value: z.string().max(2000),
@@ -105,14 +103,31 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
 
   const { field, value } = parsed.data;
   const trimmed = value.trim();
-  const isNumeric = field === "noticePeriodDays";
-  const writeValue: string | number | null = trimmed === "" ? null : isNumeric ? Number(trimmed) : trimmed;
-  if (isNumeric && writeValue !== null && (typeof writeValue !== "number" || !Number.isFinite(writeValue))) return;
+  const v: string | null = trimmed === "" ? null : trimmed;
 
-  await db
-    .update(candidates)
-    .set({ [field]: writeValue, updatedAt: new Date() } as Record<InlineField, unknown> & { updatedAt: Date })
-    .where(eq(candidates.id, id));
+  const update: Partial<typeof candidates.$inferInsert> & { updatedAt: Date } = { updatedAt: new Date() };
+  switch (field) {
+    case "fullName": if (v === null || v.length < 2) return; update.fullName = v; break;
+    case "email": update.email = v; break;
+    case "phone": update.phone = v; break;
+    case "location": update.location = v; break;
+    case "currentTitle": update.currentTitle = v; break;
+    case "currentCompany": update.currentCompany = v; break;
+    case "experienceYears": update.experienceYears = v; break;
+    case "currentCtc": update.currentCtc = v; break;
+    case "expectedCtc": update.expectedCtc = v; break;
+    case "summary": update.summary = v; break;
+    case "notes": update.notes = v; break;
+    case "noticePeriodDays": {
+      if (v === null) { update.noticePeriodDays = null; break; }
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0 || n > 3650) return;
+      update.noticePeriodDays = n;
+      break;
+    }
+  }
+
+  await db.update(candidates).set(update).where(eq(candidates.id, id));
 
   await logAudit({
     actorId: Number(user.id),
