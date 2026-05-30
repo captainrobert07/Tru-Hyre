@@ -4,10 +4,9 @@ import { db } from "@/db";
 import { jobs, clientAccounts } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { parseListParams } from "@/lib/list-params";
-import { PageHeader, JobStatusBadge, EmptyState } from "@/components/primitives";
+import { PageHeader, EmptyState } from "@/components/primitives";
 import { ListToolbar, Pager } from "@/components/list-toolbar";
-import { BulkList } from "@/components/bulk-list";
-import { bulkJobAction } from "./bulk-actions";
+import { JobsBulkTable } from "./jobs-bulk-table";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Jobs" };
@@ -100,41 +99,14 @@ export default async function JobsPage({
         />
       ) : (
         <>
-          <BulkList
-            rows={rows.map((j) => ({
-              id: j.id,
-              href: `/jobs/${j.id}`,
-              primary: j.title,
-              secondary: [j.clientName, j.location, `${j.positions} position${j.positions === 1 ? "" : "s"}`].filter(Boolean).join(" · ") || undefined,
-              trailing: <JobStatusBadge status={j.status} />,
-            }))}
-            actions={[
-              {
-                kind: "menu",
-                label: "Set status",
-                values: [
-                  { value: "open", label: "Open" },
-                  { value: "hold", label: "Hold" },
-                  { value: "closing", label: "Closing" },
-                  { value: "closed", label: "Closed", destructive: true },
-                ],
-                run: async (ids, value) => {
-                  "use server";
-                  return await bulkJobAction({ ids, action: "set_status", status: value });
-                },
-              },
-              {
-                kind: "destructive",
-                label: "Delete",
-                confirmTitle: (n) => `Delete ${n} job${n === 1 ? "" : "s"}?`,
-                confirmDescription: "Removes the jobs and their submissions. Audit log entries survive.",
-                run: async (ids) => {
-                  "use server";
-                  return await bulkJobAction({ ids, action: "delete" });
-                },
-              },
-            ]}
-          />
+          <JobsBulkTable rows={rows.map((j) => ({
+            id: j.id,
+            title: j.title,
+            status: j.status,
+            location: j.location,
+            positions: j.positions,
+            clientName: j.clientName,
+          }))} />
           <Pager basePath="/jobs" page={page} pageSize={pageSize} total={total} q={q} status={status} />
         </>
       )}

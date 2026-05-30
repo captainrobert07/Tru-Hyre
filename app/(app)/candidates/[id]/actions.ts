@@ -389,12 +389,25 @@ export async function deleteCandidateAction(id: number): Promise<void> {
     db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)),
   ]);
 
-  // Best-effort blob deletion. Don't block the SQL purge if a blob is gone.
+  // Best-effort blob deletion. Don't block the SQL purge if a blob is gone,
+  // but record every failure in the audit meta so compliance can re-attempt.
+  const blobErrors: { url: string; reason: string }[] = [];
+  let blobsDeleted = 0;
   for (const r of resumes) {
-    try { await deleteBlob(r.blobUrl); } catch { /* swallow */ }
+    try {
+      await deleteBlob(r.blobUrl);
+      blobsDeleted++;
+    } catch (e) {
+      blobErrors.push({ url: r.blobUrl, reason: (e as Error).message || "unknown" });
+    }
   }
   for (const p of packets) {
-    try { await deleteBlob(p.blobUrl); } catch { /* swallow */ }
+    try {
+      await deleteBlob(p.blobUrl);
+      blobsDeleted++;
+    } catch (e) {
+      blobErrors.push({ url: p.blobUrl, reason: (e as Error).message || "unknown" });
+    }
   }
 
   // Cascading FKs handle stage_history, submissions, feedback_events,
@@ -407,11 +420,13 @@ export async function deleteCandidateAction(id: number): Promise<void> {
     action: "delete",
     targetType: "candidate",
     targetId: id,
-    summary: `GDPR-deleted candidate ${c.fullName}`,
+    summary: `GDPR-deleted candidate ${c.fullName}${blobErrors.length > 0 ? ` (${blobErrors.length} blob errors)` : ""}`,
     meta: {
       refId: c.refId,
       email: c.email,
-      blobsDeleted: resumes.length + packets.length,
+      blobsAttempted: resumes.length + packets.length,
+      blobsDeleted,
+      blobErrors: blobErrors.length > 0 ? blobErrors : undefined,
     },
   });
 

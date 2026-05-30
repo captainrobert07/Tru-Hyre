@@ -76,6 +76,9 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
   if (action === "delete") {
     if (user.role !== "admin") return { ok: false, error: "Admin only." };
     let affected = 0;
+    let blobsAttempted = 0;
+    let blobsDeleted = 0;
+    const blobErrors: { url: string; reason: string }[] = [];
     for (const id of ids) {
       const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
       if (!c) continue;
@@ -83,8 +86,16 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
         db.select().from(resumeFiles).where(eq(resumeFiles.candidateId, id)),
         db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)),
       ]);
-      for (const r of resumes) { try { await deleteBlob(r.blobUrl); } catch { /* swallow */ } }
-      for (const p of packets) { try { await deleteBlob(p.blobUrl); } catch { /* swallow */ } }
+      for (const r of resumes) {
+        blobsAttempted++;
+        try { await deleteBlob(r.blobUrl); blobsDeleted++; }
+        catch (e) { blobErrors.push({ url: r.blobUrl, reason: (e as Error).message || "unknown" }); }
+      }
+      for (const p of packets) {
+        blobsAttempted++;
+        try { await deleteBlob(p.blobUrl); blobsDeleted++; }
+        catch (e) { blobErrors.push({ url: p.blobUrl, reason: (e as Error).message || "unknown" }); }
+      }
       await db.delete(candidates).where(eq(candidates.id, id));
       affected++;
     }
@@ -93,7 +104,8 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
       actorEmail: user.email,
       action: "delete",
       targetType: "candidate",
-      summary: `Bulk-deleted ${affected} candidates`,
+      summary: `Bulk-deleted ${affected} candidates${blobErrors.length > 0 ? ` (${blobErrors.length} blob errors)` : ""}`,
+      meta: { blobsAttempted, blobsDeleted, blobErrors: blobErrors.length > 0 ? blobErrors : undefined },
     });
     revalidatePath("/candidates");
     return { ok: true, affected };

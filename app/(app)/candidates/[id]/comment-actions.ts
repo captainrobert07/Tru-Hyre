@@ -31,11 +31,13 @@ export async function addCandidateCommentAction(candidateId: number, formData: F
   const mentionedEmails = extractMentions(body);
   let mentionedIds: number[] = [];
   if (mentionedEmails.length > 0) {
+    // Only mention staff. Mentioning a client/vendor would leak HR-internal
+    // candidate notes into their notification feed.
     const found = await db
-      .select({ id: users.id, email: users.email })
+      .select({ id: users.id, email: users.email, role: users.role })
       .from(users)
       .where(inArray(users.email, mentionedEmails));
-    mentionedIds = found.map((u) => u.id);
+    mentionedIds = found.filter((u) => u.role === "admin" || u.role === "hr").map((u) => u.id);
   }
 
   await db.insert(comments).values({
@@ -47,14 +49,15 @@ export async function addCandidateCommentAction(candidateId: number, formData: F
     mentions: mentionedIds,
   });
 
-  // Notify mentioned users
+  // Notify mentioned users — title only, no body (which may contain
+  // sensitive notes). They click through to read.
   for (const userId of mentionedIds) {
     if (userId === Number(me.id)) continue;
     await db.insert(notifications).values({
       userId,
       kind: "system",
-      title: `${me.fullName || me.email} mentioned you`,
-      body: body.slice(0, 200),
+      title: `${me.fullName || me.email} mentioned you on ${cand.fullName}`,
+      body: null,
       url: `/candidates/${candidateId}`,
     });
   }

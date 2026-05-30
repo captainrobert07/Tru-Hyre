@@ -89,23 +89,36 @@ async function main() {
     { email: "vendor@truhyre.app", fullName: "Vendor Partner", role: "vendor" as const, clientAccountId: null, vendorAccountId: talentBridge.id },
   ];
 
+  // IMPORTANT: do NOT overwrite an existing user. The seed must be a one-time
+  // bootstrap. If an admin has changed a user's password / role / linkage in
+  // production, we don't want a deploy to silently revert it. To force a
+  // reset, set SEED_RESET=1 in env.
+  const allowReset = process.env.SEED_RESET === "1";
   for (const u of seedUsers) {
-    await db
-      .insert(users)
-      .values({ ...u, passwordHash: hash, isActive: true })
-      .onConflictDoUpdate({
-        target: users.email,
-        set: {
-          fullName: u.fullName,
-          role: u.role,
-          clientAccountId: u.clientAccountId,
-          vendorAccountId: u.vendorAccountId,
-          passwordHash: hash,
-          isActive: true,
-          updatedAt: sql`now()`,
-        },
-      });
-    console.log(`  user: ${u.email} (${u.role})`);
+    if (allowReset) {
+      await db
+        .insert(users)
+        .values({ ...u, passwordHash: hash, isActive: true })
+        .onConflictDoUpdate({
+          target: users.email,
+          set: {
+            fullName: u.fullName,
+            role: u.role,
+            clientAccountId: u.clientAccountId,
+            vendorAccountId: u.vendorAccountId,
+            passwordHash: hash,
+            isActive: true,
+            updatedAt: sql`now()`,
+          },
+        });
+      console.log(`  user (reset): ${u.email} (${u.role})`);
+    } else {
+      await db
+        .insert(users)
+        .values({ ...u, passwordHash: hash, isActive: true })
+        .onConflictDoNothing({ target: users.email });
+      console.log(`  user: ${u.email} (${u.role})`);
+    }
   }
 
   const adminUser = (await db.select().from(users).where(eq(users.email, "admin@truhyre.app")))[0];

@@ -4,11 +4,9 @@ import { db } from "@/db";
 import { clientAccounts, jobs } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { parseListParams } from "@/lib/list-params";
-import { PageHeader, EmptyState, Badge } from "@/components/primitives";
+import { PageHeader, EmptyState } from "@/components/primitives";
 import { ListToolbar, Pager } from "@/components/list-toolbar";
-import { BulkList } from "@/components/bulk-list";
-import { Avatar } from "@/components/avatar";
-import { bulkClientAction } from "./bulk-actions";
+import { ClientsBulkTable } from "./clients-bulk-table";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -70,32 +68,13 @@ export default async function ClientsPage({
         />
       ) : (
         <>
-          <BulkList
-            rows={rows.map((c) => ({
-              id: c.id,
-              href: `/clients/${c.id}`,
-              primary: (
-                <span className="inline-flex items-center gap-2">
-                  <Avatar name={c.name} size="sm" />
-                  {c.name}
-                </span>
-              ),
-              secondary: [c.industry, c.primaryContactName].filter(Boolean).join(" · ") || undefined,
-              trailing: <Badge tone="default">{c.jobCount} job{c.jobCount === 1 ? "" : "s"}</Badge>,
-            }))}
-            actions={[
-              {
-                kind: "destructive",
-                label: "Delete",
-                confirmTitle: (n) => `Delete ${n} client${n === 1 ? "" : "s"}?`,
-                confirmDescription: "Removes the client account and cascade-deletes their jobs, contacts, and submissions. Audit log entries survive.",
-                run: async (ids) => {
-                  "use server";
-                  return await bulkClientAction({ ids, action: "delete" });
-                },
-              },
-            ]}
-          />
+          <ClientsBulkTable rows={rows.map((c) => ({
+            id: c.id,
+            name: c.name,
+            industry: c.industry,
+            primaryContactName: c.primaryContactName,
+            jobCount: c.jobCount,
+          }))} />
           <Pager basePath="/clients" page={page} pageSize={pageSize} total={total} q={q} />
         </>
       )}
