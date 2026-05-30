@@ -16,6 +16,15 @@ import {
 
 type Role = "admin" | "hr" | "client" | "vendor";
 
+function NotificationBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-brand-600 text-white tabular-nums">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 const NAV: { href: string; label: string; icon: ReactNode; roles: Role[] }[] = [
   { href: "/", label: "Dashboard", icon: <LayoutDashboard size={18} />, roles: ["admin", "hr"] },
   { href: "/candidates", label: "Candidates", icon: <Users size={18} />, roles: ["admin", "hr"] },
@@ -30,12 +39,15 @@ const NAV: { href: string; label: string; icon: ReactNode; roles: Role[] }[] = [
 
 export function AppShell({
   user,
+  unreadCount,
   children,
 }: {
   user: { fullName: string; email: string; role: Role };
+  unreadCount?: number;
   children: ReactNode;
 }) {
   const items = NAV.filter((n) => n.roles.includes(user.role));
+  const unread = unreadCount ?? 0;
 
   return (
     <div className="min-h-screen flex">
@@ -54,7 +66,8 @@ export function AppShell({
               className="flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-ink-soft hover:text-ink hover:bg-canvas transition-colors"
             >
               <span className="text-ink-muted">{n.icon}</span>
-              {n.label}
+              <span>{n.label}</span>
+              {n.href === "/notifications" && <NotificationBadge count={unread} />}
             </Link>
           ))}
         </nav>

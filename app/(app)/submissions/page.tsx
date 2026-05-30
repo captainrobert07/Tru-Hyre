@@ -1,57 +1,104 @@
-import { desc } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { desc, eq, and, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { submissions, candidates, jobs } from "@/db/schema";
+import { submissions, candidates, jobs, clientAccounts } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
-import { PageHeader, ListRow, Badge, EmptyState } from "@/components/primitives";
+import { PageHeader, Badge, EmptyState } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
 
-export default async function SubmissionsPage() {
+const STATUS_TABS = ["all", "submitted", "shortlist", "interview", "hold", "offer", "joined", "reject"] as const;
+type StatusTab = (typeof STATUS_TABS)[number];
+
+export default async function SubmissionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   await requireStaff();
+  const { status } = await searchParams;
+  const active: StatusTab = STATUS_TABS.includes(status as StatusTab) ? (status as StatusTab) : "all";
+
+  const conditions: SQL[] = [];
+  if (active !== "all") {
+    conditions.push(eq(submissions.status, active));
+  }
+
   const rows = await db
     .select({
       id: submissions.id,
       candidateId: submissions.candidateId,
       candidateName: candidates.fullName,
+      candidateRefId: candidates.refId,
       jobId: submissions.jobId,
       jobTitle: jobs.title,
+      clientName: clientAccounts.name,
       status: submissions.status,
       createdAt: submissions.createdAt,
     })
     .from(submissions)
     .innerJoin(candidates, eq(submissions.candidateId, candidates.id))
     .innerJoin(jobs, eq(submissions.jobId, jobs.id))
+    .innerJoin(clientAccounts, eq(jobs.clientAccountId, clientAccounts.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(submissions.createdAt))
-    .limit(200);
+    .limit(300);
 
   return (
     <>
-      <PageHeader title="Submissions" subtitle={`${rows.length} submission${rows.length === 1 ? "" : "s"}`} />
+      <PageHeader title="Submissions" subtitle={`${rows.length} on this view`} />
+
+      <div className="card mb-4 px-2 py-1.5 inline-flex flex-wrap gap-0.5">
+        {STATUS_TABS.map((t) => (
+          <Link
+            key={t}
+            href={t === "all" ? "/submissions" : `/submissions?status=${t}`}
+            className={`text-xs px-3 h-8 rounded-md inline-flex items-center transition-colors ${
+              active === t ? "bg-canvas text-ink shadow-card font-medium" : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            {t}
+          </Link>
+        ))}
+      </div>
+
       {rows.length === 0 ? (
-        <EmptyState title="No submissions yet" description="Generate a packet on a candidate, then submit them to a job." />
+        <EmptyState
+          title={active === "all" ? "No submissions yet" : `No "${active}" submissions`}
+          description={active === "all" ? "Generate a packet on a candidate, then submit them to a job." : undefined}
+        />
       ) : (
         <div className="card overflow-hidden divide-y divide-hairline">
           {rows.map((s) => (
-            <ListRow
+            <Link
               key={s.id}
               href={`/candidates/${s.candidateId}`}
-              primary={
-                <span className="flex items-center gap-2">
-                  <span>{s.candidateName}</span>
-                  <span className="text-ink-muted">→</span>
-                  <Link href={`/jobs/${s.jobId}`} onClick={(e) => e.stopPropagation()} className="text-brand-700 hover:underline">
-                    {s.jobTitle}
-                  </Link>
-                </span>
-              }
-              secondary={new Date(s.createdAt).toLocaleString()}
-              trailing={<Badge tone="blue">{s.status}</Badge>}
-            />
+              className="grid grid-cols-12 items-center gap-3 px-4 py-3 hover:bg-canvas transition-colors text-sm"
+            >
+              <div className="col-span-12 md:col-span-4 min-w-0">
+                <div className="font-medium truncate">{s.candidateName}</div>
+                <div className="text-[10px] text-ink-muted font-mono">{s.candidateRefId}</div>
+              </div>
+              <div className="col-span-12 md:col-span-5 min-w-0 text-ink-soft text-xs">
+                <div className="truncate"><span className="text-ink-muted">→</span> {s.jobTitle}</div>
+                <div className="truncate text-ink-muted">{s.clientName}</div>
+              </div>
+              <div className="col-span-7 md:col-span-2 text-xs text-ink-muted">{new Date(s.createdAt).toLocaleDateString()}</div>
+              <div className="col-span-5 md:col-span-1 flex justify-end">
+                <Badge tone={toneFor(s.status)}>{s.status}</Badge>
+              </div>
+            </Link>
           ))}
         </div>
       )}
     </>
   );
+}
+
+function toneFor(status: string): "blue" | "green" | "amber" | "red" | "default" {
+  if (status === "shortlist" || status === "offer" || status === "joined") return "green";
+  if (status === "interview" || status === "hold") return "amber";
+  if (status === "reject") return "red";
+  if (status === "submitted") return "blue";
+  return "default";
 }
