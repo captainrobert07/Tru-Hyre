@@ -101,5 +101,7 @@ export function mergeParse(base: ParsedResume, ai: AiResume | null): ParsedResum
     expectedCtc: ai.expectedCtc ?? base.expectedCtc,
     summary: ai.summary ?? base.summary,
     skills: ai.skills.length > 0 ? Array.from(new Set([...ai.skills, ...base.skills])).slice(0, 40) : base.skills,
+    linkedinUrl: base.linkedinUrl,
+    githubUrl: base.githubUrl,
   };
 }

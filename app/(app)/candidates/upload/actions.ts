@@ -30,6 +30,8 @@ const EMPTY: ParsedResume = {
   expectedCtc: null,
   summary: null,
   skills: [],
+  linkedinUrl: null,
+  githubUrl: null,
 };
 
 async function persistCandidate({
@@ -77,6 +79,8 @@ async function persistCandidate({
       expectedCtc: parsed.expectedCtc,
       summary: parsed.summary,
       skills: parsed.skills,
+      linkedinUrl: parsed.linkedinUrl,
+      githubUrl: parsed.githubUrl,
       stage: "hr_review",
       parseStatus,
       parseError,

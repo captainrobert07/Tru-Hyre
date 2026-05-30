@@ -26,6 +26,11 @@ const editSchema = z.object({
   summary: z.string().max(2000).optional().or(z.literal("")),
   skillsCsv: z.string().max(800).optional().or(z.literal("")),
   notes: z.string().max(2000).optional().or(z.literal("")),
+  linkedinUrl: z.string().max(254).optional().or(z.literal("")),
+  githubUrl: z.string().max(254).optional().or(z.literal("")),
+  availableFrom: z.string().optional().or(z.literal("")),
+  willingToRelocate: z.string().optional().or(z.literal("")),
+  workAuthorization: z.string().max(120).optional().or(z.literal("")),
 });
 
 export async function updateCandidateAction(id: number, formData: FormData): Promise<void> {
@@ -43,6 +48,14 @@ export async function updateCandidateAction(id: number, formData: FormData): Pro
     .filter(Boolean)
     .slice(0, 50);
 
+  // Coerce CTC fields through parseCtc so users can type "12L" / "1.5cr" / "120000"
+  const currentCtcNum = v.currentCtc ? parseCtc(v.currentCtc) : null;
+  const expectedCtcNum = v.expectedCtc ? parseCtc(v.expectedCtc) : null;
+
+  let willingRelocate: boolean | null = null;
+  if (v.willingToRelocate === "yes") willingRelocate = true;
+  else if (v.willingToRelocate === "no") willingRelocate = false;
+
   await db
     .update(candidates)
     .set({
@@ -54,11 +67,16 @@ export async function updateCandidateAction(id: number, formData: FormData): Pro
       currentCompany: v.currentCompany || null,
       experienceYears: v.experienceYears || null,
       noticePeriodDays: v.noticePeriodDays ? Number(v.noticePeriodDays) : null,
-      currentCtc: v.currentCtc || null,
-      expectedCtc: v.expectedCtc || null,
+      currentCtc: currentCtcNum !== null ? String(currentCtcNum) : null,
+      expectedCtc: expectedCtcNum !== null ? String(expectedCtcNum) : null,
       summary: v.summary || null,
       skills,
       notes: v.notes || null,
+      linkedinUrl: v.linkedinUrl || null,
+      githubUrl: v.githubUrl || null,
+      availableFrom: v.availableFrom || null,
+      willingToRelocate: willingRelocate,
+      workAuthorization: v.workAuthorization || null,
       updatedAt: new Date(),
     })
     .where(eq(candidates.id, id));
@@ -89,6 +107,11 @@ const INLINE_FIELDS = [
   "expectedCtc",
   "summary",
   "notes",
+  "linkedinUrl",
+  "githubUrl",
+  "availableFrom",
+  "willingToRelocate",
+  "workAuthorization",
 ] as const;
 
 const inlineSchema = z.object({
@@ -113,16 +136,51 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
     case "location": update.location = v; break;
     case "currentTitle": update.currentTitle = v; break;
     case "currentCompany": update.currentCompany = v; break;
-    case "experienceYears": update.experienceYears = v; break;
-    case "currentCtc": update.currentCtc = v; break;
-    case "expectedCtc": update.expectedCtc = v; break;
     case "summary": update.summary = v; break;
     case "notes": update.notes = v; break;
+    case "linkedinUrl": update.linkedinUrl = v; break;
+    case "githubUrl": update.githubUrl = v; break;
+    case "workAuthorization": update.workAuthorization = v; break;
+    case "experienceYears": {
+      if (v === null) { update.experienceYears = null; break; }
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0 || n > 60) return;
+      update.experienceYears = String(n);
+      break;
+    }
     case "noticePeriodDays": {
       if (v === null) { update.noticePeriodDays = null; break; }
       const n = Number(v);
       if (!Number.isFinite(n) || n < 0 || n > 3650) return;
       update.noticePeriodDays = n;
+      break;
+    }
+    case "currentCtc":
+    case "expectedCtc": {
+      if (v === null) {
+        update[field] = null;
+        break;
+      }
+      // Accept "12L", "1.2cr", "120k", "120000", "1,20,000"
+      const numeric = parseCtc(v);
+      if (numeric === null) return;
+      update[field] = String(numeric);
+      break;
+    }
+    case "availableFrom": {
+      if (v === null) { update.availableFrom = null; break; }
+      // Accept ISO date "YYYY-MM-DD" or anything Date can parse
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return;
+      update.availableFrom = d.toISOString().slice(0, 10);
+      break;
+    }
+    case "willingToRelocate": {
+      if (v === null) { update.willingToRelocate = null; break; }
+      const lower = v.toLowerCase();
+      if (["yes", "true", "y", "1"].includes(lower)) update.willingToRelocate = true;
+      else if (["no", "false", "n", "0"].includes(lower)) update.willingToRelocate = false;
+      else return;
       break;
     }
   }
@@ -140,6 +198,27 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
   });
 
   revalidatePath(`/candidates/${id}`);
+}
+
+/**
+ * Parse a user-typed compensation value into an absolute number.
+ * Accepts "12L" / "12 lakhs" / "1.5cr" / "120k" / "120,000" / plain digits.
+ * Returns null if the string can't be coerced to a positive finite number.
+ */
+function parseCtc(raw: string): number | null {
+  const cleaned = raw.replace(/[,_\s]/g, "").toLowerCase();
+  const m = cleaned.match(/^(\d+(?:\.\d+)?)(lpa|lakhs?|lac|crore|cr|k|m|million)?$/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n < 0) return null;
+  const unit = (m[2] || "").toLowerCase();
+  let scaled = n;
+  if (unit === "lpa" || unit.startsWith("lakh") || unit === "lac") scaled = n * 100_000;
+  else if (unit.startsWith("cr")) scaled = n * 10_000_000;
+  else if (unit === "k") scaled = n * 1000;
+  else if (unit.startsWith("m") || unit === "million") scaled = n * 1_000_000;
+  if (scaled > 1e12) return null; // sanity cap
+  return Math.round(scaled);
 }
 
 export async function setStageAction(id: number, toStage: string): Promise<void> {

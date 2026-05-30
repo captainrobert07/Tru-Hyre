@@ -29,8 +29,20 @@ export default async function EditCandidatePage({ params }: { params: Promise<{ 
           <Field name="currentCompany" label="Current company" defaultValue={c.currentCompany || ""} />
           <Field name="experienceYears" label="Experience (yrs)" defaultValue={c.experienceYears || ""} />
           <Field name="noticePeriodDays" label="Notice (days)" defaultValue={c.noticePeriodDays?.toString() || ""} type="number" />
-          <Field name="currentCtc" label="Current CTC" defaultValue={c.currentCtc || ""} />
-          <Field name="expectedCtc" label="Expected CTC" defaultValue={c.expectedCtc || ""} />
+          <Field name="currentCtc" label="Current CTC (e.g. 18L or 1800000)" defaultValue={c.currentCtc || ""} />
+          <Field name="expectedCtc" label="Expected CTC (e.g. 25L or 2500000)" defaultValue={c.expectedCtc || ""} />
+          <Field name="linkedinUrl" label="LinkedIn URL" defaultValue={c.linkedinUrl || ""} type="url" />
+          <Field name="githubUrl" label="GitHub URL" defaultValue={c.githubUrl || ""} type="url" />
+          <Field name="availableFrom" label="Available from" defaultValue={c.availableFrom || ""} type="date" />
+          <div>
+            <label htmlFor="willingToRelocate" className="label">Willing to relocate</label>
+            <select id="willingToRelocate" name="willingToRelocate" defaultValue={c.willingToRelocate === null ? "" : c.willingToRelocate ? "yes" : "no"} className="input">
+              <option value="">— Unspecified —</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <Field name="workAuthorization" label="Work authorization" defaultValue={c.workAuthorization || ""} />
         </div>
 
         <div>

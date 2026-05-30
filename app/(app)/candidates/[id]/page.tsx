@@ -114,10 +114,38 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Experience" value={cand.experienceYears ? `${cand.experienceYears} yrs` : "—"} />
-        <StatCard label="Notice" value={cand.noticePeriodDays ? `${cand.noticePeriodDays}d` : "—"} />
-        <StatCard label="Current CTC" value={fmtMoney(cand.currentCtc)} />
-        <StatCard label="Expected CTC" value={fmtMoney(cand.expectedCtc)} />
+        <EditableStat
+          label="Experience"
+          field="experienceYears"
+          value={cand.experienceYears ? `${cand.experienceYears} yrs` : "—"}
+          rawValue={cand.experienceYears || ""}
+          placeholder="e.g. 7"
+          candidateId={candidateId}
+        />
+        <EditableStat
+          label="Notice"
+          field="noticePeriodDays"
+          value={cand.noticePeriodDays !== null ? `${cand.noticePeriodDays}d` : "—"}
+          rawValue={cand.noticePeriodDays?.toString() || ""}
+          placeholder="days"
+          candidateId={candidateId}
+        />
+        <EditableStat
+          label="Current CTC"
+          field="currentCtc"
+          value={fmtMoney(cand.currentCtc)}
+          rawValue={cand.currentCtc || ""}
+          placeholder="e.g. 18L or 1800000"
+          candidateId={candidateId}
+        />
+        <EditableStat
+          label="Expected CTC"
+          field="expectedCtc"
+          value={fmtMoney(cand.expectedCtc)}
+          rawValue={cand.expectedCtc || ""}
+          placeholder="e.g. 25L or 2500000"
+          candidateId={candidateId}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -194,6 +222,64 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 </div>
               </div>
             )}
+          </Section>
+
+          <Section title="Career details">
+            <Field label="LinkedIn">
+              <InlineEdit
+                field="linkedinUrl"
+                defaultValue={cand.linkedinUrl || ""}
+                placeholder="https://linkedin.com/in/…"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="GitHub">
+              <InlineEdit
+                field="githubUrl"
+                defaultValue={cand.githubUrl || ""}
+                placeholder="https://github.com/…"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Available from">
+              <InlineEdit
+                field="availableFrom"
+                defaultValue={cand.availableFrom || ""}
+                placeholder="YYYY-MM-DD"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Willing to relocate">
+              <InlineEdit
+                field="willingToRelocate"
+                defaultValue={cand.willingToRelocate === null || cand.willingToRelocate === undefined ? "" : (cand.willingToRelocate ? "yes" : "no")}
+                placeholder="yes / no"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Work authorization">
+              <InlineEdit
+                field="workAuthorization"
+                defaultValue={cand.workAuthorization || ""}
+                placeholder="e.g. EU citizen, H-1B, PR"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
           </Section>
 
           <Section title="Submissions">
@@ -406,5 +492,41 @@ function fmtMoney(v: string | null) {
   if (!v) return "—";
   const n = Number(v);
   if (Number.isNaN(n)) return v;
+  if (n >= 10_000_000) return `${(n / 10_000_000).toFixed(1)}cr`;
+  if (n >= 100_000) return `${(n / 100_000).toFixed(1)}L`;
   return n.toLocaleString("en-IN");
+}
+
+function EditableStat({
+  label,
+  field,
+  value,
+  rawValue,
+  placeholder,
+  candidateId,
+}: {
+  label: string;
+  field: string;
+  value: string;
+  rawValue: string;
+  placeholder?: string;
+  candidateId: number;
+}) {
+  return (
+    <div className="card p-5 group">
+      <div className="text-xs text-ink-muted uppercase tracking-wide mb-1">{label}</div>
+      <div className="text-2xl font-semibold tabular-nums text-ink">{value}</div>
+      <div className="mt-1.5 text-xs">
+        <InlineEdit
+          field={field}
+          defaultValue={rawValue}
+          placeholder={placeholder || "Edit"}
+          onSave={async (fd) => {
+            "use server";
+            await updateCandidateFieldAction(candidateId, fd);
+          }}
+        />
+      </div>
+    </div>
+  );
 }

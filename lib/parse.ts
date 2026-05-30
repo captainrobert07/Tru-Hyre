@@ -14,6 +14,8 @@ export type ParsedResume = {
   expectedCtc: string | null;
   summary: string | null;
   skills: string[];
+  linkedinUrl: string | null;
+  githubUrl: string | null;
 };
 
 const SKILL_LIBRARY = [
@@ -89,6 +91,8 @@ export function extractFields(rawText: string): ParsedResume {
     expectedCtc: findCtc(text, "expected"),
     summary: findSummary(text, lines),
     skills: findSkills(text),
+    linkedinUrl: findLinkedin(text),
+    githubUrl: findGithub(text),
   };
 }
 
@@ -235,6 +239,26 @@ function findCompany(lines: string[]): string | null {
       return l;
     }
   }
+  return null;
+}
+
+function findLinkedin(text: string): string | null {
+  const m = text.match(/https?:\/\/(?:[a-z]{2,3}\.)?linkedin\.com\/in\/[A-Za-z0-9_\-%/.]+/i);
+  if (m) return m[0].replace(/[).,;:]+$/, "");
+  // Bare slug pattern: linkedin.com/in/slug
+  const m2 = text.match(/(?:^|\s)linkedin\.com\/in\/([A-Za-z0-9_\-%]+)/i);
+  if (m2) return `https://linkedin.com/in/${m2[1]}`;
+  return null;
+}
+
+function findGithub(text: string): string | null {
+  const m = text.match(/https?:\/\/github\.com\/[A-Za-z0-9_\-]+(?:\/[A-Za-z0-9_\-.]+)?/i);
+  if (m) {
+    // Drop trailing punctuation
+    return m[0].replace(/[).,;:]+$/, "");
+  }
+  const m2 = text.match(/(?:^|\s)github\.com\/([A-Za-z0-9_\-]+)/i);
+  if (m2) return `https://github.com/${m2[1]}`;
   return null;
 }
 
