@@ -1,34 +1,50 @@
 import { count, eq, desc, sql, and, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { candidates, jobs, submissions, notifications } from "@/db/schema";
+import { candidates, jobs, submissions, notifications, vendorAccounts, clientAccounts } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState, Badge } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard" };
 
+const FUNNEL_STEPS = ["received", "screening", "submitted", "shortlist", "interview", "offer", "joined"] as const;
+
 export default async function DashboardPage() {
   const user = await requireStaff();
 
   const [
-    candCount,
-    openJobs,
-    recentSubs,
-    submittedTodayRows,
+    candTotalRow,
+    candThisWeekRow,
+    candPrevWeekRow,
+    openJobsRow,
+    openJobsPrevRow,
+    subsTotalRow,
+    subsThisWeekRow,
+    subsPrevWeekRow,
+    offersThisWeekRow,
+    offersPrevWeekRow,
     recentCandidates,
     weeklyVolume,
     awaitingFeedback,
     stuckCandidates,
     myUnread,
+    funnelRows,
+    vendorLeaderboard,
+    jobAttention,
+    avgTimeToSubmitRow,
+    avgTimeToOfferRow,
   ] = await Promise.all([
     db.select({ n: count() }).from(candidates),
+    db.select({ n: count() }).from(candidates).where(sql`${candidates.createdAt} >= now() - interval '7 days'`),
+    db.select({ n: count() }).from(candidates).where(sql`${candidates.createdAt} >= now() - interval '14 days' AND ${candidates.createdAt} < now() - interval '7 days'`),
     db.select({ n: count() }).from(jobs).where(eq(jobs.status, "open")),
+    db.select({ n: count() }).from(jobs).where(and(eq(jobs.status, "open"), sql`${jobs.createdAt} <= now() - interval '7 days'`)),
     db.select({ n: count() }).from(submissions),
-    db
-      .select({ n: count() })
-      .from(submissions)
-      .where(sql`${submissions.createdAt} >= now() - interval '7 days'`),
+    db.select({ n: count() }).from(submissions).where(sql`${submissions.createdAt} >= now() - interval '7 days'`),
+    db.select({ n: count() }).from(submissions).where(sql`${submissions.createdAt} >= now() - interval '14 days' AND ${submissions.createdAt} < now() - interval '7 days'`),
+    db.select({ n: count() }).from(submissions).where(and(sql`${submissions.status} in ('offer', 'joined')`, sql`${submissions.updatedAt} >= now() - interval '7 days'`)),
+    db.select({ n: count() }).from(submissions).where(and(sql`${submissions.status} in ('offer', 'joined')`, sql`${submissions.updatedAt} >= now() - interval '14 days' AND ${submissions.updatedAt} < now() - interval '7 days'`)),
     db
       .select({
         id: candidates.id,
@@ -82,10 +98,128 @@ export default async function DashboardPage() {
       .select({ n: count() })
       .from(notifications)
       .where(and(eq(notifications.userId, Number(user.id)), isNull(notifications.readAt))),
+    // Funnel: count distinct candidates that *ever reached* each stage
+    // (via either current stage or stage_history). Simpler approximation:
+    // count by current stage and assume forward-only.
+    db.execute(sql`
+      SELECT stage, COUNT(*)::int AS n
+      FROM ${candidates}
+      GROUP BY stage
+    `),
+    // Vendor leaderboard: top 5 by submitted candidates in last 30 days
+    // with shortlist+ rate.
+    db.execute(sql`
+      SELECT
+        v.id, v.name,
+        COUNT(DISTINCT s.id)::int AS submissions,
+        COUNT(DISTINCT CASE WHEN s.status IN ('shortlist','interview','offer','joined') THEN s.id END)::int AS quality,
+        COUNT(DISTINCT CASE WHEN s.status = 'reject' THEN s.id END)::int AS rejected
+      FROM ${vendorAccounts} v
+      LEFT JOIN ${candidates} c ON c.vendor_account_id = v.id
+      LEFT JOIN ${submissions} s ON s.candidate_id = c.id AND s.created_at >= now() - interval '30 days'
+      GROUP BY v.id, v.name
+      HAVING COUNT(DISTINCT s.id) > 0
+      ORDER BY quality DESC, submissions DESC
+      LIMIT 5
+    `),
+    // Job attention: open jobs aging >30 days OR no submissions in 7 days
+    db.execute(sql`
+      SELECT
+        j.id, j.title, j.created_at,
+        c.name AS client_name,
+        COUNT(DISTINCT s.id)::int AS sub_count,
+        MAX(s.created_at) AS last_submission_at,
+        EXTRACT(DAY FROM now() - j.created_at)::int AS age_days
+      FROM ${jobs} j
+      LEFT JOIN ${clientAccounts} c ON c.id = j.client_account_id
+      LEFT JOIN ${submissions} s ON s.job_id = j.id
+      WHERE j.status = 'open'
+      GROUP BY j.id, j.title, j.created_at, c.name
+      HAVING (
+        EXTRACT(DAY FROM now() - j.created_at) > 30
+        OR (MAX(s.created_at) IS NULL OR MAX(s.created_at) < now() - interval '7 days')
+      )
+      ORDER BY j.created_at ASC
+      LIMIT 5
+    `),
+    // Average days from candidate.createdAt -> first submission (this candidate)
+    db.execute(sql`
+      SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (s.created_at - c.created_at)) / 86400), 0)::numeric(10,1) AS avg_days
+      FROM ${candidates} c
+      JOIN LATERAL (
+        SELECT created_at FROM ${submissions} s
+        WHERE s.candidate_id = c.id
+        ORDER BY s.created_at ASC LIMIT 1
+      ) s ON true
+      WHERE c.created_at >= now() - interval '90 days'
+    `),
+    // Average days from candidate.createdAt -> offer/joined submission
+    db.execute(sql`
+      SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (s.updated_at - c.created_at)) / 86400), 0)::numeric(10,1) AS avg_days
+      FROM ${candidates} c
+      JOIN LATERAL (
+        SELECT updated_at FROM ${submissions} s
+        WHERE s.candidate_id = c.id AND s.status IN ('offer','joined')
+        ORDER BY s.updated_at ASC LIMIT 1
+      ) s ON true
+      WHERE c.created_at >= now() - interval '180 days'
+    `),
   ]);
 
   const days = (weeklyVolume.rows || weeklyVolume) as Array<{ day: string; n: number }>;
   const max = Math.max(1, ...days.map((d) => d.n));
+
+  const candTotal = candTotalRow[0]?.n ?? 0;
+  const candThisWeek = candThisWeekRow[0]?.n ?? 0;
+  const candPrevWeek = candPrevWeekRow[0]?.n ?? 0;
+  const openJobsCount = openJobsRow[0]?.n ?? 0;
+  const openJobsPrev = openJobsPrevRow[0]?.n ?? 0;
+  const subsTotal = subsTotalRow[0]?.n ?? 0;
+  const subsThisWeek = subsThisWeekRow[0]?.n ?? 0;
+  const subsPrevWeek = subsPrevWeekRow[0]?.n ?? 0;
+  const offersThisWeek = offersThisWeekRow[0]?.n ?? 0;
+  const offersPrevWeek = offersPrevWeekRow[0]?.n ?? 0;
+  const unread = myUnread[0]?.n ?? 0;
+
+  // Funnel: rebuild as ordered counts.
+  const funnelMap = new Map<string, number>();
+  for (const r of (funnelRows.rows || funnelRows) as Array<{ stage: string; n: number }>) {
+    funnelMap.set(r.stage, r.n);
+  }
+  // For funnel display, we use cumulative downstream counts (everyone past
+  // submitted is counted toward submitted; everyone past shortlist counts
+  // toward shortlist; etc.).
+  const STAGE_ORDER = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "offer", "joined"];
+  const stageCounts: Record<string, number> = {};
+  STAGE_ORDER.forEach((s) => { stageCounts[s] = funnelMap.get(s) ?? 0; });
+  const cumulative: Record<string, number> = {};
+  let running = 0;
+  for (let i = STAGE_ORDER.length - 1; i >= 0; i--) {
+    const s = STAGE_ORDER[i];
+    running += stageCounts[s];
+    cumulative[s] = running;
+  }
+
+  const funnel = FUNNEL_STEPS.map((s, i) => {
+    const count = cumulative[s] || 0;
+    const prevCount = i === 0 ? count : cumulative[FUNNEL_STEPS[i - 1]] || 0;
+    const passRate = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
+    return { stage: s, count, passRate };
+  });
+  const funnelMax = Math.max(1, ...funnel.map((f) => f.count));
+
+  const vendorRows = (vendorLeaderboard.rows || vendorLeaderboard) as Array<{
+    id: number; name: string; submissions: number; quality: number; rejected: number;
+  }>;
+  const maxVendorSubs = Math.max(1, ...vendorRows.map((v) => v.submissions));
+
+  const jobsAttention = (jobAttention.rows || jobAttention) as Array<{
+    id: number; title: string; client_name: string | null; sub_count: number;
+    last_submission_at: Date | null; age_days: number;
+  }>;
+
+  const avgTimeToSubmit = Number((avgTimeToSubmitRow.rows || avgTimeToSubmitRow)[0]?.avg_days || 0);
+  const avgTimeToOffer = Number((avgTimeToOfferRow.rows || avgTimeToOfferRow)[0]?.avg_days || 0);
 
   return (
     <>
@@ -103,14 +237,94 @@ export default async function DashboardPage() {
       <MyDayBanner
         awaitingFeedback={awaitingFeedback}
         stuckCount={stuckCandidates.length}
-        unread={myUnread[0]?.n ?? 0}
+        unread={unread}
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Candidates" value={candCount[0]?.n ?? 0} tone="good" />
-        <StatCard label="Open jobs" value={openJobs[0]?.n ?? 0} />
-        <StatCard label="Submissions" value={recentSubs[0]?.n ?? 0} />
-        <StatCard label="Last 7 days" value={submittedTodayRows[0]?.n ?? 0} hint="new submissions" tone="info" />
+        <StatCard
+          label="Candidates"
+          value={candTotal}
+          tone="good"
+          delta={{ value: candThisWeek - candPrevWeek, label: "vs last 7d" }}
+        />
+        <StatCard
+          label="Open jobs"
+          value={openJobsCount}
+          delta={{ value: openJobsCount - openJobsPrev, label: "vs 7d ago" }}
+        />
+        <StatCard
+          label="Submissions"
+          value={subsTotal}
+          delta={{ value: subsThisWeek - subsPrevWeek, label: "vs last 7d" }}
+        />
+        <StatCard
+          label="Offers/joined"
+          value={offersThisWeek}
+          hint="last 7 days"
+          tone="info"
+          delta={{ value: offersThisWeek - offersPrevWeek, label: "vs last 7d" }}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="card p-5">
+          <div className="text-xs text-ink-muted uppercase tracking-wide">Time to submit</div>
+          <div className="stat-big mt-2">{avgTimeToSubmit > 0 ? avgTimeToSubmit.toFixed(1) : "—"}</div>
+          <div className="text-xs text-ink-soft mt-1">days, last 90d cohort</div>
+        </div>
+        <div className="card p-5">
+          <div className="text-xs text-ink-muted uppercase tracking-wide">Time to offer</div>
+          <div className="stat-big mt-2">{avgTimeToOffer > 0 ? avgTimeToOffer.toFixed(1) : "—"}</div>
+          <div className="text-xs text-ink-soft mt-1">days, last 180d cohort</div>
+        </div>
+        <div className="card p-5">
+          <div className="text-xs text-ink-muted uppercase tracking-wide">Submit rate</div>
+          <div className="stat-big mt-2">
+            {candTotal > 0 ? Math.round((subsTotal / candTotal) * 100) : 0}<span className="text-ink-muted text-2xl">%</span>
+          </div>
+          <div className="text-xs text-ink-soft mt-1">candidates → submissions, all-time</div>
+        </div>
+      </div>
+
+      <div className="card p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold">Pipeline funnel</h2>
+          <Link href="/reports" className="text-xs text-brand-700 hover:underline">Full reports →</Link>
+        </div>
+        <div className="space-y-2.5">
+          {funnel.map((f, i) => {
+            const widthPct = (f.count / funnelMax) * 100;
+            const isFirst = i === 0;
+            const tone =
+              f.stage === "joined" || f.stage === "offer" ? "bg-brand-500"
+              : f.stage === "shortlist" || f.stage === "interview" ? "bg-brand-400"
+              : "bg-blue-400";
+            return (
+              <div key={f.stage} className="flex items-center gap-3 text-sm">
+                <div className="w-24 md:w-28 text-xs uppercase tracking-wide text-ink-soft capitalize shrink-0">
+                  {f.stage.replaceAll("_", " ")}
+                </div>
+                <div className="flex-1 bg-canvas rounded-full h-7 overflow-hidden relative">
+                  <div
+                    className={`h-full ${tone} rounded-full flex items-center justify-end pr-3 text-white text-xs font-semibold tabular-nums transition-all`}
+                    style={{ width: `${Math.max(8, widthPct)}%` }}
+                  >
+                    {f.count}
+                  </div>
+                </div>
+                {!isFirst && (
+                  <div className="w-14 text-right text-xs text-ink-muted tabular-nums shrink-0">
+                    {f.passRate}%
+                  </div>
+                )}
+                {isFirst && <div className="w-14 shrink-0" />}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-ink-muted mt-3">
+          Each row counts candidates currently at or beyond that stage. Pass-through % is candidates that made it from the prior step.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
@@ -141,7 +355,7 @@ export default async function DashboardPage() {
           <div className="absolute -top-10 -right-10 size-40 rounded-full bg-brand-400/40 blur-2xl" />
           <div className="relative">
             <div className="text-xs uppercase tracking-wide opacity-80">Pipeline health</div>
-            <div className="stat-huge mt-3">{candCount[0]?.n ?? 0}</div>
+            <div className="stat-huge mt-3">{candTotal}</div>
             <div className="text-sm opacity-90 mt-2">candidates in flight</div>
             <Link
               href="/candidates"
@@ -150,6 +364,82 @@ export default async function DashboardPage() {
               Open pipeline →
             </Link>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="card overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
+            <div className="text-sm font-semibold">Top vendors (30d)</div>
+            <Link href="/vendors" className="text-xs text-brand-700 hover:underline">All vendors →</Link>
+          </div>
+          {vendorRows.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-ink-muted">
+              No vendor activity in the last 30 days.
+            </div>
+          ) : (
+            <div className="p-5 space-y-3">
+              {vendorRows.map((v) => {
+                const qualityRate = v.submissions > 0 ? Math.round((v.quality / v.submissions) * 100) : 0;
+                const widthPct = (v.submissions / maxVendorSubs) * 100;
+                return (
+                  <div key={v.id}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <Link href={`/vendors/${v.id}`} className="font-medium hover:text-brand-700 truncate">
+                        {v.name}
+                      </Link>
+                      <span className="text-xs text-ink-muted tabular-nums">
+                        {v.quality}/{v.submissions} <span className="text-brand-700 font-medium">({qualityRate}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-2 bg-canvas rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full"
+                        style={{ width: `${widthPct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="card overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
+            <div className="text-sm font-semibold">Jobs needing attention</div>
+            <Badge tone={jobsAttention.length > 0 ? "amber" : "default"}>
+              {jobsAttention.length} flagged
+            </Badge>
+          </div>
+          {jobsAttention.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-ink-muted">
+              All open jobs are healthy.
+            </div>
+          ) : (
+            <div className="divide-y divide-hairline">
+              {jobsAttention.map((j) => {
+                const isStale = j.last_submission_at === null || (Date.now() - new Date(j.last_submission_at).getTime() > 7 * 24 * 60 * 60 * 1000);
+                const isOld = j.age_days > 30;
+                const tag = isOld && isStale ? "old + stale" : isOld ? `${j.age_days}d old` : "stale";
+                return (
+                  <Link
+                    key={j.id}
+                    href={`/jobs/${j.id}`}
+                    className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-canvas transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{j.title}</div>
+                      <div className="text-xs text-ink-soft truncate">
+                        {[j.client_name, `${j.sub_count} submission${j.sub_count === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                    <Badge tone="amber">{tag}</Badge>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

@@ -33,11 +33,14 @@ export function StatCard({
   value,
   hint,
   tone = "default",
+  delta,
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
   tone?: "default" | "good" | "attention" | "info";
+  /** Period-over-period change. Positive=up, negative=down, zero=flat. */
+  delta?: { value: number; label?: string; goodWhenPositive?: boolean };
 }) {
   const pillClass =
     tone === "good" ? "pill-good" : tone === "attention" ? "pill-attention" : tone === "info" ? "pill-info" : "pill-normal";
@@ -49,8 +52,32 @@ export function StatCard({
         {pillText && <span className={pillClass}>{pillText}</span>}
       </div>
       <div className="stat-big">{value}</div>
-      {hint && <div className="mt-2 text-xs text-ink-soft">{hint}</div>}
+      <div className="mt-2 flex items-center gap-2 text-xs">
+        {delta !== undefined && <DeltaPill {...delta} />}
+        {hint && <span className="text-ink-soft">{hint}</span>}
+      </div>
     </div>
+  );
+}
+
+function DeltaPill({ value, label, goodWhenPositive = true }: { value: number; label?: string; goodWhenPositive?: boolean }) {
+  if (!Number.isFinite(value)) return null;
+  const flat = value === 0;
+  const positive = value > 0;
+  const isGood = flat ? false : goodWhenPositive ? positive : !positive;
+  const cls = flat
+    ? "bg-canvas text-ink-muted"
+    : isGood
+    ? "bg-brand-50 text-brand-700"
+    : "bg-red-50 text-red-700";
+  const arrow = flat ? "·" : positive ? "↑" : "↓";
+  const formatted = flat ? "—" : `${positive ? "+" : ""}${value.toLocaleString()}`;
+  return (
+    <span className={`inline-flex items-center gap-0.5 px-2 h-5 rounded-full font-medium ${cls}`}>
+      <span className="text-[10px]">{arrow}</span>
+      <span className="tabular-nums">{formatted}</span>
+      {label && <span className="opacity-70 ml-1">{label}</span>}
+    </span>
   );
 }
 
