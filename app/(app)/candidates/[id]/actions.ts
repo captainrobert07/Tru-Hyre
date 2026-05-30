@@ -112,6 +112,7 @@ const INLINE_FIELDS = [
   "availableFrom",
   "willingToRelocate",
   "workAuthorization",
+  "tagsCsv",
 ] as const;
 
 const inlineSchema = z.object({
@@ -173,6 +174,15 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
       const d = new Date(v);
       if (Number.isNaN(d.getTime())) return;
       update.availableFrom = d.toISOString().slice(0, 10);
+      break;
+    }
+    case "tagsCsv": {
+      const tags = (v ?? "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 20);
+      update.tags = tags;
       break;
     }
     case "willingToRelocate": {

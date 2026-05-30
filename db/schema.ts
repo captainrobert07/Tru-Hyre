@@ -188,6 +188,8 @@ export const candidates = pgTable("candidates", {
   availableFrom: date("available_from"),
   willingToRelocate: boolean("willing_to_relocate"),
   workAuthorization: varchar("work_authorization", { length: 120 }),
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
+  starredByClient: boolean("starred_by_client").notNull().default(false),
   stage: candidateStageEnum("stage").notNull().default("received"),
   parseStatus: parseStatusEnum("parse_status").notNull().default("pending"),
   parseError: text("parse_error"),
@@ -311,6 +313,26 @@ export const invitations = pgTable("invitations", {
   acceptedAt: timestamp("accepted_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ---------- Tasks / reminders ----------
+
+export const taskStatusEnum = pgEnum("task_status", ["open", "done", "snoozed"]);
+
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  ownerId: integer("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 240 }).notNull(),
+  body: text("body"),
+  status: taskStatusEnum("status").notNull().default("open"),
+  dueAt: timestamp("due_at"),
+  candidateId: integer("candidate_id").references(() => candidates.id, { onDelete: "cascade" }),
+  jobId: integer("job_id").references(() => jobs.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (t) => ({
+  ownerIdx: index("tasks_owner_idx").on(t.ownerId, t.status),
+  dueIdx: index("tasks_due_idx").on(t.dueAt),
+}));
 
 // ---------- Comments / collaboration ----------
 

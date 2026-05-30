@@ -1,9 +1,11 @@
-import { count, eq, desc, sql, and, isNull } from "drizzle-orm";
+import { count, eq, desc, sql, and, isNull, ne } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { candidates, jobs, submissions, notifications, vendorAccounts, clientAccounts } from "@/db/schema";
+import { candidates, jobs, submissions, notifications, vendorAccounts, clientAccounts, tasks } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState, Badge } from "@/components/primitives";
+import { TasksCard } from "@/components/tasks-card";
+import { createTaskAction, completeTaskAction, snoozeTaskAction, deleteTaskAction } from "../tasks/actions";
 import {
   getCoverageRatio,
   getOfferAcceptance,
@@ -44,6 +46,7 @@ export default async function DashboardPage() {
     acceptance,
     forecast,
     scoreboard,
+    myTasks,
   ] = await Promise.all([
     db.select({ n: count() }).from(candidates),
     db.select({ n: count() }).from(candidates).where(sql`${candidates.createdAt} >= now() - interval '7 days'`),
@@ -178,6 +181,12 @@ export default async function DashboardPage() {
     getOfferAcceptance(365),
     getSubmissionForecast(),
     getRecruiterScoreboard(30),
+    db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.ownerId, Number(user.id)), ne(tasks.status, "done")))
+      .orderBy(tasks.dueAt, desc(tasks.createdAt))
+      .limit(10),
   ]);
 
   const days = (weeklyVolume.rows || weeklyVolume) as Array<{ day: string; n: number }>;
@@ -517,32 +526,34 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
-            <div className="text-sm font-semibold">Recent candidates</div>
-            <Link href="/candidates" className="text-xs text-brand-700 hover:underline">View all →</Link>
-          </div>
-          {recentCandidates.length === 0 ? (
-            <EmptyState
-              title="No candidates yet"
-              description="Upload your first resume to get started."
-              cta={{ href: "/candidates/upload", label: "Upload resume" }}
-            />
-          ) : (
-            <div className="divide-y divide-hairline">
-              {recentCandidates.map((c) => (
-                <ListRow
-                  key={c.id}
-                  href={`/candidates/${c.id}`}
-                  primary={c.fullName}
-                  secondary={[c.currentTitle, c.location].filter(Boolean).join(" · ") || undefined}
-                  trailing={<StageBadge stage={c.stage} />}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <TasksCard
+          tasks={myTasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            body: t.body,
+            status: t.status,
+            dueAt: t.dueAt ? t.dueAt.toISOString() : null,
+            candidateId: t.candidateId,
+            jobId: t.jobId,
+          }))}
+          onCreate={async (fd) => {
+            "use server";
+            await createTaskAction(fd);
+          }}
+          onComplete={async (id) => {
+            "use server";
+            await completeTaskAction(id);
+          }}
+          onSnooze={async (id, days) => {
+            "use server";
+            await snoozeTaskAction(id, days);
+          }}
+          onDelete={async (id) => {
+            "use server";
+            await deleteTaskAction(id);
+          }}
+        />
 
         <div className="card overflow-hidden">
           <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
@@ -569,6 +580,32 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="card overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
+          <div className="text-sm font-semibold">Recent candidates</div>
+          <Link href="/candidates" className="text-xs text-brand-700 hover:underline">View all →</Link>
+        </div>
+        {recentCandidates.length === 0 ? (
+          <EmptyState
+            title="No candidates yet"
+            description="Upload your first resume to get started."
+            cta={{ href: "/candidates/upload", label: "Upload resume" }}
+          />
+        ) : (
+          <div className="divide-y divide-hairline">
+            {recentCandidates.map((c) => (
+              <ListRow
+                key={c.id}
+                href={`/candidates/${c.id}`}
+                primary={c.fullName}
+                secondary={[c.currentTitle, c.location].filter(Boolean).join(" · ") || undefined}
+                trailing={<StageBadge stage={c.stage} />}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

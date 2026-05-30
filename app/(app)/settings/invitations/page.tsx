@@ -18,7 +18,12 @@ export default async function InvitationsPage() {
       <PageHeader
         title="Invitations"
         subtitle={`${rows.length} on file`}
-        actions={<Link href="/settings/invitations/new" className="btn-primary">New invitation</Link>}
+        actions={
+          <>
+            <Link href="/settings/invitations/bulk" className="btn-ghost">Bulk invite</Link>
+            <Link href="/settings/invitations/new" className="btn-primary">New invitation</Link>
+          </>
+        }
       />
       {rows.length === 0 ? (
         <div className="card p-8 text-center text-sm text-ink-soft">No invitations yet.</div>

@@ -69,7 +69,12 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
             <Badge tone="gray">{j.priority}</Badge>
           </span>
         }
-        actions={<Link href={`/jobs/${j.id}/edit`} className="btn-ghost">Edit</Link>}
+        actions={
+          <>
+            <Link href={`/jobs/${j.id}/kanban`} className="btn-ghost">Pipeline</Link>
+            <Link href={`/jobs/${j.id}/edit`} className="btn-ghost">Edit</Link>
+          </>
+        }
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

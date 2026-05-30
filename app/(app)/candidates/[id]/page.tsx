@@ -280,6 +280,38 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 }}
               />
             </Field>
+            <Field label="Tags">
+              <div>
+                {cand.tags && cand.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-1">
+                    {cand.tags.map((t) => <Badge key={t} tone="default">{t}</Badge>)}
+                  </div>
+                )}
+                <InlineEdit
+                  field="tagsCsv"
+                  defaultValue={(cand.tags || []).join(", ")}
+                  placeholder="reapplicant, internal, urgent"
+                  onSave={async (fd) => {
+                    "use server";
+                    await updateCandidateFieldAction(candidateId, fd);
+                  }}
+                />
+              </div>
+            </Field>
+          </Section>
+
+          <Section title="Internal notes">
+            <p className="text-[11px] text-ink-muted mb-2">Visible to HR/admin only. Never shown to clients or vendors.</p>
+            <InlineEdit
+              field="notes"
+              defaultValue={cand.notes || ""}
+              multiline
+              placeholder="Type a quick scratch note…"
+              onSave={async (fd) => {
+                "use server";
+                await updateCandidateFieldAction(candidateId, fd);
+              }}
+            />
           </Section>
 
           <Section title="Submissions">
@@ -431,6 +463,22 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 Download latest
               </a>
             )}
+          </Section>
+
+          <Section title="Reminder">
+            <form
+              action={async (fd) => {
+                "use server";
+                fd.set("candidateId", String(candidateId));
+                const mod = await import("@/app/(app)/tasks/actions");
+                await mod.createTaskAction(fd);
+              }}
+              className="space-y-2"
+            >
+              <input name="title" placeholder="e.g. Follow up next Tuesday" required className="input text-sm" />
+              <input name="dueAt" type="date" className="input text-sm" />
+              <button type="submit" className="btn-ghost text-xs w-full">Add reminder</button>
+            </form>
           </Section>
 
           <Section title="Submit to job">

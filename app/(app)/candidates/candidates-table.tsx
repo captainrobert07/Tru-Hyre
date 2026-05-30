@@ -120,6 +120,15 @@ export function CandidatesTable({
           <button onClick={clear} className="text-xs text-ink-soft hover:text-ink px-2">Clear</button>
 
           <div className="ml-auto flex flex-wrap gap-1.5">
+            {selected.size >= 2 && selected.size <= 4 && (
+              <Link
+                href={`/candidates/compare?ids=${[...selected].join(",")}`}
+                className="text-xs px-3 h-8 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 inline-flex items-center"
+              >
+                Compare ({selected.size})
+              </Link>
+            )}
+
             <details className="relative">
               <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Move to stage ▾</summary>
               <div className="absolute right-0 top-full mt-2 w-48 card p-1 z-50">

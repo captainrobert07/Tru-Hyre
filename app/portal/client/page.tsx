@@ -9,8 +9,9 @@ import { APP_NAME } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientPortal() {
+export default async function ClientPortal({ searchParams }: { searchParams: Promise<{ status?: string; starred?: string }> }) {
   const user = await requireClient();
+  const sp = await searchParams;
   const u = (await db.select().from(users).where(eq(users.id, Number(user.id))))[0];
   if (!u || !u.clientAccountId) {
     return <NoAccountState email={user.email} />;
@@ -34,6 +35,7 @@ export default async function ClientPortal() {
           candidateName: candidates.fullName,
           candidateRefId: candidates.refId,
           candidateTitle: candidates.currentTitle,
+          starred: candidates.starredByClient,
           jobId: submissions.jobId,
           jobTitle: jobs.title,
           status: submissions.status,
@@ -50,6 +52,24 @@ export default async function ClientPortal() {
   const submitted = subs.filter((s) => s.status === "submitted").length;
   const shortlisted = subs.filter((s) => s.status === "shortlist").length;
   const offered = subs.filter((s) => s.status === "offer" || s.status === "joined").length;
+
+  const filterStatus = sp.status;
+  const onlyStarred = sp.starred === "1";
+  const visibleSubs = subs.filter((s) => {
+    if (filterStatus && s.status !== filterStatus) return false;
+    if (onlyStarred && !s.starred) return false;
+    return true;
+  });
+
+  const FILTER_CHIPS: Array<{ label: string; status?: string; starred?: string }> = [
+    { label: "All" },
+    { label: "Submitted", status: "submitted" },
+    { label: "Shortlisted", status: "shortlist" },
+    { label: "Interview", status: "interview" },
+    { label: "Hold", status: "hold" },
+    { label: "Reject", status: "reject" },
+    { label: "★ Starred", starred: "1" },
+  ];
 
   return (
     <main className="min-h-screen bg-canvas">
@@ -75,18 +95,46 @@ export default async function ClientPortal() {
           <StatCard label="Offered/Joined" value={offered} />
         </div>
 
+        <div className="flex flex-wrap gap-1 mb-3">
+          {FILTER_CHIPS.map((chip) => {
+            const params = new URLSearchParams();
+            if (chip.status) params.set("status", chip.status);
+            if (chip.starred) params.set("starred", chip.starred);
+            const href = `/portal/client${params.toString() ? `?${params}` : ""}`;
+            const active =
+              (chip.status && filterStatus === chip.status && !onlyStarred) ||
+              (chip.starred && onlyStarred && !filterStatus) ||
+              (!chip.status && !chip.starred && !filterStatus && !onlyStarred);
+            return (
+              <Link
+                key={chip.label}
+                href={href}
+                className={`text-xs px-3 h-8 rounded-full inline-flex items-center transition-colors ${
+                  active ? "bg-ink_inverted text-white" : "bg-canvas text-ink-soft hover:text-ink"
+                }`}
+              >
+                {chip.label}
+              </Link>
+            );
+          })}
+        </div>
+
         <div className="card overflow-hidden mb-6">
-          <div className="px-4 py-3 border-b border-hairline text-sm font-semibold">Submissions</div>
-          {subs.length === 0 ? (
-            <EmptyState title="No submissions yet" description="Tru Hyre will list candidates here as they're submitted to your roles." />
+          <div className="px-4 py-3 border-b border-hairline text-sm font-semibold flex items-center justify-between">
+            <span>Submissions</span>
+            <span className="text-xs text-ink-muted">{visibleSubs.length} of {subs.length}</span>
+          </div>
+          {visibleSubs.length === 0 ? (
+            <EmptyState title="No submissions match" description={subs.length === 0 ? "Tru Hyre will list candidates here as they're submitted to your roles." : "Try a different filter."} />
           ) : (
             <div className="divide-y divide-hairline">
-              {subs.map((s) => (
+              {visibleSubs.map((s) => (
                 <ListRow
                   key={s.id}
                   href={`/portal/client/submissions/${s.id}`}
                   primary={
                     <span className="flex items-center gap-2">
+                      {s.starred && <span className="text-amber-500" aria-label="starred">★</span>}
                       <span>{s.candidateName}</span>
                       <span className="text-[10px] text-ink-muted font-mono">{s.candidateRefId}</span>
                     </span>

@@ -1,13 +1,14 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { users, submissions, candidates, jobs, feedbackEvents, clientPackets } from "@/db/schema";
+import { users, submissions, candidates, jobs, feedbackEvents, clientPackets, comments as commentsTable } from "@/db/schema";
 import { requireClient } from "@/lib/rbac";
 import { PageHeader, Badge, StatCard } from "@/components/primitives";
 import { signOut } from "@/auth";
 import { APP_NAME } from "@/lib/utils";
 import { clientFeedbackAction } from "../../actions";
+import { toggleStarAction, addClientInternalCommentAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +38,18 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
     redirect("/portal/client");
   }
 
-  const feedback = await db
-    .select()
-    .from(feedbackEvents)
-    .where(eq(feedbackEvents.submissionId, submissionId))
-    .orderBy(desc(feedbackEvents.createdAt));
+  const [feedback, internalNotes] = await Promise.all([
+    db
+      .select()
+      .from(feedbackEvents)
+      .where(eq(feedbackEvents.submissionId, submissionId))
+      .orderBy(desc(feedbackEvents.createdAt)),
+    db
+      .select()
+      .from(commentsTable)
+      .where(and(eq(commentsTable.targetType, "submission"), eq(commentsTable.targetId, submissionId)))
+      .orderBy(desc(commentsTable.createdAt)),
+  ]);
 
   const c = row.cand;
   const j = row.job;
@@ -66,6 +74,17 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
               <Badge tone="blue">{row.sub.status}</Badge>
               <span className="text-xs text-ink-soft">for {j.title}</span>
             </span>
+          }
+          actions={
+            <form action={toggleStarAction.bind(null, submissionId)}>
+              <button
+                type="submit"
+                className={`btn-ghost text-sm ${c.starredByClient ? "!bg-amber-50 !text-amber-700 !border-amber-100" : ""}`}
+                aria-label={c.starredByClient ? "Unstar candidate" : "Star candidate"}
+              >
+                {c.starredByClient ? "★ Starred" : "☆ Star"}
+              </button>
+            </form>
           }
         />
 
@@ -131,6 +150,32 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
             <textarea name="body" rows={3} placeholder="Add a note for the recruiter…" className="input py-2 text-sm" />
             <button type="submit" className="btn-ghost text-xs">Send note</button>
           </form>
+        </section>
+
+        <section className="card p-4 mb-4 bg-amber-50/30 border-amber-100">
+          <h2 className="text-sm font-semibold mb-1 text-amber-900">Internal notes (your team only)</h2>
+          <p className="text-[11px] text-amber-700 mb-3">{APP_NAME} HR can&apos;t see these. Use for internal back-and-forth.</p>
+
+          <form action={addClientInternalCommentAction.bind(null, submissionId)} className="space-y-2 mb-3">
+            <textarea name="body" rows={2} placeholder="Note for your team…" className="input py-2 text-sm bg-white" />
+            <button type="submit" className="btn-ghost text-xs">Add internal note</button>
+          </form>
+
+          {internalNotes.length === 0 ? (
+            <div className="text-xs text-amber-800/70">No internal notes yet.</div>
+          ) : (
+            <ul className="text-sm divide-y divide-amber-100 -mx-1">
+              {internalNotes.map((n) => (
+                <li key={n.id} className="px-1 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium">{n.authorEmail || "—"}</span>
+                    <span className="text-xs text-amber-700">{new Date(n.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-sm mt-0.5 whitespace-pre-line">{n.body.replace(/^\[client-internal\]\s*/, "")}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="card p-4">

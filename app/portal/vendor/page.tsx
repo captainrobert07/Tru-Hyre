@@ -58,7 +58,11 @@ export default async function VendorPortal() {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-8">
-        <PageHeader title={`Welcome, ${u.fullName}`} subtitle="Your assigned jobs and candidates." />
+        <PageHeader
+          title={`Welcome, ${u.fullName}`}
+          subtitle="Your assigned jobs and candidates."
+          actions={<Link href="/portal/vendor/upload" className="btn-brand">Submit candidate</Link>}
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <StatCard label="Open jobs" value={assignedJobs.filter((j) => j.status === "open").length} />
@@ -74,13 +78,17 @@ export default async function VendorPortal() {
           ) : (
             <div className="divide-y divide-hairline">
               {assignedJobs.map((j) => (
-                <div key={j.id} className="px-4 py-3 flex justify-between items-center">
+                <Link
+                  key={j.id}
+                  href={`/portal/vendor/jobs/${j.id}`}
+                  className="px-4 py-3 flex justify-between items-center hover:bg-canvas transition-colors"
+                >
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{j.title}</div>
                     <div className="text-xs text-ink-soft">{[j.location, `${j.positions} position${j.positions === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}</div>
                   </div>
                   <JobStatusBadge status={j.status} />
-                </div>
+                </Link>
               ))}
             </div>
           )}
