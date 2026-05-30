@@ -110,11 +110,11 @@ async function ensureClientAccess(submissionId: number, userId: number, userRole
  */
 export async function quickClientFeedbackAction(
   submissionId: number,
-  kind: "shortlist" | "reject" | "interview" | "hold",
-): Promise<void> {
+  kind: "shortlist" | "reject" | "interview" | "hold" | "submitted",
+): Promise<{ ok: true; previousStatus: string | null } | { ok: false; error: string }> {
   const me = await requireClient();
   const access = await ensureClientAccess(submissionId, Number(me.id), me.role);
-  if (!access) return;
+  if (!access) return { ok: false, error: "Forbidden" };
 
   const cand = (
     await db
@@ -122,27 +122,40 @@ export async function quickClientFeedbackAction(
       .from(candidates)
       .where(eq(candidates.id, access.candidateId))
   )[0];
-  if (!cand) return;
+  if (!cand) return { ok: false, error: "Candidate not found" };
 
-  await db.insert(feedbackEvents).values({
-    submissionId,
-    kind,
-    body: null,
-    authorId: Number(me.id),
-  });
+  // Capture previous status for undo
+  const subBefore = (await db.select({ status: submissions.status }).from(submissions).where(eq(submissions.id, submissionId)))[0];
+  const previousStatus = subBefore?.status ?? null;
+
+  // Skip writing a feedback_event when the action is the undo path
+  // (undo passes the previous status; we don't want to log undo as a
+  // fresh decision). Heuristic: only log when kind is one of the four
+  // real decisions (shortlist / reject / interview / hold).
+  const isRealDecision = kind !== "submitted";
+  if (isRealDecision) {
+    await db.insert(feedbackEvents).values({
+      submissionId,
+      kind,
+      body: null,
+      authorId: Number(me.id),
+    });
+  }
 
   await db.update(submissions).set({ status: kind, updatedAt: new Date() }).where(eq(submissions.id, submissionId));
 
-  const sub = (await db.select().from(submissions).where(eq(submissions.id, submissionId)))[0];
-  if (sub?.submittedById) {
-    const job = (await db.select({ title: jobs.title }).from(jobs).where(eq(jobs.id, sub.jobId)))[0];
-    await db.insert(notifications).values({
-      userId: sub.submittedById,
-      kind: "feedback",
-      title: `Client decision: ${kind}`,
-      body: `${cand.fullName} → ${job?.title || "job"}`,
-      url: `/candidates/${access.candidateId}`,
-    });
+  if (isRealDecision) {
+    const sub = (await db.select().from(submissions).where(eq(submissions.id, submissionId)))[0];
+    if (sub?.submittedById) {
+      const job = (await db.select({ title: jobs.title }).from(jobs).where(eq(jobs.id, sub.jobId)))[0];
+      await db.insert(notifications).values({
+        userId: sub.submittedById,
+        kind: "feedback",
+        title: `Client decision: ${kind}`,
+        body: `${cand.fullName} → ${job?.title || "job"}`,
+        url: `/candidates/${access.candidateId}`,
+      });
+    }
   }
 
   await logAudit({
@@ -151,11 +164,12 @@ export async function quickClientFeedbackAction(
     action: "feedback",
     targetType: "submission",
     targetId: submissionId,
-    summary: `Quick ${kind} on ${cand.fullName}`,
+    summary: isRealDecision ? `Quick ${kind} on ${cand.fullName}` : `Undid decision (back to ${kind}) on ${cand.fullName}`,
   });
 
   revalidatePath("/portal/client");
   revalidatePath(`/portal/client/submissions/${submissionId}`);
+  return { ok: true, previousStatus };
 }
 
 export async function bulkClientFeedbackAction(

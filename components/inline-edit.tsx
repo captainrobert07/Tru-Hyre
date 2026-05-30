@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +20,19 @@ export function InlineEdit({
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(defaultValue);
   const [pending, start] = useTransition();
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  // Reset internal state when the underlying server value changes
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
+
+  // Auto-clear the green flash after 1.5s
+  useEffect(() => {
+    if (!savedFlash) return;
+    const t = setTimeout(() => setSavedFlash(false), 1500);
+    return () => clearTimeout(t);
+  }, [savedFlash]);
 
   const submit = () => {
     if (value === defaultValue) {
@@ -32,6 +45,7 @@ export function InlineEdit({
     start(async () => {
       await onSave(fd);
       setEditing(false);
+      setSavedFlash(true);
       toast.success("Saved");
     });
   };
@@ -41,10 +55,18 @@ export function InlineEdit({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="group text-left w-full inline-flex items-center gap-1 text-ink hover:text-brand-700 transition-colors"
+        className={`group text-left w-full inline-flex items-center gap-1 transition-colors rounded px-1 -mx-1 ${
+          savedFlash
+            ? "bg-brand-100 text-brand-900"
+            : "text-ink hover:text-brand-700"
+        }`}
       >
         <span className={value ? "" : "text-ink-muted"}>{value || placeholder}</span>
-        <Pencil size={11} className="text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+        {savedFlash ? (
+          <Check size={11} className="text-brand-700" />
+        ) : (
+          <Pencil size={11} className="text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
       </button>
     );
   }

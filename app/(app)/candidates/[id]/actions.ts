@@ -231,13 +231,17 @@ function parseCtc(raw: string): number | null {
   return Math.round(scaled);
 }
 
-export async function setStageAction(id: number, toStage: string): Promise<void> {
+export async function setStageAction(
+  id: number,
+  toStage: string,
+): Promise<{ ok: true; previousStage: string | null } | { ok: false; error: string }> {
   const user = await requireStaff();
   const allowed = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
-  if (!allowed.includes(toStage as typeof allowed[number])) return;
+  if (!allowed.includes(toStage as typeof allowed[number])) return { ok: false, error: "Invalid stage" };
 
   const current = (await db.select({ stage: candidates.stage }).from(candidates).where(eq(candidates.id, id)))[0];
-  if (!current) return;
+  if (!current) return { ok: false, error: "Candidate not found" };
+  if (current.stage === toStage) return { ok: true, previousStage: current.stage };
 
   await db
     .update(candidates)
@@ -261,6 +265,7 @@ export async function setStageAction(id: number, toStage: string): Promise<void>
   });
 
   revalidatePath(`/candidates/${id}`);
+  return { ok: true, previousStage: current.stage };
 }
 
 export async function generatePacketAction(id: number): Promise<{ ok: false; error: string } | { ok: true; url: string }> {

@@ -9,6 +9,7 @@ import { useConfirm } from "@/components/confirm";
 import { SlideOver } from "@/components/slide-over";
 import { StageBadge, Badge } from "@/components/primitives";
 import { Avatar } from "@/components/avatar";
+import { useListKeyboard } from "@/components/use-list-keyboard";
 import { bulkCandidateAction } from "./bulk-actions";
 
 type Row = {
@@ -69,6 +70,11 @@ export function CandidatesTable({
     setSelected(next);
   };
   const clear = () => setSelected(new Set());
+
+  const { focusedId } = useListKeyboard({
+    rows: rows.map((r) => ({ id: r.id, href: `/candidates/${r.id}` })),
+    onToggleSelect: toggleOne,
+  });
 
   const runBulk = (input: Parameters<typeof bulkCandidateAction>[0]) => {
     start(async () => {
@@ -176,8 +182,15 @@ export function CandidatesTable({
 
         {rows.map((c) => {
           const checked = selected.has(c.id);
+          const focused = focusedId === c.id;
           return (
-            <div key={c.id} className={`group px-5 py-3 flex items-center gap-3 transition-colors ${checked ? "bg-brand-50/40" : "hover:bg-canvas"}`}>
+            <div
+              key={c.id}
+              id={`row-${c.id}`}
+              className={`group px-5 py-3 flex items-center gap-3 transition-colors ${
+                focused ? "bg-brand-50/60 ring-1 ring-inset ring-brand-200" : checked ? "bg-brand-50/40" : "hover:bg-canvas"
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={checked}

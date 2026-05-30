@@ -6,7 +6,10 @@ import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { RecentTracker } from "@/components/recently-viewed";
 import { SubmitButton } from "@/components/submit-button";
+import { PendingShimmer } from "@/components/pending-shimmer";
+import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
 import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
@@ -100,6 +103,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
 
   return (
     <>
+      <RecentTracker kind="candidate" label={cand.fullName} />
       <Breadcrumbs
         crumbs={[
           { href: "/dashboard", label: "Dashboard" },
@@ -366,7 +370,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                           <StageBadge stage={a.to} />
                         </div>
                         {a.note && <p className="text-xs text-ink-soft mt-1">{a.note}</p>}
-                        <div className="text-[10px] text-ink-muted mt-1">{new Date(a.at).toLocaleString()}</div>
+                        <div className="text-[10px] text-ink-muted mt-1"><TimeAgo date={a.at} /></div>
                       </div>
                     ) : (
                       <div className="text-sm">
@@ -380,7 +384,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                           </Link>
                         </div>
                         {a.body && <p className="text-xs text-ink-soft mt-1 whitespace-pre-line">{a.body}</p>}
-                        <div className="text-[10px] text-ink-muted mt-1">{new Date(a.at).toLocaleString()}</div>
+                        <div className="text-[10px] text-ink-muted mt-1"><TimeAgo date={a.at} /></div>
                       </div>
                     )}
                   </li>
@@ -462,6 +466,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               <SubmitButton className="text-xs w-full" pendingLabel="Generating…">
                 {latestPacket ? "Regenerate packet" : "Generate packet"}
               </SubmitButton>
+              <PendingShimmer label="Rendering sanitized PDF…" />
               <p className="text-[11px] text-ink-muted">
                 Excludes email, phone, vendor name, and internal notes — safe to share with the client.
               </p>

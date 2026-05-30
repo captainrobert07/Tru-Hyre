@@ -16,7 +16,9 @@ import {
   Bell,
   Settings,
   ScrollText,
+  Clock,
 } from "lucide-react";
+import { getRecent, type RecentEntry } from "@/components/recently-viewed";
 
 type Results = {
   candidates: { id: number; fullName: string; currentTitle: string | null; refId: string; stage: string }[];
@@ -44,6 +46,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Results | null>(null);
   const [loading, setLoading] = useState(false);
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -59,7 +62,9 @@ export function CommandPalette() {
   }, []);
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setRecent(getRecent());
+    } else {
       setQuery("");
       setResults(null);
     }
@@ -198,8 +203,25 @@ export function CommandPalette() {
               </Command.Group>
             )}
 
+            {!query && recent.length > 0 && (
+              <Command.Group heading="Recently viewed" className="text-[10px] uppercase tracking-wide text-ink-muted px-2 mt-2 [&>[cmdk-group-items]]:space-y-0.5 [&>[cmdk-group-items]]:mt-1">
+                {recent.map((r) => (
+                  <Command.Item
+                    key={r.href}
+                    value={`recent-${r.href}-${r.label}`}
+                    onSelect={() => navigate(r.href)}
+                    className="group flex items-center gap-3 px-3 h-10 rounded-lg cursor-pointer text-sm aria-selected:bg-canvas data-[selected=true]:bg-canvas"
+                  >
+                    <Clock size={14} className="text-ink-muted shrink-0" />
+                    <span className="flex-1 truncate">{r.label}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-ink-muted">{r.kind}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+
             {!query && (
-              <Command.Group heading="Quick actions" className="text-[10px] uppercase tracking-wide text-ink-muted px-2 mt-2 [&>[cmdk-group-items]]:space-y-0.5 [&>[cmdk-group-items]]:mt-1">
+              <Command.Group heading="Quick actions" className="text-[10px] uppercase tracking-wide text-ink-muted px-2 mt-3 [&>[cmdk-group-items]]:space-y-0.5 [&>[cmdk-group-items]]:mt-1">
                 {QUICK_ACTIONS.map((a) => (
                   <Command.Item
                     key={a.id}

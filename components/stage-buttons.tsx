@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { toast } from "sonner";
 
 type Stage = "received" | "hr_review" | "screening" | "submitted" | "shortlist" | "interview" | "hold" | "offer" | "joined" | "rejected";
 
@@ -13,16 +14,45 @@ export function StageButtons({
   setStage,
 }: {
   current: Stage;
-  setStage: (stage: Stage) => Promise<void>;
+  setStage: (stage: Stage) => Promise<{ ok: true; previousStage: string | null } | { ok: false; error: string }>;
 }) {
   const [pending, start] = useTransition();
 
+  const apply = (stage: Stage) => {
+    start(async () => {
+      const r = await setStage(stage);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      const prev = r.previousStage;
+      if (!prev || prev === stage) {
+        toast.success(`Moved to ${stage.replaceAll("_", " ")}`);
+        return;
+      }
+      // Show toast with Undo
+      toast.success(`Moved to ${stage.replaceAll("_", " ")}`, {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            start(async () => {
+              const undo = await setStage(prev as Stage);
+              if (undo.ok) toast.success(`Reverted to ${prev.replaceAll("_", " ")}`);
+              else toast.error(undo.error);
+            });
+          },
+        },
+        duration: 8000,
+      });
+    });
+  };
+
   const onClick = (stage: Stage) => {
     if (DESTRUCTIVE.includes(stage)) {
-      const ok = window.confirm(`Move this candidate to "${stage.replace("_", " ")}"? This is hard to undo.`);
+      const ok = window.confirm(`Move this candidate to "${stage.replace("_", " ")}"? You can undo within 8 seconds.`);
       if (!ok) return;
     }
-    start(() => setStage(stage));
+    apply(stage);
   };
 
   return (

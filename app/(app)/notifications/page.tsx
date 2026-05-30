@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { notifications } from "@/db/schema";
 import { requireUser } from "@/lib/rbac";
 import { PageHeader, Badge, EmptyState } from "@/components/primitives";
+import { TimeAgo } from "@/components/time-ago";
 import { markReadAction, markAllReadAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -86,7 +87,7 @@ function NotificationRow({ n }: { n: typeof notifications.$inferSelect }) {
         <div className="flex items-center gap-2 flex-wrap">
           <Badge tone="default" className="capitalize">{n.kind.replace("_", " ")}</Badge>
           <span className="text-sm font-medium">{n.title}</span>
-          <span className="text-xs text-ink-muted ml-auto">{new Date(n.createdAt).toLocaleString()}</span>
+          <span className="text-xs text-ink-muted ml-auto"><TimeAgo date={n.createdAt} /></span>
         </div>
         {n.body && <p className="text-xs text-ink-soft mt-1 line-clamp-2">{n.body}</p>}
         <div className="flex gap-2 mt-2">

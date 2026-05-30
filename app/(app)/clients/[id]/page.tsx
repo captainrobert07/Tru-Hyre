@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, JobStatusBadge, Badge, ListRow, EmptyState } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Avatar } from "@/components/avatar";
+import { RecentTracker } from "@/components/recently-viewed";
 import { addContactAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
+      <RecentTracker kind="client" label={c.name} />
       <Breadcrumbs
         crumbs={[
           { href: "/dashboard", label: "Dashboard" },

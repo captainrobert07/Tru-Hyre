@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, ListRow, StageBadge, JobStatusBadge, EmptyState } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Avatar } from "@/components/avatar";
+import { RecentTracker } from "@/components/recently-viewed";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function VendorDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
+      <RecentTracker kind="vendor" label={v.name} />
       <Breadcrumbs
         crumbs={[
           { href: "/dashboard", label: "Dashboard" },

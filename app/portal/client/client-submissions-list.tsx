@@ -58,8 +58,34 @@ export function ClientSubmissionsList({ rows }: { rows: SubmissionRow[] }) {
 
   const handleSingle = (submissionId: number, kind: Decision) => {
     start(async () => {
-      await quickClientFeedbackAction(submissionId, kind);
-      toast.success(LABEL[kind]);
+      const r = await quickClientFeedbackAction(submissionId, kind);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      const prev = r.previousStatus;
+      // Show toast with Undo if there was a real prior status
+      if (prev && prev !== kind) {
+        toast.success(LABEL[kind], {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              start(async () => {
+                const undo = await quickClientFeedbackAction(submissionId, prev as Decision | "submitted");
+                if (undo.ok) {
+                  toast.success(`Reverted to ${prev}`);
+                  router.refresh();
+                } else {
+                  toast.error(undo.error);
+                }
+              });
+            },
+          },
+          duration: 8000,
+        });
+      } else {
+        toast.success(LABEL[kind]);
+      }
       router.refresh();
     });
   };

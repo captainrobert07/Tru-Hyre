@@ -56,9 +56,9 @@ export default async function AuditLogPage({
       {rows.length === 0 ? (
         <div className="card p-8 text-center text-sm text-ink-soft">No activity matches your filter.</div>
       ) : (
-        <div className="card overflow-x-auto">
+        <div className="card overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm min-w-[720px]">
-            <thead className="text-xs text-ink-muted uppercase tracking-wide">
+            <thead className="text-xs text-ink-muted uppercase tracking-wide sticky top-0 bg-surface z-10 shadow-[0_1px_0_rgba(15,23,42,0.06)]">
               <tr className="border-b border-hairline">
                 <th className="text-left font-medium py-2.5 px-4">When</th>
                 <th className="text-left font-medium py-2.5 px-4">Actor</th>
