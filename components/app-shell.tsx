@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { signOut } from "@/auth";
+import { APP_NAME, APP_TAGLINE } from "@/lib/utils";
+import { MobileMore } from "./mobile-more";
 import {
   LayoutDashboard,
   Users,
@@ -54,8 +56,8 @@ export function AppShell({
       <aside className="hidden md:flex w-64 shrink-0 flex-col bg-surface border-r border-hairline">
         <div className="px-5 py-5 border-b border-hairline">
           <Link href="/" className="block">
-            <div className="text-base font-semibold tracking-tight">Tru Hyre</div>
-            <div className="text-xs text-ink-soft mt-0.5">Allianz HR Platform</div>
+            <div className="text-base font-semibold tracking-tight">{APP_NAME}</div>
+            <div className="text-xs text-ink-soft mt-0.5 line-clamp-1">{APP_TAGLINE}</div>
           </Link>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -95,7 +97,7 @@ export function AppShell({
 
       <main className="flex-1 min-w-0 flex flex-col">
         <div className="md:hidden bg-surface border-b border-hairline px-4 h-12 flex items-center justify-between">
-          <Link href="/" className="text-sm font-semibold">Tru Hyre</Link>
+          <Link href="/" className="text-sm font-semibold">{APP_NAME}</Link>
           <form
             action={async () => {
               "use server";
@@ -106,13 +108,22 @@ export function AppShell({
           </form>
         </div>
         <div className="flex-1 px-4 md:px-8 py-6 md:py-8">{children}</div>
-        <nav className="md:hidden bg-surface border-t border-hairline grid grid-cols-5 h-14">
-          {items.slice(0, 5).map((n) => (
-            <Link key={n.href} href={n.href} className="flex flex-col items-center justify-center text-[10px] text-ink-soft gap-0.5">
+        <nav className="md:hidden bg-surface border-t border-hairline grid grid-cols-5 h-14 sticky bottom-0">
+          {items.slice(0, items.length > 5 ? 4 : 5).map((n) => (
+            <Link key={n.href} href={n.href} className="flex flex-col items-center justify-center text-[10px] text-ink-soft gap-0.5 relative">
               <span className="text-ink-muted">{n.icon}</span>
               <span>{n.label}</span>
+              {n.href === "/notifications" && unread > 0 && (
+                <span className="absolute top-2 right-1/3 translate-x-2 size-1.5 rounded-full bg-brand-600" />
+              )}
             </Link>
           ))}
+          {items.length > 5 && (
+            <MobileMore
+              items={items.slice(4).map((n) => ({ href: n.href, label: n.label, icon: n.icon }))}
+              unreadCount={unread}
+            />
+          )}
         </nav>
       </main>
     </div>

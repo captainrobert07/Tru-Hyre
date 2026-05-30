@@ -5,11 +5,11 @@ import { db } from "@/db";
 import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
+import { SubmitButton } from "@/components/submit-button";
+import { StageButtons } from "@/components/stage-buttons";
 import { setStageAction, generatePacketAction, submitToJobAction } from "./actions";
 
 export const dynamic = "force-dynamic";
-
-const STAGES = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
 
 export default async function CandidateDetail({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireStaff();
@@ -137,26 +137,13 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
 
         <div className="space-y-4">
           <Section title="Move stage">
-            <div className="flex flex-wrap gap-1.5">
-              {STAGES.map((s) => (
-                <form
-                  key={s}
-                  action={async () => {
-                    "use server";
-                    await setStageAction(candidateId, s);
-                  }}
-                >
-                  <button
-                    className={`text-xs px-2 h-7 rounded-md border transition-colors ${
-                      cand.stage === s ? "bg-brand-50 text-brand-700 border-brand-100" : "bg-canvas text-ink-soft border-hairline hover:bg-surface"
-                    }`}
-                    type="submit"
-                  >
-                    {s.replaceAll("_", " ")}
-                  </button>
-                </form>
-              ))}
-            </div>
+            <StageButtons
+              current={cand.stage}
+              setStage={async (stage) => {
+                "use server";
+                await setStageAction(candidateId, stage);
+              }}
+            />
           </Section>
 
           <Section title="Resume">
@@ -180,9 +167,12 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
               className="space-y-2"
             >
-              <button className="btn-primary text-xs w-full" type="submit">
+              <SubmitButton className="text-xs w-full" pendingLabel="Generating…">
                 {latestPacket ? "Regenerate packet" : "Generate packet"}
-              </button>
+              </SubmitButton>
+              <p className="text-[11px] text-ink-muted">
+                Excludes email, phone, vendor name, and internal notes — safe to share with the client.
+              </p>
             </form>
             {latestPacket && (
               <a href={latestPacket.blobUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs w-full mt-2 block text-center">
@@ -200,9 +190,13 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 ))}
               </select>
               <textarea name="notes" placeholder="Notes (optional)" rows={2} className="input text-sm py-2" />
-              <button className="btn-primary text-xs w-full" type="submit" disabled={!latestPacket}>
+              <SubmitButton
+                className="text-xs w-full"
+                disabled={!latestPacket}
+                pendingLabel="Submitting…"
+              >
                 {latestPacket ? "Submit to job" : "Generate packet first"}
-              </button>
+              </SubmitButton>
             </form>
           </Section>
         </div>

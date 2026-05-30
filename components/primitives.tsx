@@ -2,6 +2,12 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+function hasContent(node: ReactNode): boolean {
+  if (node === null || node === undefined || node === false) return false;
+  if (typeof node === "string") return node.trim().length > 0;
+  return true;
+}
+
 export function PageHeader({
   title,
   subtitle,
@@ -105,7 +111,7 @@ export function ListRow({
     >
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium truncate">{primary}</div>
-        {secondary && <div className="text-xs text-ink-soft truncate mt-0.5">{secondary}</div>}
+        {hasContent(secondary) && <div className="text-xs text-ink-soft truncate mt-0.5">{secondary}</div>}
       </div>
       {trailing && <div className="shrink-0">{trailing}</div>}
     </Link>
@@ -114,7 +120,7 @@ export function ListRow({
 
 const STAGE_TONE: Record<string, keyof typeof BADGE_STYLES> = {
   received: "gray",
-  hr_review: "blue",
+  hr_review: "default",
   screening: "blue",
   submitted: "blue",
   shortlist: "green",

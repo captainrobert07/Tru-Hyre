@@ -5,6 +5,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StatCard, Badge } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Reports" };
 
 export default async function ReportsPage() {
   await requireStaff();
@@ -128,15 +129,14 @@ export default async function ReportsPage() {
         {dailyRows.length === 0 ? (
           <div className="text-sm text-ink-muted">No uploads in the last 30 days.</div>
         ) : (
-          <div className="grid grid-cols-15 sm:grid-cols-30 gap-1 items-end h-24">
+          <div className="flex items-end gap-1 h-24 w-full">
             {dailyRows.map((r) => (
-              <div key={r.day} className="flex flex-col items-center gap-1 group">
-                <div
-                  className="w-full bg-gradient-to-b from-brand-500 to-brand-700 rounded-sm min-h-[2px]"
-                  style={{ height: `${(r.n / maxDaily) * 100}%` }}
-                  title={`${r.day}: ${r.n}`}
-                />
-              </div>
+              <div
+                key={r.day}
+                className="flex-1 min-w-[6px] bg-gradient-to-b from-brand-500 to-brand-700 rounded-sm"
+                style={{ height: `max(2px, ${(r.n / maxDaily) * 100}%)` }}
+                title={`${r.day}: ${r.n}`}
+              />
             ))}
           </div>
         )}

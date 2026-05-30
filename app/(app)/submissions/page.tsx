@@ -6,6 +6,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, Badge, EmptyState } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Submissions" };
 
 const STATUS_TABS = ["all", "submitted", "shortlist", "interview", "hold", "offer", "joined", "reject"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
@@ -70,24 +71,23 @@ export default async function SubmissionsPage({
       ) : (
         <div className="card overflow-hidden divide-y divide-hairline">
           {rows.map((s) => (
-            <Link
-              key={s.id}
-              href={`/candidates/${s.candidateId}`}
-              className="grid grid-cols-12 items-center gap-3 px-4 py-3 hover:bg-canvas transition-colors text-sm"
-            >
-              <div className="col-span-12 md:col-span-4 min-w-0">
-                <div className="font-medium truncate">{s.candidateName}</div>
+            <div key={s.id} className="grid grid-cols-12 items-center gap-3 px-4 py-3 hover:bg-canvas transition-colors text-sm">
+              <Link href={`/candidates/${s.candidateId}`} className="col-span-12 md:col-span-4 min-w-0 group">
+                <div className="font-medium truncate group-hover:text-brand-700">{s.candidateName}</div>
                 <div className="text-[10px] text-ink-muted font-mono">{s.candidateRefId}</div>
-              </div>
+              </Link>
               <div className="col-span-12 md:col-span-5 min-w-0 text-ink-soft text-xs">
-                <div className="truncate"><span className="text-ink-muted">→</span> {s.jobTitle}</div>
+                <div className="truncate">
+                  <span className="text-ink-muted">→ </span>
+                  <Link href={`/jobs/${s.jobId}`} className="hover:underline hover:text-brand-700">{s.jobTitle}</Link>
+                </div>
                 <div className="truncate text-ink-muted">{s.clientName}</div>
               </div>
               <div className="col-span-7 md:col-span-2 text-xs text-ink-muted">{new Date(s.createdAt).toLocaleDateString()}</div>
               <div className="col-span-5 md:col-span-1 flex justify-end">
                 <Badge tone={toneFor(s.status)}>{s.status}</Badge>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

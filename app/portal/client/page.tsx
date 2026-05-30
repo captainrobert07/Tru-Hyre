@@ -5,6 +5,7 @@ import { users, jobs, submissions, candidates, clientAccounts } from "@/db/schem
 import { requireClient } from "@/lib/rbac";
 import { PageHeader, ListRow, Badge, EmptyState, StatCard } from "@/components/primitives";
 import { signOut } from "@/auth";
+import { APP_NAME } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function ClientPortal() {
       <header className="bg-surface border-b border-hairline">
         <div className="max-w-5xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
           <div>
-            <div className="text-sm font-semibold">Tru Hyre · Client Portal</div>
+            <div className="text-sm font-semibold">{APP_NAME} · Client Portal</div>
             <div className="text-xs text-ink-soft">{account?.name}</div>
           </div>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>

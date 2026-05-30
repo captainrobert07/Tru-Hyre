@@ -3,8 +3,9 @@ import Link from "next/link";
 import { db } from "@/db";
 import { users, vendorAccounts, candidates, jobs, jobVendors, submissions } from "@/db/schema";
 import { requireVendor } from "@/lib/rbac";
-import { PageHeader, ListRow, StageBadge, JobStatusBadge, EmptyState, StatCard, Badge } from "@/components/primitives";
+import { PageHeader, StageBadge, JobStatusBadge, EmptyState, StatCard, Badge } from "@/components/primitives";
 import { signOut } from "@/auth";
+import { APP_NAME } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export default async function VendorPortal() {
       <header className="bg-surface border-b border-hairline">
         <div className="max-w-5xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
           <div>
-            <div className="text-sm font-semibold">Tru Hyre · Vendor Portal</div>
+            <div className="text-sm font-semibold">{APP_NAME} · Vendor Portal</div>
             <div className="text-xs text-ink-soft">{vendor?.name}</div>
           </div>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
@@ -91,22 +92,20 @@ export default async function VendorPortal() {
             <Badge tone="default">{myCandidates.length}</Badge>
           </div>
           {myCandidates.length === 0 ? (
-            <EmptyState title="No candidates submitted yet" description="Tru Hyre HR will reach out with submission details." />
+            <EmptyState title="No candidates submitted yet" description={`${APP_NAME} HR will reach out with submission details.`} />
           ) : (
             <div className="divide-y divide-hairline">
               {myCandidates.map((c) => (
-                <ListRow
-                  key={c.id}
-                  href="#"
-                  primary={
-                    <span className="flex items-center gap-2">
-                      <span>{c.fullName}</span>
+                <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate flex items-center gap-2">
+                      {c.fullName}
                       <span className="text-[10px] text-ink-muted font-mono">{c.refId}</span>
-                    </span>
-                  }
-                  secondary={c.currentTitle || "—"}
-                  trailing={<StageBadge stage={c.stage} />}
-                />
+                    </div>
+                    <div className="text-xs text-ink-soft truncate">{c.currentTitle || "—"}</div>
+                  </div>
+                  <StageBadge stage={c.stage} />
+                </div>
               ))}
             </div>
           )}

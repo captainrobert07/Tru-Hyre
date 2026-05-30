@@ -6,6 +6,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, ListRow, StageBadge, EmptyState } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Candidates" };
 
 export default async function CandidatesPage() {
   await requireStaff();

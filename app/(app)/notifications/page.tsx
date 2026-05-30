@@ -7,6 +7,7 @@ import { PageHeader, Badge, EmptyState } from "@/components/primitives";
 import { markReadAction, markAllReadAction } from "./actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Notifications" };
 
 export default async function NotificationsPage({
   searchParams,

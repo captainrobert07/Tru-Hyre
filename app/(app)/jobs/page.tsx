@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, ListRow, JobStatusBadge, EmptyState } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Jobs" };
 
 export default async function JobsPage() {
   await requireStaff();

@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/rbac";
 import { PageHeader, Badge } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Users" };
 
 export default async function UsersPage() {
   await requireAdmin();

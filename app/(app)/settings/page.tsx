@@ -7,6 +7,7 @@ import { PageHeader, StatCard } from "@/components/primitives";
 import { Users, MailPlus, Building2, ScrollText, ChevronRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   await requireAdmin();

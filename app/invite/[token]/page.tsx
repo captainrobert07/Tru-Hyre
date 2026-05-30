@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { invitations, clientAccounts, vendorAccounts } from "@/db/schema";
 import { Badge } from "@/components/primitives";
+import { APP_NAME } from "@/lib/utils";
 import { acceptInvitationAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function InvitePage({
     <main className="login-bg min-h-screen flex items-center justify-center px-4 py-10">
       <div className="card w-full max-w-md p-8">
         <div className="text-center mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome to Tru Hyre</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome to {APP_NAME}</h1>
           <p className="text-sm text-ink-soft mt-1">Set your password to activate your account.</p>
         </div>
 

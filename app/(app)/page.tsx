@@ -5,6 +5,7 @@ import { candidates, jobs, submissions } from "@/db/schema";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState } from "@/components/primitives";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const [candCount, openJobs, recentSubs, submittedTodayRows, recentCandidates] = await Promise.all([
@@ -67,7 +68,7 @@ export default async function DashboardPage() {
                 key={c.id}
                 href={`/candidates/${c.id}`}
                 primary={c.fullName}
-                secondary={[c.currentTitle, c.location].filter(Boolean).join(" · ")}
+                secondary={[c.currentTitle, c.location].filter(Boolean).join(" · ") || undefined}
                 trailing={<StageBadge stage={c.stage} />}
               />
             ))}

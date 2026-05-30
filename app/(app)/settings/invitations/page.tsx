@@ -7,6 +7,7 @@ import { PageHeader, Badge } from "@/components/primitives";
 import { revokeInvitationAction } from "../actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Invitations" };
 
 export default async function InvitationsPage() {
   await requireAdmin();

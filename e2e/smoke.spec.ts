@@ -6,6 +6,7 @@ test("health endpoint reports ok", async ({ request }) => {
   const body = await r.json();
   expect(body.status).toBe("ok");
   expect(body.name).toMatch(/Tru Hyre/i);
+  expect(body.timestamp).toBeTruthy();
 });
 
 test("login page renders", async ({ page }) => {

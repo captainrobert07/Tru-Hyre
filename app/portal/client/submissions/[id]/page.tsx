@@ -6,6 +6,7 @@ import { users, submissions, candidates, jobs, feedbackEvents, clientPackets } f
 import { requireClient } from "@/lib/rbac";
 import { PageHeader, Badge, StatCard } from "@/components/primitives";
 import { signOut } from "@/auth";
+import { APP_NAME } from "@/lib/utils";
 import { clientFeedbackAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +50,7 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
     <main className="min-h-screen bg-canvas">
       <header className="bg-surface border-b border-hairline">
         <div className="max-w-4xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
-          <Link href="/portal/client" className="text-sm font-semibold">← Tru Hyre · Client Portal</Link>
+          <Link href="/portal/client" className="text-sm font-semibold">← {APP_NAME} · Client Portal</Link>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button type="submit" className="text-xs text-ink-soft hover:text-ink">Sign out</button>
           </form>
