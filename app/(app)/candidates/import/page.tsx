@@ -45,8 +45,8 @@ export default async function ImportPage() {
             <li><span className="font-mono">noticePeriodDays</span></li>
             <li><span className="font-mono">currentCtc</span> <span className="text-ink-muted">/</span> <span className="font-mono">expectedCtc</span></li>
             <li><span className="font-mono">summary</span></li>
-            <li><span className="font-mono">skills</span> <span className="text-ink-muted">"Java, Kafka, AWS"</span></li>
-            <li><span className="font-mono">tags</span> <span className="text-ink-muted">"reapplicant, internal"</span></li>
+            <li><span className="font-mono">skills</span> <span className="text-ink-muted">&ldquo;Java, Kafka, AWS&rdquo;</span></li>
+            <li><span className="font-mono">tags</span> <span className="text-ink-muted">&ldquo;reapplicant, internal&rdquo;</span></li>
             <li><span className="font-mono">linkedinUrl</span> <span className="text-ink-muted">/</span> <span className="font-mono">githubUrl</span></li>
           </ul>
           <p className="text-[11px] text-ink-muted pt-2 border-t border-hairline">
