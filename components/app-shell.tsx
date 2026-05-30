@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { signOut } from "@/auth";
 import { APP_NAME } from "@/lib/utils";
 import { MobileMore } from "./mobile-more";
+import { CommandPalette, CommandTrigger } from "./command-palette";
 import {
   LayoutDashboard,
   Users,
@@ -14,7 +15,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
 } from "lucide-react";
 
 type Role = "admin" | "hr" | "client" | "vendor";
@@ -56,6 +56,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen flex flex-col">
+      <CommandPalette />
       {/* Top bar — desktop pill nav */}
       <header className="hidden md:flex sticky top-0 z-40 bg-canvas/80 backdrop-blur-md px-6 lg:px-10 py-4 items-center gap-4">
         <Link href="/dashboard" className="flex items-center gap-2 mr-2 shrink-0">
@@ -91,9 +92,7 @@ export function AppShell({
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button className="size-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-soft hover:text-ink" aria-label="Search">
-            <Search size={16} />
-          </button>
+          <CommandTrigger />
           <Link href="/notifications" className="relative size-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-soft hover:text-ink" aria-label="Notifications">
             <Bell size={16} />
             {unread > 0 && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-attention-500" />}

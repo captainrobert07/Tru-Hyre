@@ -12,6 +12,7 @@ import { users, invitations, clientAccounts, vendorAccounts } from "@/db/schema"
 import { logAudit } from "@/lib/audit";
 import { sendEmail, inviteEmail } from "@/lib/email";
 import { requireAdmin } from "@/lib/rbac";
+import { withToast } from "@/lib/toast";
 
 const userSchema = z.object({
   email: z.string().email().toLowerCase().trim(),
@@ -51,7 +52,7 @@ export async function createUserAction(formData: FormData): Promise<void> {
     summary: `Created user ${v.email} (${v.role})`,
   });
   revalidatePath("/settings/users");
-  redirect("/settings/users");
+  redirect(withToast("/settings/users", `User ${v.email} created`));
 }
 
 export async function updateUserAction(id: number, formData: FormData): Promise<void> {
@@ -79,7 +80,7 @@ export async function updateUserAction(id: number, formData: FormData): Promise<
     summary: `Updated user ${v.email}`,
   });
   revalidatePath("/settings/users");
-  redirect("/settings/users");
+  redirect(withToast("/settings/users", `User ${v.email} updated`));
 }
 
 const inviteSchema = z.object({
@@ -127,7 +128,7 @@ export async function createInvitationAction(formData: FormData): Promise<void> 
     meta: { emailDelivered: send.delivered, emailReason: send.reason, inviteUrl },
   });
   revalidatePath("/settings/invitations");
-  redirect("/settings/invitations");
+  redirect(withToast("/settings/invitations", send.delivered ? `Invitation emailed to ${v.email}` : `Invitation created for ${v.email} (email not sent: ${send.reason})`, send.delivered ? "success" : "info"));
 }
 
 export async function revokeInvitationAction(id: number): Promise<void> {
@@ -180,7 +181,7 @@ export async function updateCompanyProfileAction(id: number, formData: FormData)
     summary: "Updated company profile",
   });
   revalidatePath("/settings/company");
-  redirect("/settings/company");
+  redirect(withToast("/settings/company", "Company profile saved"));
 }
 
 export type AccountOption = { id: number; name: string };

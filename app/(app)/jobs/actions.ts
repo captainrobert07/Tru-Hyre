@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { jobs, jobVendors } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
+import { withToast } from "@/lib/toast";
 
 const jobSchema = z.object({
   title: z.string().min(2).max(200),
@@ -84,7 +85,7 @@ export async function createJobAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/jobs");
-  redirect(`/jobs/${created.id}`);
+  redirect(withToast(`/jobs/${created.id}`, `Job "${v.title}" created`));
 }
 
 export async function updateJobAction(id: number, formData: FormData): Promise<void> {
@@ -131,7 +132,7 @@ export async function updateJobAction(id: number, formData: FormData): Promise<v
 
   revalidatePath(`/jobs/${id}`);
   revalidatePath("/jobs");
-  redirect(`/jobs/${id}`);
+  redirect(withToast(`/jobs/${id}`, "Job updated"));
 }
 
 export async function deleteJobAction(id: number): Promise<void> {
@@ -149,5 +150,5 @@ export async function deleteJobAction(id: number): Promise<void> {
     });
   }
   revalidatePath("/jobs");
-  redirect("/jobs");
+  redirect(withToast("/jobs", "Job deleted"));
 }

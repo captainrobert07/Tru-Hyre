@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { clientAccounts, clientContacts } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
+import { withToast } from "@/lib/toast";
 
 const clientSchema = z.object({
   name: z.string().min(2).max(200),
@@ -45,7 +46,7 @@ export async function createClientAction(formData: FormData): Promise<void> {
     summary: `Created client ${v.name}`,
   });
   revalidatePath("/clients");
-  redirect(`/clients/${created.id}`);
+  redirect(withToast(`/clients/${created.id}`, `Client "${v.name}" created`));
 }
 
 export async function updateClientAction(id: number, formData: FormData): Promise<void> {
@@ -76,7 +77,7 @@ export async function updateClientAction(id: number, formData: FormData): Promis
   });
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
-  redirect(`/clients/${id}`);
+  redirect(withToast(`/clients/${id}`, "Client updated"));
 }
 
 const contactSchema = z.object({
@@ -109,5 +110,5 @@ export async function addContactAction(clientId: number, formData: FormData): Pr
     summary: `Added contact ${v.name}`,
   });
   revalidatePath(`/clients/${clientId}`);
-  redirect(`/clients/${clientId}`);
+  redirect(withToast(`/clients/${clientId}`, `Contact "${v.name}" added`));
 }

@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { uploadPacket, deleteBlob } from "@/lib/blob";
 import { renderPacketPdf } from "@/lib/packet";
 import { requireAdmin, requireStaff } from "@/lib/rbac";
+import { withToast } from "@/lib/toast";
 
 const editSchema = z.object({
   fullName: z.string().min(2).max(200),
@@ -72,7 +73,58 @@ export async function updateCandidateAction(id: number, formData: FormData): Pro
   });
 
   revalidatePath(`/candidates/${id}`);
-  redirect(`/candidates/${id}`);
+  redirect(withToast(`/candidates/${id}`, "Candidate updated"));
+}
+
+const INLINE_FIELDS = [
+  "fullName",
+  "email",
+  "phone",
+  "location",
+  "currentTitle",
+  "currentCompany",
+  "experienceYears",
+  "noticePeriodDays",
+  "currentCtc",
+  "expectedCtc",
+  "summary",
+  "notes",
+] as const;
+
+type InlineField = (typeof INLINE_FIELDS)[number];
+
+const inlineSchema = z.object({
+  field: z.enum(INLINE_FIELDS),
+  value: z.string().max(2000),
+});
+
+export async function updateCandidateFieldAction(id: number, formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const parsed = inlineSchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) return;
+
+  const { field, value } = parsed.data;
+  const trimmed = value.trim();
+  const isNumeric = field === "noticePeriodDays";
+  const writeValue: string | number | null = trimmed === "" ? null : isNumeric ? Number(trimmed) : trimmed;
+  if (isNumeric && writeValue !== null && (typeof writeValue !== "number" || !Number.isFinite(writeValue))) return;
+
+  await db
+    .update(candidates)
+    .set({ [field]: writeValue, updatedAt: new Date() } as Record<InlineField, unknown> & { updatedAt: Date })
+    .where(eq(candidates.id, id));
+
+  await logAudit({
+    actorId: Number(user.id),
+    actorEmail: user.email,
+    action: "update",
+    targetType: "candidate",
+    targetId: id,
+    summary: `Updated ${field}`,
+    meta: { field, valueLength: trimmed.length },
+  });
+
+  revalidatePath(`/candidates/${id}`);
 }
 
 export async function setStageAction(id: number, toStage: string): Promise<void> {
@@ -209,7 +261,7 @@ export async function submitToJobAction(id: number, formData: FormData): Promise
 
   revalidatePath(`/candidates/${id}`);
   revalidatePath("/submissions");
-  redirect(`/candidates/${id}`);
+  redirect(withToast(`/candidates/${id}`, `Submitted to job #${parsed.data.jobId}`));
 }
 
 // ---------- GDPR / compliance ----------
@@ -260,7 +312,7 @@ export async function deleteCandidateAction(id: number): Promise<void> {
   });
 
   revalidatePath("/candidates");
-  redirect("/candidates");
+  redirect(withToast("/candidates", `Deleted ${c.fullName}`));
 }
 
 /**

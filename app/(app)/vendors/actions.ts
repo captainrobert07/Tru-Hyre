@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { vendorAccounts } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
+import { withToast } from "@/lib/toast";
 
 const schema = z.object({
   name: z.string().min(2).max(200),
@@ -43,7 +44,7 @@ export async function createVendorAction(formData: FormData): Promise<void> {
     summary: `Created vendor ${v.name}`,
   });
   revalidatePath("/vendors");
-  redirect(`/vendors/${created.id}`);
+  redirect(withToast(`/vendors/${created.id}`, `Vendor "${v.name}" created`));
 }
 
 export async function updateVendorAction(id: number, formData: FormData): Promise<void> {
@@ -73,5 +74,5 @@ export async function updateVendorAction(id: number, formData: FormData): Promis
   });
   revalidatePath(`/vendors/${id}`);
   revalidatePath("/vendors");
-  redirect(`/vendors/${id}`);
+  redirect(withToast(`/vendors/${id}`, "Vendor updated"));
 }

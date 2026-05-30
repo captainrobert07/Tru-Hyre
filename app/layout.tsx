@@ -2,7 +2,9 @@ import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter, Instrument_Serif } from "next/font/google";
+import { Toaster } from "sonner";
 import { APP_NAME, APP_TAGLINE } from "@/lib/utils";
+import { ToastListener } from "@/components/toast-listener";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +28,20 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${instrumentSerif.variable}`}>
-      <body className="min-h-screen font-sans">{children}</body>
+      <body className="min-h-screen font-sans">
+        {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            classNames: {
+              toast: "!rounded-xl2 !border !border-hairline !shadow-card !text-sm",
+              success: "!bg-brand-50 !text-brand-900 !border-brand-100",
+              error: "!bg-red-50 !text-red-900 !border-red-100",
+            },
+          }}
+        />
+        <ToastListener />
+      </body>
     </html>
   );
 }

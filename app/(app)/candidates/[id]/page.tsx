@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { SubmitButton } from "@/components/submit-button";
 import { StageButtons } from "@/components/stage-buttons";
-import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction } from "./actions";
+import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
 import { DangerZone } from "./danger-zone";
+import { InlineEdit } from "@/components/inline-edit";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,32 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       .orderBy(desc(submissions.createdAt)),
   ]);
 
+  // Fetch feedback for all submissions of this candidate, then weave a unified
+  // activity timeline (stage moves + feedback events).
+  const subIds = subs.map((s) => s.id);
+  const feedback = subIds.length === 0
+    ? []
+    : await db
+        .select({
+          id: feedbackEvents.id,
+          submissionId: feedbackEvents.submissionId,
+          kind: feedbackEvents.kind,
+          body: feedbackEvents.body,
+          createdAt: feedbackEvents.createdAt,
+        })
+        .from(feedbackEvents)
+        .where(inArray(feedbackEvents.submissionId, subIds))
+        .orderBy(desc(feedbackEvents.createdAt));
+
+  type Activity =
+    | { kind: "stage"; at: Date; from: string | null; to: string; note: string | null }
+    | { kind: "feedback"; at: Date; feedbackKind: string; body: string | null; submissionId: number };
+
+  const activity: Activity[] = [
+    ...history.map((h): Activity => ({ kind: "stage", at: h.createdAt, from: h.fromStage, to: h.toStage, note: h.note })),
+    ...feedback.map((f): Activity => ({ kind: "feedback", at: f.createdAt, feedbackKind: f.kind, body: f.body, submissionId: f.submissionId })),
+  ].sort((a, b) => b.at.getTime() - a.at.getTime());
+
   const latestResume = resume[0];
   const latestPacket = packets[0];
 
@@ -81,17 +108,69 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <Section title="Profile">
-            <Field label="Email">{cand.email || "—"}</Field>
-            <Field label="Phone">{cand.phone || "—"}</Field>
-            <Field label="Location">{cand.location || "—"}</Field>
-            <Field label="Current title">{cand.currentTitle || "—"}</Field>
-            <Field label="Current company">{cand.currentCompany || "—"}</Field>
-            {cand.summary && (
-              <div className="pt-3 border-t border-hairline mt-3">
-                <div className="text-xs text-ink-muted uppercase tracking-wide">Summary</div>
-                <p className="text-sm mt-1 leading-relaxed">{cand.summary}</p>
-              </div>
-            )}
+            <Field label="Email">
+              <InlineEdit
+                field="email"
+                defaultValue={cand.email || ""}
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Phone">
+              <InlineEdit
+                field="phone"
+                defaultValue={cand.phone || ""}
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Location">
+              <InlineEdit
+                field="location"
+                defaultValue={cand.location || ""}
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Current title">
+              <InlineEdit
+                field="currentTitle"
+                defaultValue={cand.currentTitle || ""}
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Current company">
+              <InlineEdit
+                field="currentCompany"
+                defaultValue={cand.currentCompany || ""}
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <div className="pt-3 border-t border-hairline mt-3">
+              <div className="text-xs text-ink-muted uppercase tracking-wide mb-1">Summary</div>
+              <InlineEdit
+                field="summary"
+                defaultValue={cand.summary || ""}
+                multiline
+                placeholder="Add a summary…"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </div>
             {cand.skills && cand.skills.length > 0 && (
               <div className="pt-3 border-t border-hairline mt-3">
                 <div className="text-xs text-ink-muted uppercase tracking-wide mb-2">Skills</div>
@@ -117,21 +196,55 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
             )}
           </Section>
 
-          <Section title="Stage history">
-            {history.length === 0 ? (
-              <div className="text-sm text-ink-soft px-1 py-2">No transitions yet.</div>
+          <Section title="Activity">
+            {activity.length === 0 ? (
+              <div className="text-sm text-ink-soft px-1 py-2">No activity yet.</div>
             ) : (
-              <ul className="text-sm divide-y divide-hairline -mx-1">
-                {history.map((h) => (
-                  <li key={h.id} className="px-1 py-2 flex items-center justify-between">
-                    <span>
-                      {h.fromStage ? `${h.fromStage} → ` : ""}{h.toStage}
-                      {h.note && <span className="text-ink-soft"> · {h.note}</span>}
-                    </span>
-                    <span className="text-xs text-ink-muted">{new Date(h.createdAt).toLocaleString()}</span>
+              <ol className="relative pl-5 space-y-3 before:absolute before:left-[7px] before:top-1.5 before:bottom-1.5 before:w-px before:bg-hairline">
+                {activity.map((a, i) => (
+                  <li key={i} className="relative">
+                    <span
+                      className={`absolute -left-5 top-1.5 size-3 rounded-full border-2 border-surface ${
+                        a.kind === "stage" && a.to === "rejected"
+                          ? "bg-red-500"
+                          : a.kind === "feedback" && a.feedbackKind === "reject"
+                          ? "bg-red-500"
+                          : a.kind === "feedback" && (a.feedbackKind === "shortlist" || a.feedbackKind === "offer" || a.feedbackKind === "joined")
+                          ? "bg-brand-500"
+                          : a.kind === "feedback"
+                          ? "bg-amber-500"
+                          : "bg-blue-500"
+                      }`}
+                    />
+                    {a.kind === "stage" ? (
+                      <div className="text-sm">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Stage</span>
+                          {a.from && <Badge tone="default">{a.from.replaceAll("_", " ")}</Badge>}
+                          <span className="text-ink-muted">→</span>
+                          <StageBadge stage={a.to} />
+                        </div>
+                        {a.note && <p className="text-xs text-ink-soft mt-1">{a.note}</p>}
+                        <div className="text-[10px] text-ink-muted mt-1">{new Date(a.at).toLocaleString()}</div>
+                      </div>
+                    ) : (
+                      <div className="text-sm">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Feedback</span>
+                          <Badge tone={a.feedbackKind === "reject" ? "red" : a.feedbackKind === "shortlist" || a.feedbackKind === "offer" || a.feedbackKind === "joined" ? "green" : a.feedbackKind === "hold" ? "amber" : "blue"}>
+                            {a.feedbackKind}
+                          </Badge>
+                          <Link href={`/jobs/${subs.find((s) => s.id === a.submissionId)?.jobId || ""}`} className="text-xs text-brand-700 hover:underline">
+                            on submission #{a.submissionId}
+                          </Link>
+                        </div>
+                        {a.body && <p className="text-xs text-ink-soft mt-1 whitespace-pre-line">{a.body}</p>}
+                        <div className="text-[10px] text-ink-muted mt-1">{new Date(a.at).toLocaleString()}</div>
+                      </div>
+                    )}
                   </li>
                 ))}
-              </ul>
+              </ol>
             )}
           </Section>
         </div>
@@ -149,11 +262,28 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
 
           <Section title="Resume">
             {latestResume ? (
-              <div className="text-sm space-y-2">
-                <div className="text-ink-soft truncate">{latestResume.originalName}</div>
-                <a href={latestResume.blobUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs">
-                  Download PDF
-                </a>
+              <div className="text-sm space-y-3">
+                <div className="flex items-center gap-2 text-ink-soft text-xs">
+                  <span className="truncate flex-1">{latestResume.originalName}</span>
+                  <a href={latestResume.blobUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline shrink-0">
+                    Open in new tab ↗
+                  </a>
+                </div>
+                <div className="rounded-lg overflow-hidden border border-hairline bg-canvas">
+                  <object
+                    data={`${latestResume.blobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                    type="application/pdf"
+                    className="w-full h-[420px]"
+                    aria-label={`Resume preview for ${cand.fullName}`}
+                  >
+                    <div className="p-6 text-center text-sm text-ink-soft">
+                      Your browser can&apos;t display PDFs inline.{" "}
+                      <a href={latestResume.blobUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">
+                        Download instead.
+                      </a>
+                    </div>
+                  </object>
+                </div>
               </div>
             ) : (
               <div className="text-sm text-ink-soft">Pasted text — no file stored.</div>
