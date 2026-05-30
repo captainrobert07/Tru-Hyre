@@ -420,7 +420,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               current={cand.stage}
               setStage={async (stage) => {
                 "use server";
-                await setStageAction(candidateId, stage);
+                return await setStageAction(candidateId, stage);
               }}
             />
           </Section>
