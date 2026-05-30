@@ -24,7 +24,7 @@ const SKILL_LIBRARY = [
 ];
 
 export async function parseResume(buffer: Buffer): Promise<ParsedResume> {
-  const u8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const u8 = Uint8Array.from(buffer);
   const pdf = await getDocumentProxy(u8);
   const { text } = await extractText(pdf, { mergePages: true });
   const flat = (Array.isArray(text) ? text.join("\n") : text).replace(/\r/g, "");

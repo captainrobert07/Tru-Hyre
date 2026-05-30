@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ["unpdf", "@react-pdf/renderer"],
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
   },
