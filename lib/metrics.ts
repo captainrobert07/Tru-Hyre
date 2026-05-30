@@ -215,15 +215,14 @@ export async function getJoinedCompensation(): Promise<CompensationRow> {
   const rows = await db.execute<{ median: string | null; mean: string | null; sample_count: number }>(sql`
     SELECT
       percentile_cont(0.5) WITHIN GROUP (
-        ORDER BY (c.expected_ctc::numeric)
+        ORDER BY c.expected_ctc
       )::numeric(20,0) AS median,
-      AVG(c.expected_ctc::numeric)::numeric(20,0) AS mean,
+      AVG(c.expected_ctc)::numeric(20,0) AS mean,
       COUNT(*)::int AS sample_count
     FROM ${submissions} s
     INNER JOIN ${candidates} c ON c.id = s.candidate_id
     WHERE s.status = 'joined'
       AND c.expected_ctc IS NOT NULL
-      AND c.expected_ctc <> ''
   `);
   const r = ((rows.rows || rows) as Array<{ median: string | null; mean: string | null; sample_count: number }>)[0] ?? { median: null, mean: null, sample_count: 0 };
   return {
