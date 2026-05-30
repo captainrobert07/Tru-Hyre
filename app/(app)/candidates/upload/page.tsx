@@ -9,8 +9,8 @@ export default async function UploadPage() {
   return (
     <>
       <PageHeader
-        title="Upload resume"
-        subtitle="PDF only — Tru Hyre auto-parses name, email, phone, and skills, then runs duplicate detection."
+        title="New candidate"
+        subtitle="Upload a PDF or paste resume text. Tru Hyre extracts the full profile and runs duplicate detection automatically."
       />
       <div className="card max-w-2xl p-6">
         <UploadForm />

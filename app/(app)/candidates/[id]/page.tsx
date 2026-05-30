@@ -162,13 +162,13 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           <Section title="Resume">
             {latestResume ? (
               <div className="text-sm space-y-2">
-                <div className="text-ink-soft">{latestResume.originalName}</div>
+                <div className="text-ink-soft truncate">{latestResume.originalName}</div>
                 <a href={latestResume.blobUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs">
                   Download PDF
                 </a>
               </div>
             ) : (
-              <div className="text-sm text-ink-soft">No file on record.</div>
+              <div className="text-sm text-ink-soft">Pasted text — no file stored.</div>
             )}
           </Section>
 

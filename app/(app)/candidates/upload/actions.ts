@@ -5,47 +5,51 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { candidates, resumeFiles, stageHistory } from "@/db/schema";
 import { uploadResume } from "@/lib/blob";
-import { parseResume } from "@/lib/parse";
+import { extractFields, parseResume, type ParsedResume } from "@/lib/parse";
 import { contentHash, findDuplicates } from "@/lib/dedupe";
 import { logAudit } from "@/lib/audit";
 import { makeRefId } from "@/lib/refid";
 import { requireStaff } from "@/lib/rbac";
 
-export async function uploadResumeAction(formData: FormData): Promise<
+type UploadResult =
   | { ok: false; error: string }
-  | { ok: true; candidateId: number; duplicates: { reason: string; candidateId: number; fullName: string }[] }
-> {
-  const user = await requireStaff();
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a PDF file." };
-  if (file.size > 10 * 1024 * 1024) return { ok: false, error: "File too large (max 10 MB)." };
-  if (!/pdf/i.test(file.type) && !file.name.toLowerCase().endsWith(".pdf"))
-    return { ok: false, error: "Only PDF resumes are supported." };
+  | { ok: true; candidateId: number; duplicates: { reason: string; candidateId: number; fullName: string }[] };
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const hash = contentHash(buf);
+const EMPTY: ParsedResume = {
+  text: "",
+  fullName: null,
+  email: null,
+  phone: null,
+  location: null,
+  currentTitle: null,
+  currentCompany: null,
+  experienceYears: null,
+  noticePeriodDays: null,
+  currentCtc: null,
+  expectedCtc: null,
+  summary: null,
+  skills: [],
+};
 
-  let parsed;
-  let parseStatus: "ok" | "failed" = "ok";
-  let parseError: string | null = null;
-  try {
-    parsed = await parseResume(buf);
-  } catch (e) {
-    parseStatus = "failed";
-    parseError = (e as Error).message;
-    parsed = {
-      text: "",
-      fullName: null,
-      email: null,
-      phone: null,
-      location: null,
-      currentTitle: null,
-      currentCompany: null,
-      summary: null,
-      skills: [],
-    };
-  }
-
+async function persistCandidate({
+  parsed,
+  parseStatus,
+  parseError,
+  blob,
+  fileMeta,
+  hash,
+  fallbackName,
+  user,
+}: {
+  parsed: ParsedResume;
+  parseStatus: "ok" | "failed";
+  parseError: string | null;
+  blob: { url: string; pathname: string } | null;
+  fileMeta: { name: string; contentType: string; size: number } | null;
+  hash: string | null;
+  fallbackName: string;
+  user: { id: string; email: string };
+}): Promise<UploadResult> {
   const dupes = await findDuplicates({
     email: parsed.email,
     phone: parsed.phone,
@@ -53,10 +57,8 @@ export async function uploadResumeAction(formData: FormData): Promise<
     hash,
   });
 
-  const blob = await uploadResume(buf, file.name, file.type || "application/pdf");
-
   const refId = makeRefId();
-  const fullName = parsed.fullName || file.name.replace(/\.pdf$/i, "");
+  const fullName = parsed.fullName || fallbackName;
 
   const [created] = await db
     .insert(candidates)
@@ -68,6 +70,10 @@ export async function uploadResumeAction(formData: FormData): Promise<
       location: parsed.location,
       currentTitle: parsed.currentTitle,
       currentCompany: parsed.currentCompany,
+      experienceYears: parsed.experienceYears,
+      noticePeriodDays: parsed.noticePeriodDays,
+      currentCtc: parsed.currentCtc,
+      expectedCtc: parsed.expectedCtc,
       summary: parsed.summary,
       skills: parsed.skills,
       stage: "hr_review",
@@ -77,22 +83,24 @@ export async function uploadResumeAction(formData: FormData): Promise<
     })
     .returning();
 
-  await db.insert(resumeFiles).values({
-    candidateId: created.id,
-    blobUrl: blob.url,
-    blobPathname: blob.pathname,
-    originalName: file.name,
-    contentType: file.type || "application/pdf",
-    sizeBytes: file.size,
-    contentHash: hash,
-  });
+  if (blob && fileMeta) {
+    await db.insert(resumeFiles).values({
+      candidateId: created.id,
+      blobUrl: blob.url,
+      blobPathname: blob.pathname,
+      originalName: fileMeta.name,
+      contentType: fileMeta.contentType,
+      sizeBytes: fileMeta.size,
+      contentHash: hash,
+    });
+  }
 
   await db.insert(stageHistory).values({
     candidateId: created.id,
     fromStage: null,
     toStage: "hr_review",
     changedById: Number(user.id),
-    note: `Resume uploaded${parseStatus === "failed" ? ` (parse failed: ${parseError})` : ""}.`,
+    note: `Resume ${blob ? "uploaded" : "pasted"}${parseStatus === "failed" ? ` (parse failed: ${parseError})` : ""}.`,
   });
 
   await logAudit({
@@ -101,8 +109,8 @@ export async function uploadResumeAction(formData: FormData): Promise<
     action: "create",
     targetType: "candidate",
     targetId: created.id,
-    summary: `Uploaded resume for ${fullName}`,
-    meta: { refId, parseStatus, dupes: dupes.length },
+    summary: `Created candidate ${fullName}`,
+    meta: { refId, parseStatus, dupes: dupes.length, source: blob ? "pdf" : "paste" },
   });
 
   revalidatePath("/candidates");
@@ -115,4 +123,64 @@ export async function uploadResumeAction(formData: FormData): Promise<
     };
   }
   redirect(`/candidates/${created.id}`);
+}
+
+export async function uploadResumeAction(_prev: UploadResult | null, formData: FormData): Promise<UploadResult> {
+  const user = await requireStaff();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a PDF file." };
+  if (file.size > 10 * 1024 * 1024) return { ok: false, error: "File too large (max 10 MB)." };
+  if (!/pdf/i.test(file.type) && !file.name.toLowerCase().endsWith(".pdf"))
+    return { ok: false, error: "Only PDF resumes are supported." };
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const hash = contentHash(buf);
+
+  let parsed: ParsedResume = EMPTY;
+  let parseStatus: "ok" | "failed" = "ok";
+  let parseError: string | null = null;
+  try {
+    parsed = await parseResume(buf);
+  } catch (e) {
+    parseStatus = "failed";
+    parseError = (e as Error).message;
+  }
+
+  const blob = await uploadResume(buf, file.name, file.type || "application/pdf");
+
+  return persistCandidate({
+    parsed,
+    parseStatus,
+    parseError,
+    blob,
+    fileMeta: { name: file.name, contentType: file.type || "application/pdf", size: file.size },
+    hash,
+    fallbackName: file.name.replace(/\.pdf$/i, ""),
+    user,
+  });
+}
+
+export async function pasteResumeAction(_prev: UploadResult | null, formData: FormData): Promise<UploadResult> {
+  const user = await requireStaff();
+  const text = ((formData.get("text") as string) || "").trim();
+  if (text.length < 30) return { ok: false, error: "Paste the resume text (at least 30 characters)." };
+  if (text.length > 200_000) return { ok: false, error: "Text too long (max 200 KB)." };
+
+  let parsed: ParsedResume;
+  try {
+    parsed = extractFields(text);
+  } catch (e) {
+    return { ok: false, error: `Parse failed: ${(e as Error).message}` };
+  }
+
+  return persistCandidate({
+    parsed,
+    parseStatus: "ok",
+    parseError: null,
+    blob: null,
+    fileMeta: null,
+    hash: null,
+    fallbackName: parsed.fullName || "Pasted candidate",
+    user,
+  });
 }

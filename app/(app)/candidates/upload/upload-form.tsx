@@ -1,59 +1,111 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
-import { uploadResumeAction } from "./actions";
+import { useActionState, useState } from "react";
+import { uploadResumeAction, pasteResumeAction } from "./actions";
 
 type UploadResult = Awaited<ReturnType<typeof uploadResumeAction>>;
 
 export function UploadForm() {
-  const [state, formAction, pending] = useActionState(
-    async (_prev: UploadResult | null, formData: FormData) => {
-      const r = await uploadResumeAction(formData);
-      return r ?? null;
-    },
-    null,
-  );
+  const [mode, setMode] = useState<"pdf" | "paste">("pdf");
+  const [pdfState, pdfAction, pdfPending] = useActionState<UploadResult | null, FormData>(uploadResumeAction, null);
+  const [pasteState, pasteAction, pastePending] = useActionState<UploadResult | null, FormData>(pasteResumeAction, null);
+  const state = mode === "pdf" ? pdfState : pasteState;
+  const pending = mode === "pdf" ? pdfPending : pastePending;
 
   return (
-    <form action={formAction} className="space-y-4">
-      <div>
-        <label htmlFor="file" className="label">PDF resume</label>
-        <input id="file" name="file" type="file" accept="application/pdf,.pdf" required className="input file:mr-3 file:btn-ghost file:text-xs file:px-2 file:py-1 file:h-7 cursor-pointer" />
-      </div>
-
-      {state && state.ok === false && (
-        <div className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{state.error}</div>
-      )}
-
-      {state && state.ok === true && state.duplicates && state.duplicates.length > 0 && (
-        <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
-          <div className="font-medium">Possible duplicates detected:</div>
-          <ul className="list-disc pl-5 text-xs space-y-0.5">
-            {state.duplicates.map((d, i) => (
-              <li key={i}>
-                <Link href={`/candidates/${d.candidateId}`} className="underline">
-                  {d.fullName}
-                </Link>
-                <span className="text-amber-700"> — matched on {d.reason}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="text-xs">
-            New record was created anyway.{" "}
-            <Link href={`/candidates/${state.candidateId}`} className="underline font-medium">
-              Open new candidate →
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <button type="submit" disabled={pending} className="btn-primary">
-          {pending ? "Uploading…" : "Upload"}
+    <div className="space-y-4">
+      <div className="inline-flex rounded-lg border border-hairline p-0.5 bg-canvas">
+        <button
+          type="button"
+          onClick={() => setMode("pdf")}
+          className={`px-3 h-8 text-xs rounded-md transition-colors ${mode === "pdf" ? "bg-surface shadow-card text-ink" : "text-ink-soft"}`}
+        >
+          Upload PDF
         </button>
-        <Link href="/candidates" className="btn-ghost">Cancel</Link>
+        <button
+          type="button"
+          onClick={() => setMode("paste")}
+          className={`px-3 h-8 text-xs rounded-md transition-colors ${mode === "paste" ? "bg-surface shadow-card text-ink" : "text-ink-soft"}`}
+        >
+          Paste text
+        </button>
       </div>
-    </form>
+
+      {mode === "pdf" ? (
+        <form action={pdfAction} className="space-y-4">
+          <div>
+            <label htmlFor="file" className="label">PDF resume</label>
+            <input
+              id="file"
+              name="file"
+              type="file"
+              accept="application/pdf,.pdf"
+              required
+              className="input file:mr-3 file:btn-ghost file:text-xs file:px-2 file:py-1 file:h-7 cursor-pointer"
+            />
+            <p className="text-xs text-ink-muted mt-1.5">Max 10 MB. Tru Hyre extracts name, contact, location, title, company, experience, notice, CTC, summary, and skills.</p>
+          </div>
+          <Result state={state} />
+          <div className="flex gap-2">
+            <button type="submit" disabled={pending} className="btn-primary">
+              {pending ? "Uploading…" : "Upload"}
+            </button>
+            <Link href="/candidates" className="btn-ghost">Cancel</Link>
+          </div>
+        </form>
+      ) : (
+        <form action={pasteAction} className="space-y-4">
+          <div>
+            <label htmlFor="text" className="label">Resume text</label>
+            <textarea
+              id="text"
+              name="text"
+              required
+              rows={14}
+              className="input py-2 font-mono text-xs leading-relaxed"
+              placeholder="Paste the resume content here…&#10;&#10;Tip: from a PDF, press Ctrl-A then Ctrl-C inside the document and paste."
+            />
+            <p className="text-xs text-ink-muted mt-1.5">No file is stored. Tru Hyre runs the same extractor over the text you paste.</p>
+          </div>
+          <Result state={state} />
+          <div className="flex gap-2">
+            <button type="submit" disabled={pending} className="btn-primary">
+              {pending ? "Saving…" : "Create candidate"}
+            </button>
+            <Link href="/candidates" className="btn-ghost">Cancel</Link>
+          </div>
+        </form>
+      )}
+    </div>
   );
+}
+
+function Result({ state }: { state: UploadResult | null }) {
+  if (!state) return null;
+  if (state.ok === false) {
+    return <div className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{state.error}</div>;
+  }
+  if (state.duplicates.length > 0) {
+    return (
+      <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
+        <div className="font-medium">Possible duplicates detected:</div>
+        <ul className="list-disc pl-5 text-xs space-y-0.5">
+          {state.duplicates.map((d, i) => (
+            <li key={i}>
+              <Link href={`/candidates/${d.candidateId}`} className="underline">{d.fullName}</Link>
+              <span className="text-amber-700"> — matched on {d.reason}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="text-xs">
+          New record was created anyway.{" "}
+          <Link href={`/candidates/${state.candidateId}`} className="underline font-medium">
+            Open new candidate →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
