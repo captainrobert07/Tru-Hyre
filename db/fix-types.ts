@@ -12,6 +12,8 @@
  * SQL ALTER without truncating, so drizzle's next push sees no diff.
  */
 import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import { sql } from "drizzle-orm";
 
 async function main() {
   const url = process.env.POSTGRES_URL || process.env.DATABASE_URL;
@@ -19,19 +21,21 @@ async function main() {
     console.log("[fix-types] no DB url, skipping");
     return;
   }
-  const sql = neon(url);
+  const client = neon(url);
+  const db = drizzle(client);
 
   // Detect whether either column is still owned by a sequence (i.e., serial).
-  const probe = await sql<{ column_name: string; is_serial: boolean }[]>`
+  const probe = await db.execute<{ column_name: string; is_serial: boolean }>(sql`
     SELECT
       column_name,
       (column_default IS NOT NULL AND column_default LIKE 'nextval(%') AS is_serial
     FROM information_schema.columns
     WHERE table_name = 'users'
       AND column_name IN ('client_account_id', 'vendor_account_id')
-  `;
+  `);
 
-  const needsFix = probe.filter((r) => r.is_serial);
+  const probeRows = (probe.rows || probe) as Array<{ column_name: string; is_serial: boolean }>;
+  const needsFix = probeRows.filter((r) => r.is_serial);
   if (needsFix.length === 0) {
     console.log("[fix-types] users FK columns already integer, no-op");
     return;
@@ -40,12 +44,15 @@ async function main() {
   console.log(`[fix-types] converting ${needsFix.length} serial columns to plain integer…`);
   for (const r of needsFix) {
     const col = r.column_name;
-    // Drop the default (nextval), drop the owned-by sequence, leave the values intact.
-    // Type stays integer-compatible so no data loss.
-    await sql.query(`ALTER TABLE users ALTER COLUMN ${col} DROP DEFAULT`);
-    // Find and drop the orphan sequence
+    if (!/^[a-z_]+$/.test(col)) {
+      console.warn(`[fix-types] skipping suspicious col name ${col}`);
+      continue;
+    }
+    // sql.raw is required for identifier interpolation since drizzle won't
+    // parameterize a column name. The col name passed regex validation above.
+    await db.execute(sql.raw(`ALTER TABLE users ALTER COLUMN ${col} DROP DEFAULT`));
     const seqName = `users_${col}_seq`;
-    await sql.query(`DROP SEQUENCE IF EXISTS ${seqName}`);
+    await db.execute(sql.raw(`DROP SEQUENCE IF EXISTS ${seqName}`));
     console.log(`[fix-types]   ${col}: dropped default + sequence`);
   }
   console.log("[fix-types] done");
