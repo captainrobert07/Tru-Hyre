@@ -27,11 +27,13 @@ const editSchema = z.object({
   notes: z.string().max(2000).optional().or(z.literal("")),
 });
 
-export async function updateCandidateAction(id: number, formData: FormData): Promise<{ ok: false; error: string } | void> {
+export async function updateCandidateAction(id: number, formData: FormData): Promise<void> {
   const user = await requireStaff();
   const raw = Object.fromEntries(formData.entries());
   const parsed = editSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "Check the highlighted fields." };
+  if (!parsed.success) {
+    redirect(`/candidates/${id}/edit?error=invalid`);
+  }
 
   const v = parsed.data;
   const skills = (v.skillsCsv || "")
@@ -154,19 +156,25 @@ const submitSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-export async function submitToJobAction(id: number, formData: FormData): Promise<{ ok: false; error: string } | void> {
+export async function submitToJobAction(id: number, formData: FormData): Promise<void> {
   const user = await requireStaff();
   const parsed = submitSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!parsed.success) return { ok: false, error: "Pick a job." };
+  if (!parsed.success) {
+    redirect(`/candidates/${id}?error=invalid_job`);
+  }
 
   const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
-  if (!c) return { ok: false, error: "Candidate not found." };
+  if (!c) {
+    redirect(`/candidates/${id}?error=not_found`);
+  }
 
   const latestPacket = (
     await db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)).orderBy(clientPackets.generatedAt)
   ).pop();
 
-  if (!latestPacket) return { ok: false, error: "Generate a client packet first." };
+  if (!latestPacket) {
+    redirect(`/candidates/${id}?error=packet_required`);
+  }
 
   await db.insert(submissions).values({
     candidateId: id,
