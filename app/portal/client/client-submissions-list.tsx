@@ -11,7 +11,7 @@ import { useConfirm } from "@/components/confirm";
 import {
   quickClientFeedbackAction,
   bulkClientFeedbackAction,
-} from "./submissions/[id]/actions";
+} from "./actions";
 
 export type SubmissionRow = {
   id: number;
