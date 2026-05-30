@@ -70,23 +70,27 @@ export default async function ReportsPage() {
           value={coverage.ratio.toFixed(1)}
           tone={coverage.ratio >= 3 ? "good" : coverage.ratio >= 1 ? "default" : "attention"}
           hint={`${coverage.activeCandidates} active / ${coverage.openPositions} positions`}
+          tooltip="Active candidates ÷ open positions across all open jobs. >3 healthy, 1-3 tight, <1 starved."
         />
         <StatCard
           label="Offer acceptance"
           value={`${acceptance.acceptanceRate}%`}
           tone={acceptance.acceptanceRate >= 80 ? "good" : "default"}
           hint={`${acceptance.joins} joined / ${acceptance.offers + acceptance.joins} offers (1y)`}
+          tooltip="Of every offer that closed in the last year, what fraction joined? Rejected offers count against this rate."
         />
         <StatCard
           label="4-wk submission avg"
           value={forecast.weeklyAvg}
           hint={`projected ${forecast.projectedThisMonth} this month`}
           tone="info"
+          tooltip="Average submissions per week over the trailing 4 weeks. Used to project this calendar month."
         />
         <StatCard
           label="Median joined CTC"
           value={comp.median ? formatCompact(comp.median) : "—"}
           hint={comp.sampleCount > 0 ? `from ${comp.sampleCount} hire${comp.sampleCount === 1 ? "" : "s"}` : "no joined candidates yet"}
+          tooltip="Median expected CTC across all joined candidates. Proxy for cost-per-hire."
         />
       </div>
 

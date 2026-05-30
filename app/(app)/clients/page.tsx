@@ -4,8 +4,11 @@ import { db } from "@/db";
 import { clientAccounts, jobs } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { parseListParams } from "@/lib/list-params";
-import { PageHeader, ListRow, EmptyState, Badge } from "@/components/primitives";
+import { PageHeader, EmptyState, Badge } from "@/components/primitives";
 import { ListToolbar, Pager } from "@/components/list-toolbar";
+import { BulkList } from "@/components/bulk-list";
+import { Avatar } from "@/components/avatar";
+import { bulkClientAction } from "./bulk-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -67,17 +70,32 @@ export default async function ClientsPage({
         />
       ) : (
         <>
-          <div className="card overflow-hidden divide-y divide-hairline">
-            {rows.map((c) => (
-              <ListRow
-                key={c.id}
-                href={`/clients/${c.id}`}
-                primary={c.name}
-                secondary={[c.industry, c.primaryContactName].filter(Boolean).join(" · ") || undefined}
-                trailing={<Badge tone="default">{c.jobCount} job{c.jobCount === 1 ? "" : "s"}</Badge>}
-              />
-            ))}
-          </div>
+          <BulkList
+            rows={rows.map((c) => ({
+              id: c.id,
+              href: `/clients/${c.id}`,
+              primary: (
+                <span className="inline-flex items-center gap-2">
+                  <Avatar name={c.name} size="sm" />
+                  {c.name}
+                </span>
+              ),
+              secondary: [c.industry, c.primaryContactName].filter(Boolean).join(" · ") || undefined,
+              trailing: <Badge tone="default">{c.jobCount} job{c.jobCount === 1 ? "" : "s"}</Badge>,
+            }))}
+            actions={[
+              {
+                kind: "destructive",
+                label: "Delete",
+                confirmTitle: (n) => `Delete ${n} client${n === 1 ? "" : "s"}?`,
+                confirmDescription: "Removes the client account and cascade-deletes their jobs, contacts, and submissions. Audit log entries survive.",
+                run: async (ids) => {
+                  "use server";
+                  return await bulkClientAction({ ids, action: "delete" });
+                },
+              },
+            ]}
+          />
           <Pager basePath="/clients" page={page} pageSize={pageSize} total={total} q={q} />
         </>
       )}

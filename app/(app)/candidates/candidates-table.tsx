@@ -8,6 +8,7 @@ import { Eye } from "lucide-react";
 import { useConfirm } from "@/components/confirm";
 import { SlideOver } from "@/components/slide-over";
 import { StageBadge, Badge } from "@/components/primitives";
+import { Avatar } from "@/components/avatar";
 import { bulkCandidateAction } from "./bulk-actions";
 
 type Row = {
@@ -184,6 +185,7 @@ export function CandidatesTable({
                 className="size-4 rounded border-hairline text-brand-500 focus:ring-brand-500"
                 aria-label={`Select ${c.fullName}`}
               />
+              <Avatar name={c.fullName} size="sm" />
               <Link href={`/candidates/${c.id}`} className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate flex items-center gap-2">
                   {c.fullName}

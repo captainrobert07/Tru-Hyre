@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { vendorAccounts, candidates, jobs, jobVendors } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, ListRow, StageBadge, JobStatusBadge, EmptyState } from "@/components/primitives";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Avatar } from "@/components/avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +34,20 @@ export default async function VendorDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
+      <Breadcrumbs
+        crumbs={[
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "/vendors", label: "Vendors" },
+          { label: v.name },
+        ]}
+      />
       <PageHeader
-        title={v.name}
+        title={
+          <span className="inline-flex items-center gap-3">
+            <Avatar name={v.name} size="lg" />
+            {v.name}
+          </span>
+        }
         subtitle={[v.country, v.contactName].filter(Boolean).join(" · ") || undefined}
         actions={<Link href={`/vendors/${v.id}/edit`} className="btn-ghost">Edit</Link>}
       />

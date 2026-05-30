@@ -290,45 +290,59 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <div className="card p-5">
-          <div className="text-xs text-ink-muted uppercase tracking-wide">Coverage ratio</div>
-          <div className="stat-big mt-2">{coverage.ratio.toFixed(1)}</div>
-          <div className="text-xs text-ink-soft mt-1">
-            {coverage.activeCandidates}/{coverage.openPositions} active/positions
-            {coverage.ratio < 1 && coverage.openPositions > 0 && (
-              <Badge tone="red" className="ml-1.5 text-[10px]">starved</Badge>
-            )}
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="text-xs text-ink-muted uppercase tracking-wide">Offer acceptance</div>
-          <div className="stat-big mt-2">{acceptance.acceptanceRate}<span className="text-ink-muted text-2xl">%</span></div>
-          <div className="text-xs text-ink-soft mt-1">
-            {acceptance.joins}/{acceptance.offers + acceptance.joins} joined (1y)
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="text-xs text-ink-muted uppercase tracking-wide">Time to submit</div>
-          <div className="stat-big mt-2">{avgTimeToSubmit > 0 ? avgTimeToSubmit.toFixed(1) : "—"}</div>
-          <div className="text-xs text-ink-soft mt-1">days, last 90d</div>
-        </div>
-        <div className="card p-5">
-          <div className="text-xs text-ink-muted uppercase tracking-wide">Time to offer</div>
-          <div className="stat-big mt-2">{avgTimeToOffer > 0 ? avgTimeToOffer.toFixed(1) : "—"}</div>
-          <div className="text-xs text-ink-soft mt-1">days, last 180d</div>
-        </div>
-        <div className="card p-5">
-          <div className="text-xs text-ink-muted uppercase tracking-wide">Submit rate</div>
-          <div className="stat-big mt-2">
-            {candTotal > 0 ? Math.round((subsTotal / candTotal) * 100) : 0}<span className="text-ink-muted text-2xl">%</span>
-          </div>
-          <div className="text-xs text-ink-soft mt-1">cands → subs</div>
-        </div>
-        <div className="card p-5">
-          <div className="text-xs text-ink-muted uppercase tracking-wide">Forecast</div>
-          <div className="stat-big mt-2">{forecast.projectedThisMonth}</div>
-          <div className="text-xs text-ink-soft mt-1">subs this month at {forecast.weeklyAvg}/wk</div>
-        </div>
+        <DashStat
+          label="Coverage ratio"
+          value={coverage.ratio.toFixed(1)}
+          hint={
+            <>
+              {coverage.activeCandidates}/{coverage.openPositions} active/positions
+              {coverage.ratio < 1 && coverage.openPositions > 0 && (
+                <Badge tone="red" className="ml-1.5 text-[10px]">starved</Badge>
+              )}
+            </>
+          }
+          tooltip="Active candidates ÷ open positions across all open jobs. >3 healthy, 1-3 tight, <1 starved."
+        />
+        <DashStat
+          label="Offer acceptance"
+          value={
+            <>
+              {acceptance.acceptanceRate}
+              <span className="text-ink-muted text-2xl">%</span>
+            </>
+          }
+          hint={`${acceptance.joins}/${acceptance.offers + acceptance.joins} joined (1y)`}
+          tooltip="Of every offer that closed in the last year, what fraction joined?"
+        />
+        <DashStat
+          label="Time to submit"
+          value={avgTimeToSubmit > 0 ? avgTimeToSubmit.toFixed(1) : "—"}
+          hint="days, last 90d"
+          tooltip="Average days from candidate upload to first submission, last 90-day cohort."
+        />
+        <DashStat
+          label="Time to offer"
+          value={avgTimeToOffer > 0 ? avgTimeToOffer.toFixed(1) : "—"}
+          hint="days, last 180d"
+          tooltip="Average days from candidate upload to offer/joined, last 180-day cohort."
+        />
+        <DashStat
+          label="Submit rate"
+          value={
+            <>
+              {candTotal > 0 ? Math.round((subsTotal / candTotal) * 100) : 0}
+              <span className="text-ink-muted text-2xl">%</span>
+            </>
+          }
+          hint="cands → subs"
+          tooltip="What % of all candidates ever became a submission to a job. Higher = better screening."
+        />
+        <DashStat
+          label="Forecast"
+          value={forecast.projectedThisMonth}
+          hint={`subs this month at ${forecast.weeklyAvg}/wk`}
+          tooltip="Projected submissions this calendar month, scaled from the trailing 4-week pace."
+        />
       </div>
 
       <div className="card p-5 mb-6">
@@ -666,6 +680,48 @@ function MyDayBanner({
         />
       </div>
     </div>
+  );
+}
+
+function DashStat({
+  label,
+  value,
+  hint,
+  tooltip,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint: React.ReactNode;
+  tooltip: string;
+}) {
+  return (
+    <div className="card p-5">
+      <div className="text-xs text-ink-muted uppercase tracking-wide flex items-center gap-1.5">
+        <span className="truncate">{label}</span>
+        <DashTooltip text={tooltip} />
+      </div>
+      <div className="stat-big mt-2">{value}</div>
+      <div className="text-xs text-ink-soft mt-1">{hint}</div>
+    </div>
+  );
+}
+
+function DashTooltip({ text }: { text: string }) {
+  return (
+    <span
+      tabIndex={0}
+      className="group relative inline-flex items-center justify-center size-4 rounded-full bg-canvas text-ink-muted text-[9px] font-bold cursor-help hover:bg-hairline hover:text-ink-soft focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 align-middle shrink-0"
+      aria-label={text}
+    >
+      ?
+      <span
+        role="tooltip"
+        className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg bg-ink_inverted text-white text-[11px] font-normal leading-relaxed whitespace-normal w-56 shadow-pop pointer-events-none z-50"
+      >
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 size-2 rotate-45 bg-ink_inverted" />
+      </span>
+    </span>
   );
 }
 

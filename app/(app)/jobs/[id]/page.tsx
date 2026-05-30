@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { jobs, clientAccounts, jobVendors, vendorAccounts, submissions, candidates } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, JobStatusBadge, Badge, StatCard } from "@/components/primitives";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,13 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
 
   return (
     <>
+      <Breadcrumbs
+        crumbs={[
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "/jobs", label: "Jobs" },
+          { label: j.title },
+        ]}
+      />
       <PageHeader
         title={j.title}
         subtitle={

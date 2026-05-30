@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { clientAccounts, clientContacts, jobs } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, JobStatusBadge, Badge, ListRow, EmptyState } from "@/components/primitives";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Avatar } from "@/components/avatar";
 import { addContactAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +32,20 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
+      <Breadcrumbs
+        crumbs={[
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "/clients", label: "Clients" },
+          { label: c.name },
+        ]}
+      />
       <PageHeader
-        title={c.name}
+        title={
+          <span className="inline-flex items-center gap-3">
+            <Avatar name={c.name} size="lg" />
+            {c.name}
+          </span>
+        }
         subtitle={c.industry || undefined}
         actions={<Link href={`/clients/${c.id}/edit`} className="btn-ghost">Edit</Link>}
       />

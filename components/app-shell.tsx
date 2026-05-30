@@ -5,6 +5,8 @@ import { APP_NAME } from "@/lib/utils";
 import { MobileMore } from "./mobile-more";
 import { CommandPalette, CommandTrigger } from "./command-palette";
 import { ConfirmProvider } from "./confirm";
+import { ShortcutHelp, ShortcutTrigger } from "./shortcut-help";
+import { Avatar } from "./avatar";
 import {
   LayoutDashboard,
   Users,
@@ -59,6 +61,7 @@ export function AppShell({
     <ConfirmProvider>
     <div className="min-h-screen flex flex-col">
       <CommandPalette />
+      <ShortcutHelp />
       {/* Top bar — desktop pill nav */}
       <header className="hidden md:flex sticky top-0 z-40 bg-canvas/80 backdrop-blur-md px-6 lg:px-10 py-4 items-center gap-4">
         <Link href="/dashboard" className="flex items-center gap-2 mr-2 shrink-0">
@@ -95,15 +98,14 @@ export function AppShell({
 
         <div className="flex items-center gap-2 shrink-0">
           <CommandTrigger />
+          <ShortcutTrigger />
           <Link href="/notifications" className="relative size-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-soft hover:text-ink" aria-label="Notifications">
             <Bell size={16} />
             {unread > 0 && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-attention-500" />}
           </Link>
           <details className="relative">
             <summary className="list-none cursor-pointer flex items-center gap-2 pr-3 pl-1 h-10 rounded-full bg-surface border border-hairline shadow-pill">
-              <span className="size-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-white text-xs font-bold flex items-center justify-center">
-                {(user.fullName || user.email).slice(0, 1).toUpperCase()}
-              </span>
+              <Avatar name={user.fullName} email={user.email} size="md" />
               <span className="hidden lg:flex flex-col text-left leading-none gap-0.5">
                 <span className="text-xs font-medium truncate max-w-[120px]">{user.fullName || user.email}</span>
                 <span className="text-[10px] text-ink-muted uppercase tracking-wide">{user.role}</span>

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SubmitButton } from "@/components/submit-button";
 import { StageButtons } from "@/components/stage-buttons";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
@@ -99,6 +100,13 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
 
   return (
     <>
+      <Breadcrumbs
+        crumbs={[
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "/candidates", label: "Candidates" },
+          { label: cand.fullName },
+        ]}
+      />
       <PageHeader
         title={cand.fullName}
         subtitle={
