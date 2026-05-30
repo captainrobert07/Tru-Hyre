@@ -14,6 +14,36 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user, trigger }) {
+      if (user) {
+        token.id = (user as { id: string | number }).id;
+        token.role = (user as { role: string }).role;
+        token.fullName = (user as { fullName?: string }).fullName;
+        token.email = user.email ?? token.email;
+      }
+      // On every request, refresh id/role/fullName from DB by email so
+      // stale tokens (older deploys, FK-renumbered seeds) auto-heal.
+      if (token.email && (trigger !== "signIn" || !user)) {
+        try {
+          const fresh = await db
+            .select({ id: users.id, role: users.role, fullName: users.fullName, isActive: users.isActive })
+            .from(users)
+            .where(eq(users.email, token.email as string))
+            .limit(1);
+          const f = fresh[0];
+          if (!f || !f.isActive) return null;
+          token.id = String(f.id);
+          token.role = f.role;
+          token.fullName = f.fullName;
+        } catch {
+          // Swallow: keep stale token rather than 500ing the layout.
+        }
+      }
+      return token;
+    },
+  },
   providers: [
     Credentials({
       name: "credentials",
