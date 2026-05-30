@@ -38,5 +38,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Playwright
+playwright-report/
+test-results/
+
 # Local scratch
 _doh_proxy.py

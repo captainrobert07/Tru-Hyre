@@ -6,9 +6,11 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, invitations, clientAccounts, vendorAccounts } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
+import { sendEmail, inviteEmail } from "@/lib/email";
 import { requireAdmin } from "@/lib/rbac";
 
 const userSchema = z.object({
@@ -96,22 +98,33 @@ export async function createInvitationAction(formData: FormData): Promise<void> 
   const parsed = inviteSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) redirect("/settings/invitations/new?error=invalid");
   const v = parsed.data;
+  const token = randomBytes(24).toString("hex");
   await db.insert(invitations).values({
     email: v.email,
     role: v.role,
     clientAccountId: v.clientAccountId,
     vendorAccountId: v.vendorAccountId,
     invitedById: Number(me.id),
-    token: randomBytes(24).toString("hex"),
+    token,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     status: "pending",
   });
+
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") || "https";
+  const host = h.get("x-forwarded-host") || h.get("host") || "tru-hyre-rho.vercel.app";
+  const inviteUrl = `${proto}://${host}/invite/${token}`;
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "Tru Hyre";
+  const tmpl = inviteEmail({ appName, inviteeEmail: v.email, role: v.role, inviteUrl });
+  const send = await sendEmail({ to: v.email, ...tmpl });
+
   await logAudit({
     actorId: Number(me.id),
     actorEmail: me.email,
     action: "invite",
     targetType: "invitation",
     summary: `Invited ${v.email} as ${v.role}`,
+    meta: { emailDelivered: send.delivered, emailReason: send.reason, inviteUrl },
   });
   revalidatePath("/settings/invitations");
   redirect("/settings/invitations");

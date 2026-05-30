@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { candidates, resumeFiles, stageHistory } from "@/db/schema";
 import { uploadResume } from "@/lib/blob";
-import { extractFields, parseResume, type ParsedResume } from "@/lib/parse";
+import { extractFields, pdfToText, type ParsedResume } from "@/lib/parse";
+import { mergeParse, parseResumeWithAi } from "@/lib/parse-ai";
 import { contentHash, findDuplicates } from "@/lib/dedupe";
 import { logAudit } from "@/lib/audit";
 import { makeRefId } from "@/lib/refid";
@@ -140,7 +141,10 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
   let parseStatus: "ok" | "failed" = "ok";
   let parseError: string | null = null;
   try {
-    parsed = await parseResume(buf);
+    const text = await pdfToText(buf);
+    const base = extractFields(text);
+    const ai = await parseResumeWithAi(text);
+    parsed = mergeParse(base, ai);
   } catch (e) {
     parseStatus = "failed";
     parseError = (e as Error).message;
@@ -168,7 +172,9 @@ export async function pasteResumeAction(_prev: UploadResult | null, formData: Fo
 
   let parsed: ParsedResume;
   try {
-    parsed = extractFields(text);
+    const base = extractFields(text);
+    const ai = await parseResumeWithAi(text);
+    parsed = mergeParse(base, ai);
   } catch (e) {
     return { ok: false, error: `Parse failed: ${(e as Error).message}` };
   }

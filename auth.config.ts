@@ -12,7 +12,9 @@ export const authConfig = {
 
       const isPublic =
         path === "/login" ||
+        path.startsWith("/invite/") ||
         path.startsWith("/api/auth") ||
+        path.startsWith("/api/health") ||
         path.startsWith("/_next") ||
         path === "/favicon.ico";
 
