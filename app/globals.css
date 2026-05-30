@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-ink;
+    font-feature-settings: "ss01", "cv11";
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-canvas;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-hairline rounded-xl2 shadow-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-700;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink hover:bg-canvas border border-hairline;
+  }
+  .input {
+    @apply w-full h-10 px-3 rounded-lg border border-hairline bg-surface text-ink placeholder:text-ink-muted focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors;
+  }
+  .label {
+    @apply text-sm font-medium text-ink-soft mb-1.5 block;
+  }
+  .login-bg {
+    background:
+      radial-gradient(60rem 30rem at 50% -10%, #dbeafe 0%, transparent 60%),
+      radial-gradient(50rem 25rem at 100% 100%, #eef2ff 0%, transparent 60%),
+      #f7f8fa;
+  }
+}
