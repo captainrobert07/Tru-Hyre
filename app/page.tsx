@@ -123,7 +123,7 @@ function FloatingResumePeek() {
 
       {/* Floating reminder card */}
       <div className="absolute -bottom-6 right-2 card p-4 w-56">
-        <div className="text-xs text-ink-muted">Today's signal</div>
+        <div className="text-xs text-ink-muted">Today&apos;s signal</div>
         <div className="text-sm font-medium mt-1">3 vendor candidates ready for review</div>
         <div className="mt-2"><span className="pill-attention">ATTENTION</span></div>
       </div>
