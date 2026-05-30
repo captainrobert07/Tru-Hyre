@@ -4,6 +4,12 @@ import { db } from "@/db";
 import { candidates, jobs, submissions, notifications, vendorAccounts, clientAccounts } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState, Badge } from "@/components/primitives";
+import {
+  getCoverageRatio,
+  getOfferAcceptance,
+  getRecruiterScoreboard,
+  getSubmissionForecast,
+} from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard" };
@@ -34,6 +40,10 @@ export default async function DashboardPage() {
     jobAttention,
     avgTimeToSubmitRow,
     avgTimeToOfferRow,
+    coverage,
+    acceptance,
+    forecast,
+    scoreboard,
   ] = await Promise.all([
     db.select({ n: count() }).from(candidates),
     db.select({ n: count() }).from(candidates).where(sql`${candidates.createdAt} >= now() - interval '7 days'`),
@@ -164,6 +174,10 @@ export default async function DashboardPage() {
       ) s ON true
       WHERE c.created_at >= now() - interval '180 days'
     `),
+    getCoverageRatio(),
+    getOfferAcceptance(365),
+    getSubmissionForecast(),
+    getRecruiterScoreboard(30),
   ]);
 
   const days = (weeklyVolume.rows || weeklyVolume) as Array<{ day: string; n: number }>;
@@ -266,23 +280,45 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="card p-5">
+          <div className="text-xs text-ink-muted uppercase tracking-wide">Coverage ratio</div>
+          <div className="stat-big mt-2">{coverage.ratio.toFixed(1)}</div>
+          <div className="text-xs text-ink-soft mt-1">
+            {coverage.activeCandidates}/{coverage.openPositions} active/positions
+            {coverage.ratio < 1 && coverage.openPositions > 0 && (
+              <Badge tone="red" className="ml-1.5 text-[10px]">starved</Badge>
+            )}
+          </div>
+        </div>
+        <div className="card p-5">
+          <div className="text-xs text-ink-muted uppercase tracking-wide">Offer acceptance</div>
+          <div className="stat-big mt-2">{acceptance.acceptanceRate}<span className="text-ink-muted text-2xl">%</span></div>
+          <div className="text-xs text-ink-soft mt-1">
+            {acceptance.joins}/{acceptance.offers + acceptance.joins} joined (1y)
+          </div>
+        </div>
         <div className="card p-5">
           <div className="text-xs text-ink-muted uppercase tracking-wide">Time to submit</div>
           <div className="stat-big mt-2">{avgTimeToSubmit > 0 ? avgTimeToSubmit.toFixed(1) : "—"}</div>
-          <div className="text-xs text-ink-soft mt-1">days, last 90d cohort</div>
+          <div className="text-xs text-ink-soft mt-1">days, last 90d</div>
         </div>
         <div className="card p-5">
           <div className="text-xs text-ink-muted uppercase tracking-wide">Time to offer</div>
           <div className="stat-big mt-2">{avgTimeToOffer > 0 ? avgTimeToOffer.toFixed(1) : "—"}</div>
-          <div className="text-xs text-ink-soft mt-1">days, last 180d cohort</div>
+          <div className="text-xs text-ink-soft mt-1">days, last 180d</div>
         </div>
         <div className="card p-5">
           <div className="text-xs text-ink-muted uppercase tracking-wide">Submit rate</div>
           <div className="stat-big mt-2">
             {candTotal > 0 ? Math.round((subsTotal / candTotal) * 100) : 0}<span className="text-ink-muted text-2xl">%</span>
           </div>
-          <div className="text-xs text-ink-soft mt-1">candidates → submissions, all-time</div>
+          <div className="text-xs text-ink-soft mt-1">cands → subs</div>
+        </div>
+        <div className="card p-5">
+          <div className="text-xs text-ink-muted uppercase tracking-wide">Forecast</div>
+          <div className="stat-big mt-2">{forecast.projectedThisMonth}</div>
+          <div className="text-xs text-ink-soft mt-1">subs this month at {forecast.weeklyAvg}/wk</div>
         </div>
       </div>
 
@@ -366,6 +402,44 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {scoreboard.length > 1 && (
+        <section className="card p-5 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold">Recruiter scoreboard</h2>
+            <Link href="/reports" className="text-xs text-brand-700 hover:underline">Full breakdown →</Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {scoreboard.slice(0, 3).map((s, i) => (
+              <div key={s.recruiterId} className={`p-4 rounded-xl2 border ${
+                i === 0 ? "bg-brand-500 text-white border-brand-500"
+                : i === 1 ? "bg-canvas border-hairline"
+                : "bg-canvas border-hairline"
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`size-7 rounded-full text-xs font-bold flex items-center justify-center ${
+                    i === 0 ? "bg-white/20 text-white" : "bg-ink_inverted text-white"
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className={`text-sm font-semibold truncate ${i === 0 ? "" : "text-ink"}`}>
+                      {s.fullName || s.email}
+                    </div>
+                  </div>
+                </div>
+                <div className={`text-2xl font-semibold tabular-nums ${i === 0 ? "" : "text-ink"}`}>
+                  {s.joins}
+                  <span className={`text-xs ml-1.5 ${i === 0 ? "opacity-70" : "text-ink-muted"}`}>joins</span>
+                </div>
+                <div className={`text-[11px] mt-1 ${i === 0 ? "opacity-80" : "text-ink-soft"}`}>
+                  {s.uploads} uploads · {s.submitted} submitted · {s.offers} offers
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <div className="card overflow-hidden">
