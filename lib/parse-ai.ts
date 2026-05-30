@@ -76,6 +76,9 @@ export async function parseResumeWithAi(rawText: string): Promise<AiResume | nul
       expectedCtc: num("expectedCtc"),
       summary: str("summary"),
       skills,
+      // URL extraction stays in the regex layer; AI doesn't return them.
+      linkedinUrl: null,
+      githubUrl: null,
     };
   } catch (e) {
     console.error("[parse-ai] anthropic threw", (e as Error).message);
