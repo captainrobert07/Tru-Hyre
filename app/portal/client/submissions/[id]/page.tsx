@@ -124,30 +124,53 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
           </section>
         )}
 
-        <section className="card p-4 mb-4">
-          <h2 className="text-sm font-semibold mb-3">Your feedback</h2>
-          <form action={clientFeedbackAction.bind(null, submissionId)} className="flex flex-wrap gap-1.5 mb-3">
-            {(["shortlist", "interview", "hold", "reject"] as const).map((kind) => (
+        <section className="card p-5 mb-4">
+          <h2 className="text-sm font-semibold mb-1">Your decision</h2>
+          <p className="text-xs text-ink-soft mb-4">Pick one — your recruiter is notified instantly.</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+            <form action={clientFeedbackAction.bind(null, submissionId)}>
+              <input type="hidden" name="kind" value="shortlist" />
               <button
-                key={kind}
                 type="submit"
-                name="kind"
-                value={kind}
-                className={`text-xs px-3 h-8 rounded-md border transition-colors ${
-                  kind === "reject"
-                    ? "border-red-200 text-red-700 hover:bg-red-50"
-                    : kind === "shortlist"
-                    ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                    : "border-hairline text-ink hover:bg-canvas"
-                }`}
+                className="w-full h-12 rounded-xl2 bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 active:scale-[.98] transition flex items-center justify-center gap-2"
               >
-                {kind}
+                ✓ Shortlist
               </button>
-            ))}
-          </form>
-          <form action={clientFeedbackAction.bind(null, submissionId)} className="space-y-2">
+            </form>
+            <form action={clientFeedbackAction.bind(null, submissionId)}>
+              <input type="hidden" name="kind" value="interview" />
+              <button
+                type="submit"
+                className="w-full h-12 rounded-xl2 bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 active:scale-[.98] transition flex items-center justify-center gap-2"
+              >
+                Interview
+              </button>
+            </form>
+            <form action={clientFeedbackAction.bind(null, submissionId)}>
+              <input type="hidden" name="kind" value="hold" />
+              <button
+                type="submit"
+                className="w-full h-12 rounded-xl2 bg-canvas text-ink-soft border border-hairline font-semibold text-sm hover:bg-surface active:scale-[.98] transition flex items-center justify-center gap-2"
+              >
+                Hold
+              </button>
+            </form>
+            <form action={clientFeedbackAction.bind(null, submissionId)}>
+              <input type="hidden" name="kind" value="reject" />
+              <button
+                type="submit"
+                className="w-full h-12 rounded-xl2 bg-red-500 text-white font-semibold text-sm hover:bg-red-600 active:scale-[.98] transition flex items-center justify-center gap-2"
+              >
+                ✗ Reject
+              </button>
+            </form>
+          </div>
+
+          <form action={clientFeedbackAction.bind(null, submissionId)} className="space-y-2 pt-3 border-t border-hairline">
+            <label className="text-xs text-ink-muted block">Or send a note without changing the decision:</label>
             <input type="hidden" name="kind" value="note" />
-            <textarea name="body" rows={3} placeholder="Add a note for the recruiter…" className="input py-2 text-sm" />
+            <textarea name="body" rows={2} placeholder="Add a note for the recruiter…" className="input py-2 text-sm" />
             <button type="submit" className="btn-ghost text-xs">Send note</button>
           </form>
         </section>

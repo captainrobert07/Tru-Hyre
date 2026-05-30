@@ -3,9 +3,10 @@ import Link from "next/link";
 import { db } from "@/db";
 import { users, jobs, submissions, candidates, clientAccounts } from "@/db/schema";
 import { requireClient } from "@/lib/rbac";
-import { PageHeader, ListRow, Badge, EmptyState, StatCard } from "@/components/primitives";
+import { PageHeader, Badge, EmptyState, StatCard } from "@/components/primitives";
 import { signOut } from "@/auth";
 import { APP_NAME } from "@/lib/utils";
+import { ClientSubmissionsList } from "./client-submissions-list";
 
 export const dynamic = "force-dynamic";
 
@@ -119,31 +120,31 @@ export default async function ClientPortal({ searchParams }: { searchParams: Pro
           })}
         </div>
 
-        <div className="card overflow-hidden mb-6">
-          <div className="px-4 py-3 border-b border-hairline text-sm font-semibold flex items-center justify-between">
-            <span>Submissions</span>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <h2 className="text-sm font-semibold">Submissions</h2>
             <span className="text-xs text-ink-muted">{visibleSubs.length} of {subs.length}</span>
           </div>
           {visibleSubs.length === 0 ? (
-            <EmptyState title="No submissions match" description={subs.length === 0 ? "Tru Hyre will list candidates here as they're submitted to your roles." : "Try a different filter."} />
+            <EmptyState
+              title="No submissions match"
+              description={subs.length === 0 ? `${APP_NAME} will list candidates here as they're submitted to your roles.` : "Try a different filter."}
+            />
           ) : (
-            <div className="divide-y divide-hairline">
-              {visibleSubs.map((s) => (
-                <ListRow
-                  key={s.id}
-                  href={`/portal/client/submissions/${s.id}`}
-                  primary={
-                    <span className="flex items-center gap-2">
-                      {s.starred && <span className="text-amber-500" aria-label="starred">★</span>}
-                      <span>{s.candidateName}</span>
-                      <span className="text-[10px] text-ink-muted font-mono">{s.candidateRefId}</span>
-                    </span>
-                  }
-                  secondary={`${s.candidateTitle || "—"} · for ${s.jobTitle}`}
-                  trailing={<Badge tone="blue">{s.status}</Badge>}
-                />
-              ))}
-            </div>
+            <ClientSubmissionsList
+              rows={visibleSubs.map((s) => ({
+                id: s.id,
+                candidateId: s.candidateId,
+                candidateName: s.candidateName,
+                candidateRefId: s.candidateRefId,
+                candidateTitle: s.candidateTitle,
+                starred: s.starred,
+                jobId: s.jobId,
+                jobTitle: s.jobTitle,
+                status: s.status,
+                createdAt: s.createdAt.toISOString(),
+              }))}
+            />
           )}
         </div>
 
