@@ -71,7 +71,7 @@ export default async function VendorUploadPage() {
 
         {assignedJobs.length > 0 && (
           <section className="mt-8">
-            <h2 className="text-sm font-semibold mb-3">Open jobs you're assigned to</h2>
+            <h2 className="text-sm font-semibold mb-3">Open jobs you&apos;re assigned to</h2>
             <div className="card divide-y divide-hairline overflow-hidden">
               {assignedJobs.filter((j) => j.status === "open").map((j) => (
                 <Link
