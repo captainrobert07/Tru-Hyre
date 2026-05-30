@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { Inter, Instrument_Serif } from "next/font/google";
 import { Toaster } from "sonner";
 import { APP_NAME, APP_TAGLINE } from "@/lib/utils";
@@ -40,7 +41,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             },
           }}
         />
-        <ToastListener />
+        <Suspense fallback={null}>
+          <ToastListener />
+        </Suspense>
       </body>
     </html>
   );
