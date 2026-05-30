@@ -1,6 +1,110 @@
-import { pgTable, serial, varchar, timestamp, boolean, pgEnum, text } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  serial,
+  varchar,
+  timestamp,
+  boolean,
+  pgEnum,
+  text,
+  integer,
+  jsonb,
+  date,
+  numeric,
+  index,
+} from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["admin", "hr", "client", "vendor"]);
+
+export const jobStatusEnum = pgEnum("job_status", ["open", "hold", "closing", "closed"]);
+export const jobPriorityEnum = pgEnum("job_priority", ["low", "normal", "high", "urgent"]);
+
+export const candidateStageEnum = pgEnum("candidate_stage", [
+  "received",
+  "hr_review",
+  "screening",
+  "submitted",
+  "shortlist",
+  "interview",
+  "hold",
+  "offer",
+  "joined",
+  "rejected",
+]);
+export const parseStatusEnum = pgEnum("parse_status", ["pending", "ok", "failed"]);
+
+export const submissionStatusEnum = pgEnum("submission_status", [
+  "submitted",
+  "shortlist",
+  "reject",
+  "interview",
+  "hold",
+  "offer",
+  "joined",
+]);
+
+export const feedbackKindEnum = pgEnum("feedback_kind", [
+  "shortlist",
+  "reject",
+  "interview",
+  "hold",
+  "offer",
+  "joined",
+  "note",
+]);
+
+export const notificationKindEnum = pgEnum("notification_kind", [
+  "stage_change",
+  "feedback",
+  "packet",
+  "duplicate",
+  "submission",
+  "invitation",
+  "system",
+]);
+
+export const invitationStatusEnum = pgEnum("invitation_status", ["pending", "accepted", "revoked", "expired"]);
+
+export const auditActionEnum = pgEnum("audit_action", [
+  "create",
+  "update",
+  "delete",
+  "login",
+  "logout",
+  "view",
+  "download",
+  "submit",
+  "feedback",
+  "invite",
+  "role_change",
+]);
+
+// ---------- Accounts ----------
+
+export const clientAccounts = pgTable("client_accounts", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull().unique(),
+  industry: varchar("industry", { length: 120 }),
+  website: varchar("website", { length: 254 }),
+  primaryContactName: varchar("primary_contact_name", { length: 120 }),
+  primaryContactEmail: varchar("primary_contact_email", { length: 254 }),
+  primaryContactPhone: varchar("primary_contact_phone", { length: 40 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const vendorAccounts = pgTable("vendor_accounts", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull().unique(),
+  contactName: varchar("contact_name", { length: 120 }),
+  contactEmail: varchar("contact_email", { length: 254 }),
+  contactPhone: varchar("contact_phone", { length: 40 }),
+  country: varchar("country", { length: 80 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -9,11 +113,282 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: roleEnum("role").notNull(),
   isActive: boolean("is_active").notNull().default(true),
-  clientAccountId: serial("client_account_id"),
-  vendorAccountId: serial("vendor_account_id"),
+  clientAccountId: integer("client_account_id").references(() => clientAccounts.id, { onDelete: "set null" }),
+  vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const clientContacts = pgTable("client_contacts", {
+  id: serial("id").primaryKey(),
+  clientAccountId: integer("client_account_id").notNull().references(() => clientAccounts.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 120 }).notNull(),
+  email: varchar("email", { length: 254 }),
+  phone: varchar("phone", { length: 40 }),
+  title: varchar("title", { length: 120 }),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ---------- Jobs ----------
+
+export const jobs = pgTable("jobs", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  clientAccountId: integer("client_account_id").notNull().references(() => clientAccounts.id, { onDelete: "restrict" }),
+  ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+  status: jobStatusEnum("status").notNull().default("open"),
+  priority: jobPriorityEnum("priority").notNull().default("normal"),
+  location: varchar("location", { length: 120 }),
+  workMode: varchar("work_mode", { length: 40 }),
+  experienceMin: numeric("experience_min", { precision: 4, scale: 1 }),
+  experienceMax: numeric("experience_max", { precision: 4, scale: 1 }),
+  ctcMin: numeric("ctc_min", { precision: 12, scale: 2 }),
+  ctcMax: numeric("ctc_max", { precision: 12, scale: 2 }),
+  positions: integer("positions").notNull().default(1),
+  description: text("description"),
+  skills: jsonb("skills").$type<string[]>().notNull().default([]),
+  closeBy: date("close_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  clientIdx: index("jobs_client_idx").on(t.clientAccountId),
+  statusIdx: index("jobs_status_idx").on(t.status),
+}));
+
+export const jobVendors = pgTable("job_vendors", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  vendorAccountId: integer("vendor_account_id").notNull().references(() => vendorAccounts.id, { onDelete: "cascade" }),
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
+}, (t) => ({
+  jobIdx: index("job_vendors_job_idx").on(t.jobId),
+  vendorIdx: index("job_vendors_vendor_idx").on(t.vendorAccountId),
+}));
+
+// ---------- Candidates ----------
+
+export const candidates = pgTable("candidates", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("full_name", { length: 200 }).notNull(),
+  email: varchar("email", { length: 254 }),
+  phone: varchar("phone", { length: 40 }),
+  location: varchar("location", { length: 120 }),
+  currentTitle: varchar("current_title", { length: 200 }),
+  currentCompany: varchar("current_company", { length: 200 }),
+  experienceYears: numeric("experience_years", { precision: 4, scale: 1 }),
+  noticePeriodDays: integer("notice_period_days"),
+  currentCtc: numeric("current_ctc", { precision: 12, scale: 2 }),
+  expectedCtc: numeric("expected_ctc", { precision: 12, scale: 2 }),
+  summary: text("summary"),
+  skills: jsonb("skills").$type<string[]>().notNull().default([]),
+  stage: candidateStageEnum("stage").notNull().default("received"),
+  parseStatus: parseStatusEnum("parse_status").notNull().default("pending"),
+  parseError: text("parse_error"),
+  vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
+  uploadedById: integer("uploaded_by_id").references(() => users.id, { onDelete: "set null" }),
+  notes: text("notes"),
+  refId: varchar("ref_id", { length: 24 }).notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: index("candidates_email_idx").on(t.email),
+  stageIdx: index("candidates_stage_idx").on(t.stage),
+  vendorIdx: index("candidates_vendor_idx").on(t.vendorAccountId),
+}));
+
+export const resumeFiles = pgTable("resume_files", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  blobUrl: text("blob_url").notNull(),
+  blobPathname: text("blob_pathname").notNull(),
+  originalName: varchar("original_name", { length: 254 }).notNull(),
+  contentType: varchar("content_type", { length: 80 }),
+  sizeBytes: integer("size_bytes"),
+  contentHash: varchar("content_hash", { length: 64 }),
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("resume_files_candidate_idx").on(t.candidateId),
+  hashIdx: index("resume_files_hash_idx").on(t.contentHash),
+}));
+
+export const clientPackets = pgTable("client_packets", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  blobUrl: text("blob_url").notNull(),
+  blobPathname: text("blob_pathname").notNull(),
+  generatedById: integer("generated_by_id").references(() => users.id, { onDelete: "set null" }),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+});
+
+export const stageHistory = pgTable("stage_history", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  fromStage: candidateStageEnum("from_stage"),
+  toStage: candidateStageEnum("to_stage").notNull(),
+  changedById: integer("changed_by_id").references(() => users.id, { onDelete: "set null" }),
+  note: text("note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("stage_history_candidate_idx").on(t.candidateId),
+}));
+
+// ---------- Submissions & feedback ----------
+
+export const submissions = pgTable("submissions", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  jobId: integer("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  packetId: integer("packet_id").references(() => clientPackets.id, { onDelete: "set null" }),
+  submittedById: integer("submitted_by_id").references(() => users.id, { onDelete: "set null" }),
+  status: submissionStatusEnum("status").notNull().default("submitted"),
+  expectedJoinDate: date("expected_join_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("submissions_candidate_idx").on(t.candidateId),
+  jobIdx: index("submissions_job_idx").on(t.jobId),
+  statusIdx: index("submissions_status_idx").on(t.status),
+}));
+
+export const feedbackEvents = pgTable("feedback_events", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").notNull().references(() => submissions.id, { onDelete: "cascade" }),
+  kind: feedbackKindEnum("kind").notNull(),
+  body: text("body"),
+  authorId: integer("author_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  submissionIdx: index("feedback_events_submission_idx").on(t.submissionId),
+}));
+
+// ---------- Notifications ----------
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  kind: notificationKindEnum("kind").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  body: text("body"),
+  url: varchar("url", { length: 400 }),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index("notifications_user_idx").on(t.userId),
+  unreadIdx: index("notifications_unread_idx").on(t.userId, t.readAt),
+}));
+
+// ---------- Settings ----------
+
+export const companyProfile = pgTable("company_profile", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  tagline: varchar("tagline", { length: 200 }),
+  contactEmail: varchar("contact_email", { length: 254 }),
+  parsingEnabled: boolean("parsing_enabled").notNull().default(true),
+  ocrEnabled: boolean("ocr_enabled").notNull().default(false),
+  aiParsingEnabled: boolean("ai_parsing_enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const invitations = pgTable("invitations", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 254 }).notNull(),
+  role: roleEnum("role").notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  invitedById: integer("invited_by_id").references(() => users.id, { onDelete: "set null" }),
+  clientAccountId: integer("client_account_id").references(() => clientAccounts.id, { onDelete: "set null" }),
+  vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
+  status: invitationStatusEnum("status").notNull().default("pending"),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ---------- Audit ----------
+
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  actorId: integer("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorEmail: varchar("actor_email", { length: 254 }),
+  action: auditActionEnum("action").notNull(),
+  targetType: varchar("target_type", { length: 80 }),
+  targetId: varchar("target_id", { length: 80 }),
+  summary: varchar("summary", { length: 400 }).notNull(),
+  meta: jsonb("meta").$type<Record<string, unknown>>(),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  userAgent: varchar("user_agent", { length: 254 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  actorIdx: index("audit_log_actor_idx").on(t.actorId),
+  createdIdx: index("audit_log_created_idx").on(t.createdAt),
+}));
+
+// ---------- Relations ----------
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  clientAccount: one(clientAccounts, {
+    fields: [users.clientAccountId],
+    references: [clientAccounts.id],
+  }),
+  vendorAccount: one(vendorAccounts, {
+    fields: [users.vendorAccountId],
+    references: [vendorAccounts.id],
+  }),
+  notifications: many(notifications),
+}));
+
+export const clientAccountsRelations = relations(clientAccounts, ({ many }) => ({
+  contacts: many(clientContacts),
+  jobs: many(jobs),
+  users: many(users),
+}));
+
+export const vendorAccountsRelations = relations(vendorAccounts, ({ many }) => ({
+  candidates: many(candidates),
+  jobAssignments: many(jobVendors),
+  users: many(users),
+}));
+
+export const jobsRelations = relations(jobs, ({ one, many }) => ({
+  client: one(clientAccounts, { fields: [jobs.clientAccountId], references: [clientAccounts.id] }),
+  owner: one(users, { fields: [jobs.ownerId], references: [users.id] }),
+  vendors: many(jobVendors),
+  submissions: many(submissions),
+}));
+
+export const jobVendorsRelations = relations(jobVendors, ({ one }) => ({
+  job: one(jobs, { fields: [jobVendors.jobId], references: [jobs.id] }),
+  vendor: one(vendorAccounts, { fields: [jobVendors.vendorAccountId], references: [vendorAccounts.id] }),
+}));
+
+export const candidatesRelations = relations(candidates, ({ one, many }) => ({
+  vendor: one(vendorAccounts, { fields: [candidates.vendorAccountId], references: [vendorAccounts.id] }),
+  uploadedBy: one(users, { fields: [candidates.uploadedById], references: [users.id] }),
+  resumeFiles: many(resumeFiles),
+  packets: many(clientPackets),
+  history: many(stageHistory),
+  submissions: many(submissions),
+}));
+
+export const submissionsRelations = relations(submissions, ({ one, many }) => ({
+  candidate: one(candidates, { fields: [submissions.candidateId], references: [candidates.id] }),
+  job: one(jobs, { fields: [submissions.jobId], references: [jobs.id] }),
+  packet: one(clientPackets, { fields: [submissions.packetId], references: [clientPackets.id] }),
+  feedback: many(feedbackEvents),
+}));
+
+// ---------- Type exports ----------
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type ClientAccount = typeof clientAccounts.$inferSelect;
+export type VendorAccount = typeof vendorAccounts.$inferSelect;
+export type Job = typeof jobs.$inferSelect;
+export type Candidate = typeof candidates.$inferSelect;
+export type Submission = typeof submissions.$inferSelect;
+export type FeedbackEvent = typeof feedbackEvents.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type AuditLogEntry = typeof auditLog.$inferSelect;
