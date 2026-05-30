@@ -1,6 +1,0 @@
-{% comment %}Args: label, value, meta(optional), tone(optional: brand/emerald/rose/amber){% endcomment %}
-<div class="stat-card">
-  <div class="stat-label">{{ label }}</div>
-  <div class="stat-value tabular-nums {% if tone == 'brand' %}text-brand{% elif tone == 'emerald' %}text-emerald-700{% elif tone == 'rose' %}text-rose-700{% elif tone == 'amber' %}text-amber-700{% endif %}">{{ value }}</div>
-  {% if meta %}<div class="stat-meta">{{ meta }}</div>{% endif %}
-</div>
