@@ -6,6 +6,7 @@ import { MobileMore } from "./mobile-more";
 import { CommandPalette, CommandTrigger } from "./command-palette";
 import { ConfirmProvider } from "./confirm";
 import { ShortcutHelp, ShortcutTrigger } from "./shortcut-help";
+import { QuickAdd } from "./quick-add";
 import { Avatar } from "./avatar";
 import {
   LayoutDashboard,
@@ -98,6 +99,7 @@ export function AppShell({
 
         <div className="flex items-center gap-2 shrink-0">
           <CommandTrigger />
+          <QuickAdd />
           <ShortcutTrigger />
           <Link href="/notifications" className="relative size-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-soft hover:text-ink" aria-label="Notifications">
             <Bell size={16} />

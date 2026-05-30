@@ -40,7 +40,12 @@ export default async function CandidatesPage({
 
   const whereExpr = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [rows, totalRows, vendorList, mySavedViews] = await Promise.all([
+  // Stage counts respect the q filter but ignore the stage filter (so the
+  // pills show "all" totals, not just the currently-selected stage).
+  const stageCondsQ: SQL[] = q ? [conditions[0]!] : [];
+  const stageWhere = stageCondsQ.length > 0 ? and(...stageCondsQ) : undefined;
+
+  const [rows, totalRows, vendorList, mySavedViews, stageCountRows] = await Promise.all([
     db
       .select({
         id: candidates.id,
@@ -63,8 +68,16 @@ export default async function CandidatesPage({
       .from(savedViews)
       .where(and(eq(savedViews.userId, Number(user.id)), eq(savedViews.scope, "candidates"), eq(savedViews.pinned, true)))
       .orderBy(savedViews.sortOrder, savedViews.createdAt),
+    db
+      .select({ stage: candidates.stage, n: count() })
+      .from(candidates)
+      .where(stageWhere)
+      .groupBy(candidates.stage),
   ]);
   const total = totalRows[0]?.n ?? 0;
+  const stageCounts = new Map<string, number>();
+  for (const r of stageCountRows) stageCounts.set(r.stage, r.n);
+  const allStagesTotal = stageCountRows.reduce((s, r) => s + r.n, 0);
 
   const stageOptions = ["all", "received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"];
 
@@ -73,7 +86,12 @@ export default async function CandidatesPage({
       <PageHeader
         title="Candidates"
         subtitle={`${total} candidate${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}`}
-        actions={<Link href="/candidates/upload" className="btn-primary">Upload resume</Link>}
+        actions={
+          <>
+            <Link href="/candidates/import" className="btn-ghost">Import CSV</Link>
+            <Link href="/candidates/upload" className="btn-primary">Upload resume</Link>
+          </>
+        }
       />
 
       <ListToolbar
@@ -98,6 +116,7 @@ export default async function CandidatesPage({
       <div className="flex flex-wrap gap-1 mb-3">
         {stageOptions.map((s) => {
           const active = (stage || "all") === s;
+          const n = s === "all" ? allStagesTotal : (stageCounts.get(s) || 0);
           const params = new URLSearchParams();
           if (q) params.set("q", q);
           if (s !== "all") params.set("stage", s);
@@ -106,11 +125,18 @@ export default async function CandidatesPage({
             <Link
               key={s}
               href={href}
-              className={`text-[11px] px-2.5 h-7 rounded-full inline-flex items-center transition-colors ${
+              className={`text-[11px] px-2.5 h-7 rounded-full inline-flex items-center gap-1.5 transition-colors ${
                 active ? "bg-ink_inverted text-white" : "bg-canvas text-ink-soft hover:text-ink"
-              }`}
+              } ${n === 0 && s !== "all" && !active ? "opacity-50" : ""}`}
             >
-              {s === "all" ? "All stages" : s.replaceAll("_", " ")}
+              <span>{s === "all" ? "All" : s.replaceAll("_", " ")}</span>
+              <span
+                className={`tabular-nums text-[10px] font-medium px-1 rounded ${
+                  active ? "bg-white/15" : "bg-surface text-ink-muted"
+                }`}
+              >
+                {n}
+              </span>
             </Link>
           );
         })}

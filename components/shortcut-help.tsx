@@ -5,17 +5,18 @@ import { X, Keyboard } from "lucide-react";
 
 const SHORTCUTS: Array<{ keys: string[]; label: string; section: string }> = [
   { section: "Navigation", keys: ["⌘", "K"], label: "Open command palette / search" },
+  { section: "Navigation", keys: ["N"], label: "Quick-add (new candidate / job / client / vendor)" },
   { section: "Navigation", keys: ["?"], label: "Show this cheat sheet" },
   { section: "Navigation", keys: ["Esc"], label: "Close any open modal / dropdown" },
 
-  { section: "Forms", keys: ["⌘", "↵"], label: "Submit a multiline form (comments, notes)" },
+  { section: "Lists", keys: ["J", "K"], label: "Move focus down / up between rows" },
+  { section: "Lists", keys: ["↵"], label: "Open the focused candidate" },
+  { section: "Lists", keys: ["X", "␣"], label: "Toggle selection on the focused row" },
+  { section: "Lists", keys: ["Hover"], label: "Reveal preview (eye icon) on candidate rows" },
+
+  { section: "Forms", keys: ["⌘", "↵"], label: "Submit a multiline form (comments, notes, tasks)" },
   { section: "Forms", keys: ["↵"], label: "Submit single-line inline edits" },
-  { section: "Forms", keys: ["Esc"], label: "Cancel an inline edit" },
-
-  { section: "Lists", keys: ["Click"], label: "Open candidate / job / client / vendor" },
-  { section: "Lists", keys: ["Hover row"], label: "Reveal preview (eye icon) on candidates" },
-
-  { section: "Tasks", keys: ["⌘", "↵"], label: "Add task from quick-add box" },
+  { section: "Forms", keys: ["Esc"], label: "Cancel an inline edit / close a modal" },
 ];
 
 export function ShortcutHelp() {
