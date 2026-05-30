@@ -1,11 +1,14 @@
-import { desc, ilike, or, sql, count, and, type SQL } from "drizzle-orm";
+import { desc, ilike, or, sql, count, and, eq, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { candidates } from "@/db/schema";
+import { candidates, vendorAccounts, savedViews } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { parseListParams } from "@/lib/list-params";
-import { PageHeader, ListRow, StageBadge, EmptyState } from "@/components/primitives";
+import { PageHeader, EmptyState } from "@/components/primitives";
 import { ListToolbar, Pager } from "@/components/list-toolbar";
+import { CandidatesTable } from "./candidates-table";
+import { SavedViews } from "@/components/saved-views";
+import { createSavedViewAction, deleteSavedViewAction } from "./saved-view-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Candidates" };
@@ -15,7 +18,7 @@ export default async function CandidatesPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string; stage?: string }>;
 }) {
-  await requireStaff();
+  const user = await requireStaff();
   const sp = await searchParams;
   const { q, page, pageSize, offset } = parseListParams(sp);
   const stage = sp.stage;
@@ -37,7 +40,7 @@ export default async function CandidatesPage({
 
   const whereExpr = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [rows, totalRows] = await Promise.all([
+  const [rows, totalRows, vendorList, mySavedViews] = await Promise.all([
     db
       .select({
         id: candidates.id,
@@ -54,6 +57,12 @@ export default async function CandidatesPage({
       .limit(pageSize)
       .offset(offset),
     db.select({ n: count() }).from(candidates).where(whereExpr),
+    db.select({ id: vendorAccounts.id, name: vendorAccounts.name }).from(vendorAccounts).orderBy(vendorAccounts.name),
+    db
+      .select({ id: savedViews.id, name: savedViews.name, query: savedViews.query, pinned: savedViews.pinned })
+      .from(savedViews)
+      .where(and(eq(savedViews.userId, Number(user.id)), eq(savedViews.scope, "candidates"), eq(savedViews.pinned, true)))
+      .orderBy(savedViews.sortOrder, savedViews.createdAt),
   ]);
   const total = totalRows[0]?.n ?? 0;
 
@@ -70,29 +79,42 @@ export default async function CandidatesPage({
       <ListToolbar
         basePath="/candidates"
         placeholder="Search by name, email, title, location, skill, or ref id…"
-        extra={
-          <div className="flex flex-wrap gap-1">
-            {stageOptions.map((s) => {
-              const active = (stage || "all") === s;
-              const params = new URLSearchParams();
-              if (q) params.set("q", q);
-              if (s !== "all") params.set("stage", s);
-              const href = `/candidates${params.toString() ? `?${params}` : ""}`;
-              return (
-                <Link
-                  key={s}
-                  href={href}
-                  className={`text-xs px-3 h-9 rounded-full inline-flex items-center transition-colors ${
-                    active ? "bg-ink_inverted text-white" : "bg-canvas text-ink-soft hover:text-ink"
-                  }`}
-                >
-                  {s === "all" ? "All" : s.replaceAll("_", " ")}
-                </Link>
-              );
-            })}
-          </div>
-        }
       />
+
+      <SavedViews
+        scope="candidates"
+        basePath="/candidates"
+        views={mySavedViews}
+        onCreate={async (input) => {
+          "use server";
+          return await createSavedViewAction(input);
+        }}
+        onDelete={async (id) => {
+          "use server";
+          await deleteSavedViewAction(id);
+        }}
+      />
+
+      <div className="flex flex-wrap gap-1 mb-3">
+        {stageOptions.map((s) => {
+          const active = (stage || "all") === s;
+          const params = new URLSearchParams();
+          if (q) params.set("q", q);
+          if (s !== "all") params.set("stage", s);
+          const href = `/candidates${params.toString() ? `?${params}` : ""}`;
+          return (
+            <Link
+              key={s}
+              href={href}
+              className={`text-[11px] px-2.5 h-7 rounded-full inline-flex items-center transition-colors ${
+                active ? "bg-ink_inverted text-white" : "bg-canvas text-ink-soft hover:text-ink"
+              }`}
+            >
+              {s === "all" ? "All stages" : s.replaceAll("_", " ")}
+            </Link>
+          );
+        })}
+      </div>
 
       {rows.length === 0 ? (
         <EmptyState
@@ -102,24 +124,7 @@ export default async function CandidatesPage({
         />
       ) : (
         <>
-          <div className="card overflow-hidden divide-y divide-hairline">
-            {rows.map((c) => (
-              <ListRow
-                key={c.id}
-                href={`/candidates/${c.id}`}
-                primary={
-                  <span className="flex items-center gap-2">
-                    {c.fullName}
-                    <span className="text-[10px] text-ink-muted font-mono">{c.refId}</span>
-                  </span>
-                }
-                secondary={[c.currentTitle, c.location, c.experienceYears ? `${c.experienceYears} yrs` : null]
-                  .filter(Boolean)
-                  .join(" · ")}
-                trailing={<StageBadge stage={c.stage} />}
-              />
-            ))}
-          </div>
+          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={vendorList} />
           <Pager basePath="/candidates" page={page} pageSize={pageSize} total={total} q={q} status={stage} />
         </>
       )}

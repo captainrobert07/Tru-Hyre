@@ -1,9 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
+import { useConfirm } from "@/components/confirm";
 
 export function DangerZone({
-  candidateId,
   candidateName,
   exportHref,
   isAdmin,
@@ -16,17 +16,18 @@ export function DangerZone({
   onDelete: () => Promise<void>;
 }) {
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
 
-  const handleDelete = () => {
-    const confirmed = window.confirm(
-      `GDPR delete ${candidateName}?\n\nThis permanently removes the candidate, every resume file, every packet, every stage transition, every submission, and every feedback event.\n\nAn audit log entry survives. Type the candidate name in the next prompt to confirm.`,
-    );
-    if (!confirmed) return;
-    const typed = window.prompt(`Type "${candidateName}" to confirm delete:`);
-    if ((typed || "").trim() !== candidateName) {
-      window.alert("Names don't match. Cancelled.");
-      return;
-    }
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: `GDPR delete ${candidateName}?`,
+      description:
+        "This permanently removes the candidate, every resume file, every packet, every stage transition, every submission, and every feedback event. An audit log entry survives.",
+      destructive: true,
+      typeToConfirm: candidateName,
+      confirmLabel: "Delete forever",
+    });
+    if (!ok) return;
     start(() => onDelete());
   };
 

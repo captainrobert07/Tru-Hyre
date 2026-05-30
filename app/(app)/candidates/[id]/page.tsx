@@ -1,15 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { SubmitButton } from "@/components/submit-button";
 import { StageButtons } from "@/components/stage-buttons";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
+import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
 import { DangerZone } from "./danger-zone";
 import { InlineEdit } from "@/components/inline-edit";
+import { Comments } from "@/components/comments";
 
 export const dynamic = "force-dynamic";
 
@@ -56,19 +58,32 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   // Fetch feedback for all submissions of this candidate, then weave a unified
   // activity timeline (stage moves + feedback events).
   const subIds = subs.map((s) => s.id);
-  const feedback = subIds.length === 0
-    ? []
-    : await db
-        .select({
-          id: feedbackEvents.id,
-          submissionId: feedbackEvents.submissionId,
-          kind: feedbackEvents.kind,
-          body: feedbackEvents.body,
-          createdAt: feedbackEvents.createdAt,
-        })
-        .from(feedbackEvents)
-        .where(inArray(feedbackEvents.submissionId, subIds))
-        .orderBy(desc(feedbackEvents.createdAt));
+  const [feedback, candComments] = await Promise.all([
+    subIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({
+            id: feedbackEvents.id,
+            submissionId: feedbackEvents.submissionId,
+            kind: feedbackEvents.kind,
+            body: feedbackEvents.body,
+            createdAt: feedbackEvents.createdAt,
+          })
+          .from(feedbackEvents)
+          .where(inArray(feedbackEvents.submissionId, subIds))
+          .orderBy(desc(feedbackEvents.createdAt)),
+    db
+      .select({
+        id: comments.id,
+        body: comments.body,
+        authorEmail: comments.authorEmail,
+        authorId: comments.authorId,
+        createdAt: comments.createdAt,
+      })
+      .from(comments)
+      .where(and(eq(comments.targetType, "candidate"), eq(comments.targetId, candidateId)))
+      .orderBy(desc(comments.createdAt)),
+  ]);
 
   type Activity =
     | { kind: "stage"; at: Date; from: string | null; to: string; note: string | null }
@@ -247,6 +262,26 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               </ol>
             )}
           </Section>
+
+          <Comments
+            comments={candComments.map((c) => ({
+              id: c.id,
+              body: c.body,
+              authorEmail: c.authorEmail,
+              authorId: c.authorId,
+              createdAt: c.createdAt.toISOString(),
+            }))}
+            currentUserId={Number(user.id)}
+            isAdmin={user.role === "admin"}
+            onAdd={async (fd) => {
+              "use server";
+              await addCandidateCommentAction(candidateId, fd);
+            }}
+            onDelete={async (id) => {
+              "use server";
+              await deleteCandidateCommentAction(candidateId, id);
+            }}
+          />
         </div>
 
         <div className="space-y-4">

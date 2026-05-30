@@ -307,6 +307,40 @@ export const invitations = pgTable("invitations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ---------- Comments / collaboration ----------
+
+export const commentTargetEnum = pgEnum("comment_target", ["candidate", "submission", "job"]);
+
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  targetType: commentTargetEnum("target_type").notNull(),
+  targetId: integer("target_id").notNull(),
+  authorId: integer("author_id").references(() => users.id, { onDelete: "set null" }),
+  authorEmail: varchar("author_email", { length: 254 }),
+  body: text("body").notNull(),
+  mentions: jsonb("mentions").$type<number[]>().notNull().default([]),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  targetIdx: index("comments_target_idx").on(t.targetType, t.targetId),
+}));
+
+// ---------- Saved views ----------
+
+export const savedViewScopeEnum = pgEnum("saved_view_scope", ["candidates", "jobs", "clients", "vendors", "submissions"]);
+
+export const savedViews = pgTable("saved_views", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  scope: savedViewScopeEnum("scope").notNull(),
+  name: varchar("name", { length: 80 }).notNull(),
+  query: jsonb("query").$type<Record<string, string>>().notNull().default({}),
+  pinned: boolean("pinned").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index("saved_views_user_idx").on(t.userId, t.scope),
+}));
+
 // ---------- Audit ----------
 
 export const auditLog = pgTable("audit_log", {

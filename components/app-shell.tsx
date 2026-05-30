@@ -4,6 +4,7 @@ import { signOut } from "@/auth";
 import { APP_NAME } from "@/lib/utils";
 import { MobileMore } from "./mobile-more";
 import { CommandPalette, CommandTrigger } from "./command-palette";
+import { ConfirmProvider } from "./confirm";
 import {
   LayoutDashboard,
   Users,
@@ -55,6 +56,7 @@ export function AppShell({
   const overflow = items.slice(4);
 
   return (
+    <ConfirmProvider>
     <div className="min-h-screen flex flex-col">
       <CommandPalette />
       {/* Top bar — desktop pill nav */}
@@ -165,5 +167,6 @@ export function AppShell({
         )}
       </nav>
     </div>
+    </ConfirmProvider>
   );
 }
