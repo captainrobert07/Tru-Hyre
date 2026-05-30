@@ -7,7 +7,8 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { SubmitButton } from "@/components/submit-button";
 import { StageButtons } from "@/components/stage-buttons";
-import { setStageAction, generatePacketAction, submitToJobAction } from "./actions";
+import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction } from "./actions";
+import { DangerZone } from "./danger-zone";
 
 export const dynamic = "force-dynamic";
 
@@ -199,6 +200,17 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               </SubmitButton>
             </form>
           </Section>
+
+          <DangerZone
+            candidateId={candidateId}
+            candidateName={cand.fullName}
+            exportHref={`/api/candidates/${candidateId}/export`}
+            isAdmin={user.role === "admin"}
+            onDelete={async () => {
+              "use server";
+              await deleteCandidateAction(candidateId);
+            }}
+          />
         </div>
       </div>
 

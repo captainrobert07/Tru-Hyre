@@ -13,7 +13,13 @@ export default async function AuditLogPage() {
 
   return (
     <>
-      <PageHeader title="Audit log" subtitle={`${rows.length} most recent entries (append-only)`} />
+      <PageHeader
+        title="Audit log"
+        subtitle={`${rows.length} most recent entries (append-only)`}
+        actions={
+          <a href="/api/settings/audit-export" className="btn-ghost">Export CSV</a>
+        }
+      />
       {rows.length === 0 ? (
         <div className="card p-8 text-center text-sm text-ink-soft">No activity yet.</div>
       ) : (

@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { candidates, clientPackets, stageHistory, submissions } from "@/db/schema";
+import { candidates, clientPackets, stageHistory, submissions, resumeFiles, feedbackEvents } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
-import { uploadPacket } from "@/lib/blob";
+import { uploadPacket, deleteBlob } from "@/lib/blob";
 import { renderPacketPdf } from "@/lib/packet";
-import { requireStaff } from "@/lib/rbac";
+import { requireAdmin, requireStaff } from "@/lib/rbac";
 
 const editSchema = z.object({
   fullName: z.string().min(2).max(200),
@@ -210,4 +210,98 @@ export async function submitToJobAction(id: number, formData: FormData): Promise
   revalidatePath(`/candidates/${id}`);
   revalidatePath("/submissions");
   redirect(`/candidates/${id}`);
+}
+
+// ---------- GDPR / compliance ----------
+
+/**
+ * Hard-delete a candidate and every artifact attached to them.
+ * Admin-only because it's irreversible. Removes:
+ *   - candidate row (cascades to stage_history, submissions, feedback_events)
+ *   - resume blobs (real files on Vercel Blob)
+ *   - client packet blobs
+ * Audit-logged with the candidate's ref id + name + email so the
+ * compliance trail survives the delete.
+ */
+export async function deleteCandidateAction(id: number): Promise<void> {
+  const user = await requireAdmin();
+  const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
+  if (!c) redirect("/candidates");
+
+  const [resumes, packets] = await Promise.all([
+    db.select().from(resumeFiles).where(eq(resumeFiles.candidateId, id)),
+    db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)),
+  ]);
+
+  // Best-effort blob deletion. Don't block the SQL purge if a blob is gone.
+  for (const r of resumes) {
+    try { await deleteBlob(r.blobUrl); } catch { /* swallow */ }
+  }
+  for (const p of packets) {
+    try { await deleteBlob(p.blobUrl); } catch { /* swallow */ }
+  }
+
+  // Cascading FKs handle stage_history, submissions, feedback_events,
+  // resume_files, client_packets.
+  await db.delete(candidates).where(eq(candidates.id, id));
+
+  await logAudit({
+    actorId: Number(user.id),
+    actorEmail: user.email,
+    action: "delete",
+    targetType: "candidate",
+    targetId: id,
+    summary: `GDPR-deleted candidate ${c.fullName}`,
+    meta: {
+      refId: c.refId,
+      email: c.email,
+      blobsDeleted: resumes.length + packets.length,
+    },
+  });
+
+  revalidatePath("/candidates");
+  redirect("/candidates");
+}
+
+/**
+ * Export everything we have on a candidate as JSON. Used for
+ * GDPR data-subject-access requests. Admin-only.
+ */
+export async function exportCandidateData(id: number): Promise<Record<string, unknown> | null> {
+  const user = await requireAdmin();
+  const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
+  if (!c) return null;
+
+  const [resumes, packets, history, subs] = await Promise.all([
+    db.select().from(resumeFiles).where(eq(resumeFiles.candidateId, id)),
+    db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)),
+    db.select().from(stageHistory).where(eq(stageHistory.candidateId, id)),
+    db.select().from(submissions).where(eq(submissions.candidateId, id)),
+  ]);
+
+  const subIds = subs.map((s) => s.id);
+  const feedback = subIds.length === 0
+    ? []
+    : await db.select().from(feedbackEvents).where(eq(feedbackEvents.submissionId, subIds[0]));
+
+  await logAudit({
+    actorId: Number(user.id),
+    actorEmail: user.email,
+    action: "download",
+    targetType: "candidate",
+    targetId: id,
+    summary: `Exported full data for ${c.fullName}`,
+    meta: { refId: c.refId },
+  });
+
+  return {
+    exportedAt: new Date().toISOString(),
+    exportedBy: user.email,
+    candidate: c,
+    resumeFiles: resumes,
+    clientPackets: packets,
+    stageHistory: history,
+    submissions: subs,
+    feedbackEvents: feedback,
+  };
 }
