@@ -19,6 +19,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ fileId: string }> },
 ) {
+  try {
   const user = await requireUser();
   const { fileId } = await params;
   if (!fileId) return new NextResponse("Bad request", { status: 400 });
@@ -94,4 +95,9 @@ export async function GET(
       "Cache-Control": "private, no-store",
     },
   });
+  } catch (e) {
+    if ((e as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw e;
+    console.error("[/api/files] error", e);
+    return new NextResponse(`Server error: ${(e as Error).message}`, { status: 500 });
+  }
 }
