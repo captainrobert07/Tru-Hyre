@@ -7,7 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { candidates, clientPackets, stageHistory, submissions, resumeFiles, feedbackEvents } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
-import { uploadPacket, deleteBlob } from "@/lib/blob";
+import { uploadPacket, deleteDriveFile } from "@/lib/drive";
 import { renderPacketPdf } from "@/lib/packet";
 import { requireAdmin, requireStaff } from "@/lib/rbac";
 import { withToast } from "@/lib/toast";
@@ -291,11 +291,11 @@ export async function generatePacketAction(id: number): Promise<{ ok: false; err
     return { ok: false, error: `Packet render failed: ${(e as Error).message}` };
   }
 
-  const blob = await uploadPacket(pdf, c.refId);
+  const drive = await uploadPacket(pdf, c.refId);
   await db.insert(clientPackets).values({
     candidateId: id,
-    blobUrl: blob.url,
-    blobPathname: blob.pathname,
+    driveFileId: drive.driveFileId,
+    driveWebViewLink: drive.webViewLink,
     generatedById: Number(user.id),
   });
 
@@ -309,7 +309,7 @@ export async function generatePacketAction(id: number): Promise<{ ok: false; err
   });
 
   revalidatePath(`/candidates/${id}`);
-  return { ok: true, url: blob.url };
+  return { ok: true, fileId: drive.driveFileId };
 }
 
 const submitSchema = z.object({
@@ -394,24 +394,24 @@ export async function deleteCandidateAction(id: number): Promise<void> {
     db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)),
   ]);
 
-  // Best-effort blob deletion. Don't block the SQL purge if a blob is gone,
+  // Best-effort Drive deletion. Don't block the SQL purge if a file is gone,
   // but record every failure in the audit meta so compliance can re-attempt.
   const blobErrors: { url: string; reason: string }[] = [];
   let blobsDeleted = 0;
   for (const r of resumes) {
     try {
-      await deleteBlob(r.blobUrl);
+      await deleteDriveFile(r.driveFileId);
       blobsDeleted++;
     } catch (e) {
-      blobErrors.push({ url: r.blobUrl, reason: (e as Error).message || "unknown" });
+      blobErrors.push({ url: r.driveFileId, reason: (e as Error).message || "unknown" });
     }
   }
   for (const p of packets) {
     try {
-      await deleteBlob(p.blobUrl);
+      await deleteDriveFile(p.driveFileId);
       blobsDeleted++;
     } catch (e) {
-      blobErrors.push({ url: p.blobUrl, reason: (e as Error).message || "unknown" });
+      blobErrors.push({ url: p.driveFileId, reason: (e as Error).message || "unknown" });
     }
   }
 

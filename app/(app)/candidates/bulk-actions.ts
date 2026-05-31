@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { candidates, clientPackets, resumeFiles, stageHistory } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
-import { deleteBlob } from "@/lib/blob";
+import { deleteDriveFile } from "@/lib/drive";
 import { requireStaff } from "@/lib/rbac";
 
 const STAGES = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
@@ -88,13 +88,13 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
       ]);
       for (const r of resumes) {
         blobsAttempted++;
-        try { await deleteBlob(r.blobUrl); blobsDeleted++; }
-        catch (e) { blobErrors.push({ url: r.blobUrl, reason: (e as Error).message || "unknown" }); }
+        try { await deleteDriveFile(r.driveFileId); blobsDeleted++; }
+        catch (e) { blobErrors.push({ url: r.driveFileId, reason: (e as Error).message || "unknown" }); }
       }
       for (const p of packets) {
         blobsAttempted++;
-        try { await deleteBlob(p.blobUrl); blobsDeleted++; }
-        catch (e) { blobErrors.push({ url: p.blobUrl, reason: (e as Error).message || "unknown" }); }
+        try { await deleteDriveFile(p.driveFileId); blobsDeleted++; }
+        catch (e) { blobErrors.push({ url: p.driveFileId, reason: (e as Error).message || "unknown" }); }
       }
       await db.delete(candidates).where(eq(candidates.id, id));
       affected++;

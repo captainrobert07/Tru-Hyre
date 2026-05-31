@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { candidates, resumeFiles, stageHistory, users } from "@/db/schema";
-import { uploadResume } from "@/lib/blob";
+import { uploadResume } from "@/lib/drive";
 import { extractFields, pdfToText, type ParsedResume } from "@/lib/parse";
 import { mergeParse, parseResumeWithAi } from "@/lib/parse-ai";
 import { contentHash, findDuplicates } from "@/lib/dedupe";
@@ -68,7 +68,7 @@ export async function vendorUploadResumeAction(formData: FormData): Promise<void
     hash,
   });
 
-  const blob = await uploadResume(buf, file.name, file.type || "application/pdf");
+  const drive = await uploadResume(buf, file.name, file.type || "application/pdf");
   const refId = makeRefId();
   const fullName = parsed.fullName || file.name.replace(/\.pdf$/i, "");
 
@@ -100,8 +100,8 @@ export async function vendorUploadResumeAction(formData: FormData): Promise<void
 
   await db.insert(resumeFiles).values({
     candidateId: created.id,
-    blobUrl: blob.url,
-    blobPathname: blob.pathname,
+    driveFileId: drive.driveFileId,
+    driveWebViewLink: drive.webViewLink,
     originalName: file.name,
     contentType: file.type || "application/pdf",
     sizeBytes: file.size,

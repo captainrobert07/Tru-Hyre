@@ -208,8 +208,8 @@ export const candidates = pgTable("candidates", {
 export const resumeFiles = pgTable("resume_files", {
   id: serial("id").primaryKey(),
   candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
-  blobUrl: text("blob_url").notNull(),
-  blobPathname: text("blob_pathname").notNull(),
+  driveFileId: text("drive_file_id").notNull(),
+  driveWebViewLink: text("drive_web_view_link"),
   originalName: varchar("original_name", { length: 254 }).notNull(),
   contentType: varchar("content_type", { length: 80 }),
   sizeBytes: integer("size_bytes"),
@@ -223,8 +223,8 @@ export const resumeFiles = pgTable("resume_files", {
 export const clientPackets = pgTable("client_packets", {
   id: serial("id").primaryKey(),
   candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
-  blobUrl: text("blob_url").notNull(),
-  blobPathname: text("blob_pathname").notNull(),
+  driveFileId: text("drive_file_id").notNull(),
+  driveWebViewLink: text("drive_web_view_link"),
   generatedById: integer("generated_by_id").references(() => users.id, { onDelete: "set null" }),
   generatedAt: timestamp("generated_at").notNull().defaultNow(),
 });

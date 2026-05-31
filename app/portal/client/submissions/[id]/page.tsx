@@ -118,7 +118,7 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
         {row.packet && (
           <section className="card p-4 mb-4">
             <h2 className="text-sm font-semibold mb-2">Client packet</h2>
-            <a href={row.packet.blobUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs">
+            <a href={`/api/files/${row.packet.driveFileId}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs">
               Download sanitized PDF
             </a>
           </section>

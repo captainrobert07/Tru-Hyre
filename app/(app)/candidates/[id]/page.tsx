@@ -430,20 +430,20 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               <div className="text-sm space-y-3">
                 <div className="flex items-center gap-2 text-ink-soft text-xs">
                   <span className="truncate flex-1">{latestResume.originalName}</span>
-                  <a href={latestResume.blobUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline shrink-0">
+                  <a href={`/api/files/${latestResume.driveFileId}`} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline shrink-0">
                     Open in new tab ↗
                   </a>
                 </div>
                 <div className="rounded-lg overflow-hidden border border-hairline bg-canvas">
                   <object
-                    data={`${latestResume.blobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                    data={`/api/files/${latestResume.driveFileId}#toolbar=0&navpanes=0&scrollbar=0`}
                     type="application/pdf"
                     className="w-full h-[420px]"
                     aria-label={`Resume preview for ${cand.fullName}`}
                   >
                     <div className="p-6 text-center text-sm text-ink-soft">
                       Your browser can&apos;t display PDFs inline.{" "}
-                      <a href={latestResume.blobUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">
+                      <a href={`/api/files/${latestResume.driveFileId}`} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">
                         Download instead.
                       </a>
                     </div>
@@ -472,7 +472,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               </p>
             </form>
             {latestPacket && (
-              <a href={latestPacket.blobUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs w-full mt-2 block text-center">
+              <a href={`/api/files/${latestPacket.driveFileId}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs w-full mt-2 block text-center">
                 Download latest
               </a>
             )}

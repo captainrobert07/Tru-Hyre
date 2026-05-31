@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { candidates, resumeFiles, stageHistory } from "@/db/schema";
-import { uploadResume } from "@/lib/blob";
+import { uploadResume, type DriveUploadResult } from "@/lib/drive";
 import { extractFields, pdfToText, type ParsedResume } from "@/lib/parse";
 import { mergeParse, parseResumeWithAi } from "@/lib/parse-ai";
 import { contentHash, findDuplicates } from "@/lib/dedupe";
@@ -38,7 +38,7 @@ async function persistCandidate({
   parsed,
   parseStatus,
   parseError,
-  blob,
+  drive,
   fileMeta,
   hash,
   fallbackName,
@@ -47,7 +47,7 @@ async function persistCandidate({
   parsed: ParsedResume;
   parseStatus: "ok" | "failed";
   parseError: string | null;
-  blob: { url: string; pathname: string } | null;
+  drive: DriveUploadResult | null;
   fileMeta: { name: string; contentType: string; size: number } | null;
   hash: string | null;
   fallbackName: string;
@@ -88,11 +88,11 @@ async function persistCandidate({
     })
     .returning();
 
-  if (blob && fileMeta) {
+  if (drive && fileMeta) {
     await db.insert(resumeFiles).values({
       candidateId: created.id,
-      blobUrl: blob.url,
-      blobPathname: blob.pathname,
+      driveFileId: drive.driveFileId,
+      driveWebViewLink: drive.webViewLink,
       originalName: fileMeta.name,
       contentType: fileMeta.contentType,
       sizeBytes: fileMeta.size,
@@ -105,7 +105,7 @@ async function persistCandidate({
     fromStage: null,
     toStage: "hr_review",
     changedById: Number(user.id),
-    note: `Resume ${blob ? "uploaded" : "pasted"}${parseStatus === "failed" ? ` (parse failed: ${parseError})` : ""}.`,
+    note: `Resume ${drive ? "uploaded" : "pasted"}${parseStatus === "failed" ? ` (parse failed: ${parseError})` : ""}.`,
   });
 
   await logAudit({
@@ -115,7 +115,7 @@ async function persistCandidate({
     targetType: "candidate",
     targetId: created.id,
     summary: `Created candidate ${fullName}`,
-    meta: { refId, parseStatus, dupes: dupes.length, source: blob ? "pdf" : "paste" },
+    meta: { refId, parseStatus, dupes: dupes.length, source: drive ? "pdf" : "paste" },
   });
 
   revalidatePath("/candidates");
@@ -154,13 +154,13 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
     parseError = (e as Error).message;
   }
 
-  const blob = await uploadResume(buf, file.name, file.type || "application/pdf");
+  const drive = await uploadResume(buf, file.name, file.type || "application/pdf");
 
   return persistCandidate({
     parsed,
     parseStatus,
     parseError,
-    blob,
+    drive,
     fileMeta: { name: file.name, contentType: file.type || "application/pdf", size: file.size },
     hash,
     fallbackName: file.name.replace(/\.pdf$/i, ""),
@@ -187,7 +187,7 @@ export async function pasteResumeAction(_prev: UploadResult | null, formData: Fo
     parsed,
     parseStatus: "ok",
     parseError: null,
-    blob: null,
+    drive: null,
     fileMeta: null,
     hash: null,
     fallbackName: parsed.fullName || "Pasted candidate",
