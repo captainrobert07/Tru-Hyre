@@ -41,20 +41,40 @@ async function main() {
     return;
   }
 
-  console.log(`[fix-types] converting ${needsFix.length} serial columns to plain integer…`);
-  for (const r of needsFix) {
-    const col = r.column_name;
-    if (!/^[a-z_]+$/.test(col)) {
-      console.warn(`[fix-types] skipping suspicious col name ${col}`);
-      continue;
+  if (needsFix.length > 0) {
+    console.log(`[fix-types] converting ${needsFix.length} serial columns to plain integer…`);
+    for (const r of needsFix) {
+      const col = r.column_name;
+      if (!/^[a-z_]+$/.test(col)) {
+        console.warn(`[fix-types] skipping suspicious col name ${col}`);
+        continue;
+      }
+      await db.execute(sql.raw(`ALTER TABLE users ALTER COLUMN ${col} DROP DEFAULT`));
+      const seqName = `users_${col}_seq`;
+      await db.execute(sql.raw(`DROP SEQUENCE IF EXISTS ${seqName}`));
+      console.log(`[fix-types]   ${col}: dropped default + sequence`);
     }
-    // sql.raw is required for identifier interpolation since drizzle won't
-    // parameterize a column name. The col name passed regex validation above.
-    await db.execute(sql.raw(`ALTER TABLE users ALTER COLUMN ${col} DROP DEFAULT`));
-    const seqName = `users_${col}_seq`;
-    await db.execute(sql.raw(`DROP SEQUENCE IF EXISTS ${seqName}`));
-    console.log(`[fix-types]   ${col}: dropped default + sequence`);
   }
+
+  // Phase 20: blob → drive column rename. drizzle-kit push --force cannot
+  // add a NOT NULL column ('drive_file_id') to a non-empty table, so we
+  // truncate resume_files and client_packets first. Pre-pilot — accepted
+  // data loss, candidates rows survive (just lose their resume PDF link).
+  // Idempotent: once the columns are renamed, the legacy column probe is
+  // empty and this branch is a no-op.
+  const legacyCheck = await db.execute<{ table_name: string }>(sql`
+    SELECT table_name
+    FROM information_schema.columns
+    WHERE column_name = 'blob_url'
+      AND table_name IN ('resume_files', 'client_packets')
+  `);
+  const legacyRows = (legacyCheck.rows || legacyCheck) as Array<{ table_name: string }>;
+  if (legacyRows.length > 0) {
+    console.log("[fix-types] truncating resume_files + client_packets for Drive cutover…");
+    await db.execute(sql.raw(`TRUNCATE TABLE resume_files, client_packets`));
+    console.log("[fix-types]   truncated");
+  }
+
   console.log("[fix-types] done");
 }
 
