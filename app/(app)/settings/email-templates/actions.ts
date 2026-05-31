@@ -13,7 +13,7 @@ const updateSchema = z.object({
   subject: z.string().min(1).max(240),
   bodyText: z.string().min(1).max(20_000),
   bodyHtml: z.string().min(1).max(50_000),
-  isActive: z.coerce.boolean(),
+  isActive: z.enum(["true", "false"]).transform((v) => v === "true"),
 });
 
 export type UpdateResult = { ok: true } | { ok: false; error: string };

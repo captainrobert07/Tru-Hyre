@@ -25,9 +25,13 @@ function getDriveClient(): drive_v3.Drive | null {
     return null;
   }
 
+  // Env-var pipelines often turn real newlines into the literal sequence "\n";
+  // googleapis JWT will silently fail auth if the PEM has no real newlines.
+  const privateKey = creds.private_key.replace(/\\n/g, "\n");
+
   const auth = new google.auth.JWT({
     email: creds.client_email,
-    key: creds.private_key,
+    key: privateKey,
     scopes: ["https://www.googleapis.com/auth/drive.file"],
   });
 

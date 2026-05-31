@@ -29,6 +29,7 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
   if (action === "set_stage") {
     if (!stage) return { ok: false, error: "Stage is required." };
     let affected = 0;
+    const movedRows: Array<{ cur: typeof candidates.$inferSelect }> = [];
     for (const id of ids) {
       const cur = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
       if (!cur) continue;
@@ -41,12 +42,7 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
         changedById: Number(user.id),
         note: "Bulk action",
       });
-      await fireStageTransitionEmail({
-        candidate: { id: cur.id, fullName: cur.fullName, email: cur.email, refId: cur.refId },
-        fromStage: cur.stage,
-        toStage: stage,
-        actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
-      });
+      movedRows.push({ cur });
       affected++;
     }
     await logAudit({
@@ -56,6 +52,19 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
       targetType: "candidate",
       summary: `Bulk moved ${affected} candidates → ${stage}`,
     });
+    // Fire stage emails in parallel — each call already swallows its own
+    // exceptions, so Promise.all never rejects. Bounds total wall-clock to
+    // ~ slowest single send rather than affected × send-time.
+    await Promise.all(
+      movedRows.map(({ cur }) =>
+        fireStageTransitionEmail({
+          candidate: { id: cur.id, fullName: cur.fullName, email: cur.email, refId: cur.refId },
+          fromStage: cur.stage,
+          toStage: stage,
+          actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
+        }),
+      ),
+    );
     revalidatePath("/candidates");
     return { ok: true, affected };
   }

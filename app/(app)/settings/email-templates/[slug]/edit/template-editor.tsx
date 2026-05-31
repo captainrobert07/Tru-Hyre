@@ -44,13 +44,12 @@ export function TemplateEditor({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="slug" value={slug} />
 
+      <input type="hidden" name="isActive" value={isActive ? "true" : "false"} />
       <label className="flex items-center gap-2 text-xs">
         <input
           type="checkbox"
-          name="isActive"
           checked={isActive}
           onChange={(e) => setIsActive(e.target.checked)}
-          value="true"
           className="size-4 accent-emerald-600"
         />
         <span className="font-medium">Active</span>

@@ -14,13 +14,17 @@ let cachedTransport: Transporter | null = null;
 function getTransport(): Transporter | null {
   if (cachedTransport) return cachedTransport;
   const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
+  // Gmail shows App Passwords as "xxxx xxxx xxxx xxxx" — strip whitespace
+  // so a copy-paste with spaces still authenticates.
+  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, "");
   if (!user || !pass) return null;
   cachedTransport = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
     auth: { user, pass },
+    connectionTimeout: 8_000,
+    socketTimeout: 8_000,
   });
   return cachedTransport;
 }
@@ -48,8 +52,12 @@ export async function sendEmail(input: SendInput): Promise<SendResult> {
     });
     return { delivered: true, id: info.messageId };
   } catch (e) {
+    // Log full error server-side; return a coarse reason so SMTP error
+    // strings (which can include "Username and Password not accepted")
+    // never reach toasts or audit_log.meta.
     console.error("[email] gmail send threw", (e as Error).message);
-    return { delivered: false, reason: `smtp_${(e as Error).message.slice(0, 80)}` };
+    const code = (e as { code?: string }).code || "exception";
+    return { delivered: false, reason: `smtp_${code}` };
   }
 }
 
