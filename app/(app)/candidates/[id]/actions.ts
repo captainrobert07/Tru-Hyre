@@ -9,6 +9,7 @@ import { candidates, clientPackets, stageHistory, submissions, resumeFiles, feed
 import { logAudit } from "@/lib/audit";
 import { uploadPacket, deleteDriveFile } from "@/lib/drive";
 import { renderPacketPdf } from "@/lib/packet";
+import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireAdmin, requireStaff } from "@/lib/rbac";
 import { withToast } from "@/lib/toast";
 
@@ -264,6 +265,16 @@ export async function setStageAction(
     summary: `Moved stage ${current.stage} → ${toStage}`,
   });
 
+  const cand = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
+  if (cand) {
+    await fireStageTransitionEmail({
+      candidate: { id: cand.id, fullName: cand.fullName, email: cand.email, refId: cand.refId },
+      fromStage: current.stage,
+      toStage,
+      actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
+    });
+  }
+
   revalidatePath(`/candidates/${id}`);
   return { ok: true, previousStage: current.stage };
 }
@@ -366,6 +377,13 @@ export async function submitToJobAction(id: number, formData: FormData): Promise
     targetType: "submission",
     targetId: id,
     summary: `Submitted ${c.fullName} to job #${parsed.data.jobId}`,
+  });
+
+  await fireStageTransitionEmail({
+    candidate: { id: c.id, fullName: c.fullName, email: c.email, refId: c.refId },
+    fromStage: c.stage,
+    toStage: "submitted",
+    actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
   });
 
   revalidatePath(`/candidates/${id}`);

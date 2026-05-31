@@ -77,6 +77,8 @@ export const auditActionEnum = pgEnum("audit_action", [
   "feedback",
   "invite",
   "role_change",
+  "email_send",
+  "template_edit",
 ]);
 
 // ---------- Accounts ----------
@@ -385,6 +387,42 @@ export const auditLog = pgTable("audit_log", {
 }, (t) => ({
   actorIdx: index("audit_log_actor_idx").on(t.actorId),
   createdIdx: index("audit_log_created_idx").on(t.createdAt),
+}));
+
+// ---------- Email templates + outbox ----------
+
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 120 }).notNull(),
+  subject: varchar("subject", { length: 240 }).notNull(),
+  bodyHtml: text("body_html").notNull(),
+  bodyText: text("body_text").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  updatedById: integer("updated_by_id").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const emailOutbox = pgTable("email_outbox", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").references(() => candidates.id, { onDelete: "set null" }),
+  templateSlug: varchar("template_slug", { length: 64 }).notNull(),
+  toEmail: varchar("to_email", { length: 254 }).notNull(),
+  fromEmail: varchar("from_email", { length: 254 }).notNull(),
+  subject: varchar("subject", { length: 240 }).notNull(),
+  bodyHtml: text("body_html").notNull(),
+  bodyText: text("body_text").notNull(),
+  status: varchar("status", { length: 16 }).notNull(),
+  error: text("error"),
+  sentAt: timestamp("sent_at"),
+  triggeredById: integer("triggered_by_id").references(() => users.id, { onDelete: "set null" }),
+  fromStage: varchar("from_stage", { length: 32 }),
+  toStage: varchar("to_stage", { length: 32 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("email_outbox_candidate_idx").on(t.candidateId),
+  createdIdx: index("email_outbox_created_idx").on(t.createdAt),
 }));
 
 // ---------- Relations ----------

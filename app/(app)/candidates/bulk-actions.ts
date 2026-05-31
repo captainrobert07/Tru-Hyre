@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { candidates, clientPackets, resumeFiles, stageHistory } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { deleteDriveFile } from "@/lib/drive";
+import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireStaff } from "@/lib/rbac";
 
 const STAGES = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
@@ -29,8 +30,9 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
     if (!stage) return { ok: false, error: "Stage is required." };
     let affected = 0;
     for (const id of ids) {
-      const cur = (await db.select({ stage: candidates.stage }).from(candidates).where(eq(candidates.id, id)))[0];
+      const cur = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
       if (!cur) continue;
+      if (cur.stage === stage) continue;
       await db.update(candidates).set({ stage, updatedAt: new Date() }).where(eq(candidates.id, id));
       await db.insert(stageHistory).values({
         candidateId: id,
@@ -38,6 +40,12 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
         toStage: stage,
         changedById: Number(user.id),
         note: "Bulk action",
+      });
+      await fireStageTransitionEmail({
+        candidate: { id: cur.id, fullName: cur.fullName, email: cur.email, refId: cur.refId },
+        fromStage: cur.stage,
+        toStage: stage,
+        actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
       });
       affected++;
     }

@@ -11,6 +11,7 @@ import {
   jobVendors,
   candidates,
   companyProfile,
+  emailTemplates,
 } from "./schema";
 
 const SEED_PASSWORD = "Kris@35193";
@@ -21,7 +22,7 @@ async function main() {
 
   const client = neon(url);
   const db = drizzle(client, {
-    schema: { users, clientAccounts, clientContacts, vendorAccounts, jobs, jobVendors, candidates, companyProfile },
+    schema: { users, clientAccounts, clientContacts, vendorAccounts, jobs, jobVendors, candidates, companyProfile, emailTemplates },
   });
 
   console.log("seeding company profile…");
@@ -236,6 +237,113 @@ async function main() {
     ]);
     console.log(`  candidates: 3`);
   }
+
+  console.log("seeding email templates…");
+  const TEMPLATE_SEED: Array<{
+    slug: string;
+    name: string;
+    isActive: boolean;
+    subject: string;
+    bodyText: string;
+    bodyHtml: string;
+  }> = [
+    {
+      slug: "stage:received",
+      name: "Stage: Received",
+      isActive: false,
+      subject: "We received your application — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nThanks for sharing your resume with us. We've logged it under reference {{candidate.refId}} and a recruiter will be in touch if there's a fit.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Thanks for sharing your resume with us. We've logged it under reference <strong>{{candidate.refId}}</strong> and a recruiter will be in touch if there's a fit.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:hr_review",
+      name: "Stage: HR review",
+      isActive: false,
+      subject: "Your application is under review — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nYour application ({{candidate.refId}}) is now with our HR team. We'll get back to you within a few business days.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Your application (<strong>{{candidate.refId}}</strong>) is now with our HR team. We'll get back to you within a few business days.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:screening",
+      name: "Stage: Screening",
+      isActive: false,
+      subject: "Quick screening call — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nWe'd like to set up a brief screening call. {{recruiter.fullName}} will reach out shortly with available slots.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>We'd like to set up a brief screening call. <strong>{{recruiter.fullName}}</strong> will reach out shortly with available slots.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:submitted",
+      name: "Stage: Submitted to client",
+      isActive: false,
+      subject: "Your profile has been submitted — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nGood news — we've submitted your profile for the {{job.title}} role. The client review usually takes 3-5 business days; we'll update you as soon as we hear back.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Good news — we've submitted your profile for the <strong>{{job.title}}</strong> role. The client review usually takes 3-5 business days; we'll update you as soon as we hear back.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:shortlist",
+      name: "Stage: Shortlisted",
+      isActive: true,
+      subject: "You've been shortlisted for {{job.title}} — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nThe client has shortlisted you for {{job.title}}. {{recruiter.fullName}} will follow up with the next steps in the next day or two.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>The client has shortlisted you for <strong>{{job.title}}</strong>. <strong>{{recruiter.fullName}}</strong> will follow up with the next steps in the next day or two.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:interview",
+      name: "Stage: Interview invite",
+      isActive: true,
+      subject: "Interview invitation: {{job.title}} — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nThe client would like to interview you for the {{job.title}} role. {{recruiter.fullName}} will reach out shortly with timing and format.\n\nWe're excited about this one — best of luck.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>The client would like to interview you for the <strong>{{job.title}}</strong> role. <strong>{{recruiter.fullName}}</strong> will reach out shortly with timing and format.</p><p>We're excited about this one — best of luck.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:hold",
+      name: "Stage: On hold",
+      isActive: true,
+      subject: "Update on your application — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nQuick update: the {{job.title}} role is on hold while the client finalises requirements. We're keeping your profile active — we'll re-engage as soon as things move.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Quick update: the <strong>{{job.title}}</strong> role is on hold while the client finalises requirements. We're keeping your profile active — we'll re-engage as soon as things move.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:offer",
+      name: "Stage: Offer",
+      isActive: true,
+      subject: "Offer from the client for {{job.title}} — congratulations!",
+      bodyText: `Hi {{candidate.firstName}},\n\nWonderful news — the client has extended an offer for the {{job.title}} role. {{recruiter.fullName}} will share the formal letter and walk you through next steps.\n\nCongratulations.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Wonderful news — the client has extended an offer for the <strong>{{job.title}}</strong> role. <strong>{{recruiter.fullName}}</strong> will share the formal letter and walk you through next steps.</p><p>Congratulations.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:joined",
+      name: "Stage: Joined",
+      isActive: true,
+      subject: "Welcome aboard — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nWelcome to the team. Wishing you a great start at {{job.title}}. Please reach out to {{recruiter.fullName}} for anything we can help with as you settle in.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Welcome to the team. Wishing you a great start at <strong>{{job.title}}</strong>. Please reach out to <strong>{{recruiter.fullName}}</strong> for anything we can help with as you settle in.</p><p>— {{appName}}</p>`,
+    },
+    {
+      slug: "stage:rejected",
+      name: "Stage: Rejected",
+      isActive: true,
+      subject: "Update on your application — {{candidate.refId}}",
+      bodyText: `Hi {{candidate.firstName}},\n\nThank you for your interest in {{job.title}}. After careful review, the client has decided not to move forward with your profile this time.\n\nWe'll keep your details on file and will reach out if a better-fitting role opens up.\n\n— {{appName}}`,
+      bodyHtml: `<p>Hi {{candidate.firstName}},</p><p>Thank you for your interest in <strong>{{job.title}}</strong>. After careful review, the client has decided not to move forward with your profile this time.</p><p>We'll keep your details on file and will reach out if a better-fitting role opens up.</p><p>— {{appName}}</p>`,
+    },
+  ];
+
+  let templatesAdded = 0;
+  for (const t of TEMPLATE_SEED) {
+    const existing = (await db.select({ id: emailTemplates.id }).from(emailTemplates).where(eq(emailTemplates.slug, t.slug)))[0];
+    if (existing) continue;
+    await db.insert(emailTemplates).values({
+      slug: t.slug,
+      name: t.name,
+      subject: t.subject,
+      bodyHtml: t.bodyHtml,
+      bodyText: t.bodyText,
+      isActive: t.isActive,
+    });
+    templatesAdded++;
+  }
+  console.log(`  email templates: ${templatesAdded} new (${TEMPLATE_SEED.length} total)`);
 
   console.log("\nseed complete.");
 }
