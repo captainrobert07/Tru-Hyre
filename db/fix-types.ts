@@ -56,23 +56,44 @@ async function main() {
     }
   }
 
-  // Phase 20: blob → drive column rename. drizzle-kit push --force cannot
-  // add a NOT NULL column ('drive_file_id') to a non-empty table, so we
-  // truncate resume_files and client_packets first. Pre-pilot — accepted
-  // data loss, candidates rows survive (just lose their resume PDF link).
-  // Idempotent: once the columns are renamed, the legacy column probe is
-  // empty and this branch is a no-op.
-  const legacyCheck = await db.execute<{ table_name: string }>(sql`
-    SELECT table_name
-    FROM information_schema.columns
-    WHERE column_name = 'blob_url'
-      AND table_name IN ('resume_files', 'client_packets')
-  `);
-  const legacyRows = (legacyCheck.rows || legacyCheck) as Array<{ table_name: string }>;
-  if (legacyRows.length > 0) {
-    console.log("[fix-types] truncating resume_files + client_packets for Drive cutover…");
-    await db.execute(sql.raw(`TRUNCATE TABLE resume_files, client_packets`));
-    console.log("[fix-types]   truncated");
+  // Phase 20: blob → drive column migration. We cannot let drizzle-kit
+  // run an interactive prompt (the ambiguous "create vs rename" question
+  // hangs on non-TTY runners). Do the column swap deterministically here,
+  // BEFORE drizzle-kit push, so by the time push runs, the schema is in
+  // sync and push exits cleanly.
+  for (const tableName of ["resume_files", "client_packets"]) {
+    if (!/^[a-z_]+$/.test(tableName)) continue;
+    const cols = await db.execute<{ column_name: string }>(sql.raw(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = '${tableName}'
+        AND column_name IN ('blob_url','blob_pathname','drive_file_id','drive_web_view_link')
+    `));
+    const colRows = (cols.rows || cols) as Array<{ column_name: string }>;
+    const have = new Set(colRows.map((r) => r.column_name));
+
+    const hasLegacy = have.has("blob_url") || have.has("blob_pathname");
+    const hasNew = have.has("drive_file_id");
+
+    if (hasLegacy && !hasNew) {
+      console.log(`[fix-types] ${tableName}: legacy schema → swapping to drive columns`);
+      await db.execute(sql.raw(`TRUNCATE TABLE ${tableName} CASCADE`));
+      if (have.has("blob_url")) await db.execute(sql.raw(`ALTER TABLE ${tableName} DROP COLUMN blob_url`));
+      if (have.has("blob_pathname")) await db.execute(sql.raw(`ALTER TABLE ${tableName} DROP COLUMN blob_pathname`));
+      await db.execute(sql.raw(`ALTER TABLE ${tableName} ADD COLUMN drive_file_id text NOT NULL DEFAULT ''`));
+      await db.execute(sql.raw(`ALTER TABLE ${tableName} ALTER COLUMN drive_file_id DROP DEFAULT`));
+      await db.execute(sql.raw(`ALTER TABLE ${tableName} ADD COLUMN drive_web_view_link text`));
+      console.log(`[fix-types]   ${tableName}: dropped blob_*, added drive_file_id + drive_web_view_link`);
+    } else if (hasLegacy && hasNew) {
+      console.log(`[fix-types] ${tableName}: half-migrated state → finishing the swap`);
+      await db.execute(sql.raw(`TRUNCATE TABLE ${tableName} CASCADE`));
+      if (have.has("blob_url")) await db.execute(sql.raw(`ALTER TABLE ${tableName} DROP COLUMN blob_url`));
+      if (have.has("blob_pathname")) await db.execute(sql.raw(`ALTER TABLE ${tableName} DROP COLUMN blob_pathname`));
+      console.log(`[fix-types]   ${tableName}: cleaned up legacy columns`);
+    } else if (!hasLegacy && hasNew) {
+      console.log(`[fix-types] ${tableName}: already on drive columns, no-op`);
+    } else {
+      console.log(`[fix-types] ${tableName}: table missing drive columns entirely (will be created by drizzle-kit)`);
+    }
   }
 
   console.log("[fix-types] done");
