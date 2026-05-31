@@ -38,7 +38,6 @@ async function main() {
   const needsFix = probeRows.filter((r) => r.is_serial);
   if (needsFix.length === 0) {
     console.log("[fix-types] users FK columns already integer, no-op");
-    return;
   }
 
   if (needsFix.length > 0) {
