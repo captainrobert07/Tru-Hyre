@@ -240,7 +240,7 @@ export async function setStageAction(
   const allowed = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
   if (!allowed.includes(toStage as typeof allowed[number])) return { ok: false, error: "Invalid stage" };
 
-  const current = (await db.select({ stage: candidates.stage }).from(candidates).where(eq(candidates.id, id)))[0];
+  const current = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
   if (!current) return { ok: false, error: "Candidate not found" };
   if (current.stage === toStage) return { ok: true, previousStage: current.stage };
 
@@ -265,15 +265,12 @@ export async function setStageAction(
     summary: `Moved stage ${current.stage} → ${toStage}`,
   });
 
-  const cand = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
-  if (cand) {
-    await fireStageTransitionEmail({
-      candidate: { id: cand.id, fullName: cand.fullName, email: cand.email, refId: cand.refId },
-      fromStage: current.stage,
-      toStage,
-      actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
-    });
-  }
+  await fireStageTransitionEmail({
+    candidate: { id: current.id, fullName: current.fullName, email: current.email, refId: current.refId },
+    fromStage: current.stage,
+    toStage,
+    actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
+  });
 
   revalidatePath(`/candidates/${id}`);
   return { ok: true, previousStage: current.stage };

@@ -24,18 +24,30 @@ export async function GET(
   const { fileId } = await params;
   if (!fileId) return new NextResponse("Bad request", { status: 400 });
 
-  const [resumeRow] = await db
-    .select({
-      id: resumeFiles.id,
-      candidateId: resumeFiles.candidateId,
-      vendorAccountId: candidates.vendorAccountId,
-      contentType: resumeFiles.contentType,
-      originalName: resumeFiles.originalName,
-    })
-    .from(resumeFiles)
-    .innerJoin(candidates, eq(resumeFiles.candidateId, candidates.id))
-    .where(eq(resumeFiles.driveFileId, fileId))
-    .limit(1);
+  // Resume + packet lookups run in parallel — most file IDs match exactly
+  // one of the two; the second query was wasted on resume hits before.
+  const [[resumeRow], [packetRow]] = await Promise.all([
+    db
+      .select({
+        id: resumeFiles.id,
+        candidateId: resumeFiles.candidateId,
+        vendorAccountId: candidates.vendorAccountId,
+        contentType: resumeFiles.contentType,
+        originalName: resumeFiles.originalName,
+      })
+      .from(resumeFiles)
+      .innerJoin(candidates, eq(resumeFiles.candidateId, candidates.id))
+      .where(eq(resumeFiles.driveFileId, fileId))
+      .limit(1),
+    db
+      .select({
+        id: clientPackets.id,
+        candidateId: clientPackets.candidateId,
+      })
+      .from(clientPackets)
+      .where(eq(clientPackets.driveFileId, fileId))
+      .limit(1),
+  ]);
 
   let allowed = false;
   let displayName: string | null = null;
@@ -48,38 +60,27 @@ export async function GET(
       allowed = !!(u && u.vendorAccountId && resumeRow.vendorAccountId === u.vendorAccountId);
     }
     displayName = resumeRow.originalName;
-  } else {
-    const [packetRow] = await db
-      .select({
-        id: clientPackets.id,
-        candidateId: clientPackets.candidateId,
-      })
-      .from(clientPackets)
-      .where(eq(clientPackets.driveFileId, fileId))
-      .limit(1);
-
-    if (packetRow) {
-      if (user.role === "admin" || user.role === "hr") {
-        allowed = true;
-      } else if (user.role === "client") {
-        const u = (await db.select().from(users).where(eq(users.id, Number(user.id))))[0];
-        if (u?.clientAccountId) {
-          const [match] = await db
-            .select({ id: submissions.id })
-            .from(submissions)
-            .innerJoin(jobs, eq(submissions.jobId, jobs.id))
-            .where(
-              and(
-                eq(submissions.packetId, packetRow.id),
-                eq(jobs.clientAccountId, u.clientAccountId),
-              ),
-            )
-            .limit(1);
-          allowed = !!match;
-        }
+  } else if (packetRow) {
+    if (user.role === "admin" || user.role === "hr") {
+      allowed = true;
+    } else if (user.role === "client") {
+      const u = (await db.select().from(users).where(eq(users.id, Number(user.id))))[0];
+      if (u?.clientAccountId) {
+        const [match] = await db
+          .select({ id: submissions.id })
+          .from(submissions)
+          .innerJoin(jobs, eq(submissions.jobId, jobs.id))
+          .where(
+            and(
+              eq(submissions.packetId, packetRow.id),
+              eq(jobs.clientAccountId, u.clientAccountId),
+            ),
+          )
+          .limit(1);
+        allowed = !!match;
       }
-      displayName = `packet-${packetRow.candidateId}.pdf`;
     }
+    displayName = `packet-${packetRow.candidateId}.pdf`;
   }
 
   if (!allowed) return new NextResponse("Not found", { status: 404 });
@@ -88,13 +89,16 @@ export async function GET(
   if (!stream) return new NextResponse("File unavailable", { status: 404 });
 
   const webStream = Readable.toWeb(stream.body) as unknown as ReadableStream;
-  return new NextResponse(webStream, {
-    headers: {
-      "Content-Type": stream.contentType,
-      "Content-Disposition": `inline; filename="${(displayName || stream.name).replace(/"/g, "")}"`,
-      "Cache-Control": "private, no-store",
-    },
-  });
+  const headers: Record<string, string> = {
+    "Content-Type": stream.contentType,
+    "Content-Disposition": `inline; filename="${(displayName || stream.name).replace(/"/g, "")}"`,
+    // Drive file IDs are immutable; cache per-user for an hour so flipping
+    // between tabs / re-rendering candidate detail doesn't re-stream from
+    // Drive every time. private = browser only, never shared CDN.
+    "Cache-Control": "private, max-age=3600",
+  };
+  if (stream.size != null) headers["Content-Length"] = String(stream.size);
+  return new NextResponse(webStream, { headers });
   } catch (e) {
     if ((e as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw e;
     console.error("[/api/files] error", e);

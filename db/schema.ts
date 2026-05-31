@@ -220,6 +220,7 @@ export const resumeFiles = pgTable("resume_files", {
 }, (t) => ({
   candidateIdx: index("resume_files_candidate_idx").on(t.candidateId),
   hashIdx: index("resume_files_hash_idx").on(t.contentHash),
+  driveIdx: index("resume_files_drive_idx").on(t.driveFileId),
 }));
 
 export const clientPackets = pgTable("client_packets", {
@@ -229,7 +230,10 @@ export const clientPackets = pgTable("client_packets", {
   driveWebViewLink: text("drive_web_view_link"),
   generatedById: integer("generated_by_id").references(() => users.id, { onDelete: "set null" }),
   generatedAt: timestamp("generated_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  driveIdx: index("client_packets_drive_idx").on(t.driveFileId),
+  candidateIdx: index("client_packets_candidate_idx").on(t.candidateId),
+}));
 
 export const stageHistory = pgTable("stage_history", {
   id: serial("id").primaryKey(),

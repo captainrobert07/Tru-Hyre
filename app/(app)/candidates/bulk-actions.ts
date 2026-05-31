@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
@@ -70,14 +70,11 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
   }
 
   if (action === "assign_vendor") {
-    let affected = 0;
-    for (const id of ids) {
-      await db
-        .update(candidates)
-        .set({ vendorAccountId: vendorId ?? null, updatedAt: new Date() })
-        .where(eq(candidates.id, id));
-      affected++;
-    }
+    const result = await db
+      .update(candidates)
+      .set({ vendorAccountId: vendorId ?? null, updatedAt: new Date() })
+      .where(inArray(candidates.id, ids));
+    const affected = (result as unknown as { rowCount?: number }).rowCount ?? ids.length;
     await logAudit({
       actorId: Number(user.id),
       actorEmail: user.email,
@@ -96,25 +93,38 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
     let blobsAttempted = 0;
     let blobsDeleted = 0;
     const blobErrors: { url: string; reason: string }[] = [];
-    for (const id of ids) {
-      const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
-      if (!c) continue;
-      const [resumes, packets] = await Promise.all([
-        db.select().from(resumeFiles).where(eq(resumeFiles.candidateId, id)),
-        db.select().from(clientPackets).where(eq(clientPackets.candidateId, id)),
-      ]);
-      for (const r of resumes) {
-        blobsAttempted++;
-        try { await deleteDriveFile(r.driveFileId); blobsDeleted++; }
-        catch (e) { blobErrors.push({ url: r.driveFileId, reason: (e as Error).message || "unknown" }); }
-      }
-      for (const p of packets) {
-        blobsAttempted++;
-        try { await deleteDriveFile(p.driveFileId); blobsDeleted++; }
-        catch (e) { blobErrors.push({ url: p.driveFileId, reason: (e as Error).message || "unknown" }); }
-      }
-      await db.delete(candidates).where(eq(candidates.id, id));
-      affected++;
+    // Collect every Drive file across the batch in two queries (not 2N),
+    // then delete in parallel. Old behaviour: 50 candidates × 2 files ×
+    // ~200ms serial ≈ 20s; new: capped at one Drive RTT.
+    const [allResumes, allPackets] = await Promise.all([
+      db.select().from(resumeFiles).where(inArray(resumeFiles.candidateId, ids)),
+      db.select().from(clientPackets).where(inArray(clientPackets.candidateId, ids)),
+    ]);
+    const driveTargets = [
+      ...allResumes.map((r) => r.driveFileId),
+      ...allPackets.map((p) => p.driveFileId),
+    ];
+    blobsAttempted = driveTargets.length;
+    const deletes = await Promise.all(
+      driveTargets.map((fid) =>
+        deleteDriveFile(fid).then(
+          () => ({ ok: true as const }),
+          (e: Error) => ({ ok: false as const, fid, reason: e.message || "unknown" }),
+        ),
+      ),
+    );
+    for (const r of deletes) {
+      if (r.ok) blobsDeleted++;
+      else blobErrors.push({ url: r.fid, reason: r.reason });
+    }
+    // Hard-delete candidate rows in one statement; FKs cascade to
+    // resume_files / client_packets / stage_history / submissions / etc.
+    const present = (
+      await db.select({ id: candidates.id }).from(candidates).where(inArray(candidates.id, ids))
+    ).map((r) => r.id);
+    if (present.length > 0) {
+      await db.delete(candidates).where(inArray(candidates.id, present));
+      affected = present.length;
     }
     await logAudit({
       actorId: Number(user.id),
