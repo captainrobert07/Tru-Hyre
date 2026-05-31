@@ -1,46 +1,55 @@
-type SendInput = {
+import nodemailer, { type Transporter } from "nodemailer";
+
+export type SendInput = {
   to: string;
   subject: string;
   text: string;
   html?: string;
 };
 
-type SendResult = { delivered: boolean; reason?: string; id?: string };
+export type SendResult = { delivered: boolean; reason?: string; id?: string };
+
+let cachedTransport: Transporter | null = null;
+
+function getTransport(): Transporter | null {
+  if (cachedTransport) return cachedTransport;
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  cachedTransport = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+  });
+  return cachedTransport;
+}
+
+function defaultFrom(): string {
+  if (process.env.EMAIL_FROM) return process.env.EMAIL_FROM;
+  if (process.env.GMAIL_USER) return `Tru Hyre Recruitment <${process.env.GMAIL_USER}>`;
+  return "Tru Hyre <noreply@truhyre.app>";
+}
 
 export async function sendEmail(input: SendInput): Promise<SendResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "Tru Hyre <noreply@truhyre.app>";
-
-  if (!apiKey) {
+  const transport = getTransport();
+  if (!transport) {
     console.log("[email] (dev) skipping send →", { to: input.to, subject: input.subject });
-    return { delivered: false, reason: "no_api_key" };
+    return { delivered: false, reason: "no_smtp_credentials" };
   }
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [input.to],
-        subject: input.subject,
-        text: input.text,
-        html: input.html,
-      }),
+    const info = await transport.sendMail({
+      from: defaultFrom(),
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      html: input.html,
     });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("[email] resend error", res.status, body.slice(0, 400));
-      return { delivered: false, reason: `resend_${res.status}` };
-    }
-    const data = (await res.json()) as { id?: string };
-    return { delivered: true, id: data.id };
+    return { delivered: true, id: info.messageId };
   } catch (e) {
-    console.error("[email] resend threw", (e as Error).message);
-    return { delivered: false, reason: "exception" };
+    console.error("[email] gmail send threw", (e as Error).message);
+    return { delivered: false, reason: `smtp_${(e as Error).message.slice(0, 80)}` };
   }
 }
 
