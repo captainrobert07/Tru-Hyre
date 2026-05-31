@@ -268,7 +268,7 @@ export async function setStageAction(
   return { ok: true, previousStage: current.stage };
 }
 
-export async function generatePacketAction(id: number): Promise<{ ok: false; error: string } | { ok: true; url: string }> {
+export async function generatePacketAction(id: number): Promise<{ ok: false; error: string } | { ok: true; fileId: string }> {
   const user = await requireStaff();
   const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
   if (!c) return { ok: false, error: "Candidate not found." };
