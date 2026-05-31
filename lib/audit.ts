@@ -4,7 +4,8 @@ import { auditLog } from "@/db/schema";
 
 type AuditAction =
   | "create" | "update" | "delete" | "login" | "logout"
-  | "view" | "download" | "submit" | "feedback" | "invite" | "role_change";
+  | "view" | "download" | "submit" | "feedback" | "invite" | "role_change"
+  | "email_send" | "template_edit";
 
 export async function logAudit(input: {
   actorId?: number | null;
