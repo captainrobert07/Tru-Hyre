@@ -20,10 +20,10 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 > to the shared recruiting mailbox. Without it, scheduling still records the interview
 > and emails the candidate, but no Calendar invite/Meet link is created.
 
-## Wave 2 — Daily-loop leverage
-- [ ] ⭐ **Recruiter "My action items" inbox** (M) — `/inbox`: my tasks, idle candidates, stale submissions, @mentions, my interviews.
-- [ ] ⭐ **Candidate comms timeline + ad-hoc email composer** (M) — show `emailOutbox` on profile + send templated/custom email from the app.
-- [ ] ⭐ **Structured interview scorecards** (M) — 1–5 ratings + recommendation, aggregated on submission.
+## Wave 2 — Daily-loop leverage ✅ SHIPPED (preview build green, commit f173c5f)
+- [x] ⭐ **Recruiter "My action items" inbox** (M) — `/inbox` + nav badge: my tasks, idle candidates I own, stale submissions I sent, my upcoming interviews, unread count.
+- [x] ⭐ **Candidate comms timeline + ad-hoc email composer** (M) — emailOutbox history + template/custom send on the profile, logged + audited.
+- [x] ⭐ **Structured interview scorecards** (M) — 1–5 per-criterion ratings + verdict, mirrored into the activity timeline.
 
 ## Wave 3 — AI multipliers (Claude already wired in `lib/parse-ai.ts`)
 - [ ] ⭐ **Candidate ↔ job match scoring** (L) — SQL prefilter → Claude scores shortlist 0–100 with reasons; `candidate_scores` table.
