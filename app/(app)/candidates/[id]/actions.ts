@@ -11,6 +11,7 @@ import { uploadPacket, deleteDriveFile } from "@/lib/drive";
 import { renderPacketPdf } from "@/lib/packet";
 import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireAdmin, requireStaff } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
 import { withToast } from "@/lib/toast";
 
 const editSchema = z.object({
@@ -197,12 +198,16 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
       break;
     }
     case "source": {
+      if (!(await isFeatureEnabled("source_tracking"))) return;
       const allowed = ["direct", "referral", "linkedin", "job_board", "agency", "careers", "other"] as const;
       if (v === null || !allowed.includes(v as typeof allowed[number])) return;
       update.source = v as typeof allowed[number];
       break;
     }
-    case "sourceDetail": update.sourceDetail = v ? v.slice(0, 160) : null; break;
+    case "sourceDetail":
+      if (!(await isFeatureEnabled("source_tracking"))) return;
+      update.sourceDetail = v ? v.slice(0, 160) : null;
+      break;
   }
 
   await db.update(candidates).set(update).where(eq(candidates.id, id));

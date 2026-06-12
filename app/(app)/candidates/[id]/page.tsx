@@ -4,6 +4,7 @@ import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
+import { getFeatureStates } from "@/lib/features";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RecentTracker } from "@/components/recently-viewed";
@@ -33,6 +34,8 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
 
   const cand = (await db.select().from(candidates).where(eq(candidates.id, candidateId)))[0];
   if (!cand) notFound();
+
+  const flags = await getFeatureStates();
 
   const [resume, packets, history, openJobs, subs] = await Promise.all([
     db
@@ -377,31 +380,35 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 }}
               />
             </Field>
-            <Field label="Source">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge tone="blue">{(cand.source || "direct").replaceAll("_", " ")}</Badge>
-                <InlineEdit
-                  field="source"
-                  defaultValue={cand.source || "direct"}
-                  placeholder="direct / referral / linkedin / job_board / agency / careers / other"
-                  onSave={async (fd) => {
-                    "use server";
-                    await updateCandidateFieldAction(candidateId, fd);
-                  }}
-                />
-              </div>
-            </Field>
-            <Field label="Source detail">
-              <InlineEdit
-                field="sourceDetail"
-                defaultValue={cand.sourceDetail || ""}
-                placeholder="Referrer name, board, etc."
-                onSave={async (fd) => {
-                  "use server";
-                  await updateCandidateFieldAction(candidateId, fd);
-                }}
-              />
-            </Field>
+            {flags.source_tracking && (
+              <>
+                <Field label="Source">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge tone="blue">{(cand.source || "direct").replaceAll("_", " ")}</Badge>
+                    <InlineEdit
+                      field="source"
+                      defaultValue={cand.source || "direct"}
+                      placeholder="direct / referral / linkedin / job_board / agency / careers / other"
+                      onSave={async (fd) => {
+                        "use server";
+                        await updateCandidateFieldAction(candidateId, fd);
+                      }}
+                    />
+                  </div>
+                </Field>
+                <Field label="Source detail">
+                  <InlineEdit
+                    field="sourceDetail"
+                    defaultValue={cand.sourceDetail || ""}
+                    placeholder="Referrer name, board, etc."
+                    onSave={async (fd) => {
+                      "use server";
+                      await updateCandidateFieldAction(candidateId, fd);
+                    }}
+                  />
+                </Field>
+              </>
+            )}
             <Field label="Tags">
               <div>
                 {cand.tags && cand.tags.length > 0 && (
@@ -535,6 +542,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
             />
           </Section>
 
+          {flags.interviews && (
           <Section title="Interviews">
             <InterviewScheduler
               interviews={interviewItems}
@@ -550,7 +558,9 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
             />
           </Section>
+          )}
 
+          {flags.email_composer && (
           <Section title="Communication">
             <EmailComposer
               candidateEmail={cand.email}
@@ -562,7 +572,9 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
             />
           </Section>
+          )}
 
+          {flags.scorecards && (
           <Section title="Scorecards">
             <Scorecard
               scorecards={scorecardItems}
@@ -574,6 +586,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
             />
           </Section>
+          )}
 
           <Section title="Resume">
             {latestResume ? (

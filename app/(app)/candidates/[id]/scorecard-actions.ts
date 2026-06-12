@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { candidates, interviewFeedback, feedbackEvents } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
+import { assertFeatureEnabled } from "@/lib/features";
 
 // Fixed default criteria. (Per-job custom criteria is a follow-on.)
 const VERDICTS = ["strong_yes", "yes", "no", "strong_no"] as const;
@@ -33,6 +34,7 @@ export async function submitScorecardAction(
   formData: FormData,
 ): Promise<{ ok: boolean; error?: string }> {
   const user = await requireStaff();
+  await assertFeatureEnabled("scorecards");
   const parsed = schema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { ok: false, error: "Pick an overall verdict." };
   const v = parsed.data;

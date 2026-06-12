@@ -9,6 +9,7 @@ import { sendEmail } from "@/lib/email";
 import { renderTemplate, type TemplateContext } from "@/lib/email-templates";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
+import { assertFeatureEnabled } from "@/lib/features";
 import { APP_NAME } from "@/lib/utils";
 
 const schema = z.object({
@@ -43,6 +44,7 @@ export async function sendAdHocEmailAction(
   formData: FormData,
 ): Promise<{ ok: boolean; error?: string }> {
   const user = await requireStaff();
+  await assertFeatureEnabled("email_composer");
   const parsed = schema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { ok: false, error: "Invalid input." };
   const v = parsed.data;

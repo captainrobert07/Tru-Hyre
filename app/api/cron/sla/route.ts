@@ -3,6 +3,7 @@ import { and, eq, like, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, submissions, interviews, tasks, notifications } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
+import { isFeatureEnabled } from "@/lib/features";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +47,10 @@ type TaskSeed = {
 export async function GET(req: Request) {
   if (!authorized(req)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  if (!(await isFeatureEnabled("sla_alerts"))) {
+    return NextResponse.json({ ok: true, skipped: "feature_disabled" });
   }
 
   // 1. Gather the three SLA breach sets in parallel.

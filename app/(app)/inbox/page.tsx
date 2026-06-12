@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, Badge, ListRow, StageBadge } from "@/components/primitives";
 import { TimeAgo } from "@/components/time-ago";
 import { getMyActionItems } from "@/lib/metrics";
+import { isFeatureEnabled } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Inbox" };
@@ -21,6 +23,7 @@ function fmtWhen(iso: string): string {
 
 export default async function InboxPage() {
   const user = await requireStaff();
+  if (!(await isFeatureEnabled("inbox"))) redirect("/dashboard");
   const items = await getMyActionItems(Number(user.id));
 
   return (

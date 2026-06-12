@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { notifications } from "@/db/schema";
 import { AppShell } from "@/components/app-shell";
 import { getMyActionItemCount } from "@/lib/metrics";
+import { getFeatureStates } from "@/lib/features";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await auth();
@@ -16,6 +17,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (u.role === "client") redirect("/portal/client");
   if (u.role === "vendor") redirect("/portal/vendor");
 
+  const flags = await getFeatureStates();
+
   let unreadCount = 0;
   let inboxCount = 0;
   if (u.id) {
@@ -25,7 +28,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           .select({ n: count() })
           .from(notifications)
           .where(and(eq(notifications.userId, Number(u.id)), isNull(notifications.readAt))),
-        getMyActionItemCount(Number(u.id)),
+        flags.inbox ? getMyActionItemCount(Number(u.id)) : Promise.resolve(0),
       ]);
       unreadCount = r[0]?.n ?? 0;
       inboxCount = ic;
@@ -40,6 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       user={{ fullName: u.fullName || u.email || "", email: u.email || "", role: u.role as "admin" | "hr" }}
       unreadCount={unreadCount}
       inboxCount={inboxCount}
+      enabledFeatures={{ inbox: flags.inbox, command_palette: flags.command_palette }}
     >
       {children}
     </AppShell>

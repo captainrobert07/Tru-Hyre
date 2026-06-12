@@ -6,7 +6,7 @@ import { uploadResumeAction, pasteResumeAction } from "./actions";
 
 type UploadResult = Awaited<ReturnType<typeof uploadResumeAction>>;
 
-export function UploadForm() {
+export function UploadForm({ showSource = true }: { showSource?: boolean }) {
   const [mode, setMode] = useState<"pdf" | "paste">("pdf");
   const [pdfState, pdfAction, pdfPending] = useActionState<UploadResult | null, FormData>(uploadResumeAction, null);
   const [pasteState, pasteAction, pastePending] = useActionState<UploadResult | null, FormData>(pasteResumeAction, null);
@@ -46,7 +46,7 @@ export function UploadForm() {
             />
             <p className="text-xs text-ink-muted mt-1.5">Max 10 MB. Tru Hyre extracts name, contact, location, title, company, experience, notice, CTC, summary, and skills.</p>
           </div>
-          <SourceFields />
+          {showSource && <SourceFields />}
           <Result state={state} />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary">
@@ -69,7 +69,7 @@ export function UploadForm() {
             />
             <p className="text-xs text-ink-muted mt-1.5">No file is stored. Tru Hyre runs the same extractor over the text you paste.</p>
           </div>
-          <SourceFields />
+          {showSource && <SourceFields />}
           <Result state={state} />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary">

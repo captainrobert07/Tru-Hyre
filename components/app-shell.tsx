@@ -50,14 +50,20 @@ export function AppShell({
   user,
   unreadCount,
   inboxCount,
+  enabledFeatures,
   children,
 }: {
   user: { fullName: string; email: string; role: Role };
   unreadCount?: number;
   inboxCount?: number;
+  enabledFeatures?: { inbox?: boolean; command_palette?: boolean };
   children: ReactNode;
 }) {
-  const items = NAV.filter((n) => n.roles.includes(user.role));
+  const inboxEnabled = enabledFeatures?.inbox ?? true;
+  const paletteEnabled = enabledFeatures?.command_palette ?? true;
+  const items = NAV
+    .filter((n) => n.roles.includes(user.role))
+    .filter((n) => (n.href === "/inbox" ? inboxEnabled : true));
   const unread = unreadCount ?? 0;
   const inbox = inboxCount ?? 0;
   const dotFor = (href: string) => (href === "/notifications" ? unread : href === "/inbox" ? inbox : 0);
@@ -67,7 +73,7 @@ export function AppShell({
   return (
     <ConfirmProvider>
     <div className="min-h-screen flex flex-col">
-      <CommandPalette />
+      {paletteEnabled && <CommandPalette />}
       <ShortcutHelp />
       {/* Top bar — desktop pill nav */}
       <header className="hidden md:flex sticky top-0 z-40 bg-canvas/80 backdrop-blur-md px-6 lg:px-10 py-4 items-center gap-4">
@@ -104,7 +110,7 @@ export function AppShell({
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          <CommandTrigger />
+          {paletteEnabled && <CommandTrigger />}
           <QuickAdd />
           <ShortcutTrigger />
           <Link href="/notifications" className="relative size-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-soft hover:text-ink" aria-label="Notifications">

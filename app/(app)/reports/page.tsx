@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, StatCard, Badge } from "@/components/primitives";
 import {
   getSourceOfHire,
@@ -20,6 +21,7 @@ export const metadata = { title: "Reports" };
 
 export default async function ReportsPage() {
   await requireStaff();
+  const showSourceEff = await isFeatureEnabled("source_tracking");
 
   const [
     source,
@@ -189,6 +191,7 @@ export default async function ReportsPage() {
       </div>
 
       {/* Source effectiveness funnel */}
+      {showSourceEff && (
       <section className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold">Source effectiveness</h2>
@@ -232,6 +235,7 @@ export default async function ReportsPage() {
           Join rate = joined ÷ candidates from that source. Set a candidate&apos;s source at upload or on their profile.
         </p>
       </section>
+      )}
 
       {/* Cycle time + Vendor SLA */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">

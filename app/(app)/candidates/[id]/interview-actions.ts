@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/rbac";
+import { assertFeatureEnabled } from "@/lib/features";
 import { scheduleInterview, cancelInterview, type InterviewMode } from "@/lib/interviews";
 
 const scheduleSchema = z.object({
@@ -52,6 +53,7 @@ export async function scheduleInterviewAction(
   formData: FormData,
 ): Promise<{ ok: boolean; error?: string; meetLink?: string | null }> {
   const user = await requireStaff();
+  await assertFeatureEnabled("interviews");
   const parsed = scheduleSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { ok: false, error: "Please fill in the interview title and time." };
   const v = parsed.data;
@@ -89,6 +91,7 @@ export async function cancelInterviewAction(
   interviewId: number,
 ): Promise<{ ok: boolean; error?: string }> {
   const user = await requireStaff();
+  await assertFeatureEnabled("interviews");
   const r = await cancelInterview(interviewId, {
     id: Number(user.id),
     email: user.email,

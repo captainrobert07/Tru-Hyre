@@ -475,6 +475,19 @@ export const auditLog = pgTable("audit_log", {
   createdIdx: index("audit_log_created_idx").on(t.createdAt),
 }));
 
+// ---------- Feature flags ----------
+
+// On/off state for optional features. The catalogue (label/description/
+// category/default) lives in code at lib/features.ts; only the boolean state
+// is persisted here, keyed by the feature key. A missing row = use the
+// code-defined default.
+export const featureFlags = pgTable("feature_flags", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  enabled: boolean("enabled").notNull(),
+  updatedById: integer("updated_by_id").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ---------- Email templates + outbox ----------
 
 export const emailTemplates = pgTable("email_templates", {
