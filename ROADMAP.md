@@ -28,13 +28,15 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 ## Feature flags ✅ SHIPPED (preview build green, commit 002a386)
 - [x] **Admin enable/disable per feature** — `feature_flags` table + `lib/features.ts` registry; `/settings/features` toggles grouped by category; each feature gated at UI + server action (defense in depth). Disabling hides UI and blocks the action immediately. New features should register here.
 
-## Wave 3 — AI multipliers (Claude already wired in `lib/parse-ai.ts`)
-- [ ] ⭐ **Candidate ↔ job match scoring** (L) — SQL prefilter → Claude scores shortlist 0–100 with reasons; `candidate_scores` table.
-- [ ] **AI candidate summary / highlights** (S)
-- [ ] **JD generator** (S)
-- [ ] **Semantic resume search** (M)
-- [ ] **AI screening questions** (S)
-- [ ] **AI duplicate-merge suggestions** (M)
+## Wave 3 — AI multipliers ✅ SHIPPED (preview build green, commit 85119a4)
+- [x] ⭐ **Candidate ↔ job match scoring** (L) — `lib/match.ts`: SQL skill prefilter → Claude scores shortlist 0–100 w/ reasons; `candidate_scores` cache; Recommended panel on job detail.
+- [x] **AI candidate summary / highlights** (S) — button on candidate profile → generates + saves summary.
+- [x] **JD generator** (S) — "Draft description" button on job form.
+- [x] **Semantic resume search** (M) — `/candidates/ai-search`: NL query → criteria → SQL filter+rank; keyword fallback.
+- [x] **AI screening questions** (S) — button on job form.
+- [x] **AI duplicate-merge suggestions** (M) — `/candidates/duplicates`: fuzzy email/phone/name pair scan for manual review.
+
+> Shared core: `lib/ai.ts` (Claude client + callTool/callText, no-op without `ANTHROPIC_API_KEY`). All 6 are feature-flagged (AI category) and gated UI + action. ⚠️ Need `ANTHROPIC_API_KEY` in Vercel to function live (build-safe without it).
 
 ## Wave 4 — Sourcing channels
 - [ ] ⭐ **Public careers page + self-apply** (L) — `/careers` feeds the parse pipeline.
