@@ -9,8 +9,6 @@ import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
 
 // Fixed default criteria. (Per-job custom criteria is a follow-on.)
-export const SCORECARD_CRITERIA = ["technical", "communication", "culture"] as const;
-
 const VERDICTS = ["strong_yes", "yes", "no", "strong_no"] as const;
 
 const schema = z.object({
