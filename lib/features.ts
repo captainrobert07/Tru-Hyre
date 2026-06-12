@@ -33,7 +33,11 @@ export type FeatureKey =
   | "requisition_approval"
   | "interview_reminders"
   | "self_scheduling"
-  | "bulk_actions";
+  | "bulk_actions"
+  | "bulk_email"
+  | "email_sequences"
+  | "sms_notifications"
+  | "gmail_sync";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline";
 
@@ -199,6 +203,34 @@ export const FEATURES: FeatureDef[] = [
     description: "Bulk stage-change and tag candidates from the candidates list.",
     category: "Pipeline",
     defaultEnabled: true,
+  },
+  {
+    key: "bulk_email",
+    label: "Bulk email to segments",
+    description: "Email a templated message to a selected set of candidates at once.",
+    category: "Communication",
+    defaultEnabled: true,
+  },
+  {
+    key: "email_sequences",
+    label: "Email sequences (drip)",
+    description: "Enroll candidates in a multi-step email sequence; steps send on schedule via the daily job.",
+    category: "Communication",
+    defaultEnabled: false,
+  },
+  {
+    key: "sms_notifications",
+    label: "SMS / WhatsApp notifications",
+    description: "Send stage-change texts via an SMS provider. Requires SMS provider credentials to actually send.",
+    category: "Communication",
+    defaultEnabled: false,
+  },
+  {
+    key: "gmail_sync",
+    label: "Two-way email sync",
+    description: "Log inbound candidate replies into the communication timeline. Full Gmail/IMAP sync requires external setup.",
+    category: "Communication",
+    defaultEnabled: false,
   },
 ];
 

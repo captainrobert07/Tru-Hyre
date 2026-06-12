@@ -11,6 +11,7 @@ import { StageBadge, Badge } from "@/components/primitives";
 import { Avatar } from "@/components/avatar";
 import { useListKeyboard } from "@/components/use-list-keyboard";
 import { bulkCandidateAction } from "./bulk-actions";
+import { bulkEmailAction } from "./bulk-email-actions";
 
 type Row = {
   id: number;
@@ -47,10 +48,14 @@ export function CandidatesTable({
   rows,
   isAdmin,
   vendors,
+  templates = [],
+  bulkEmailEnabled = false,
 }: {
   rows: Row[];
   isAdmin: boolean;
   vendors: { id: number; name: string }[];
+  templates?: { slug: string; name: string }[];
+  bulkEmailEnabled?: boolean;
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -94,6 +99,18 @@ export function CandidatesTable({
   const onAddTag = () => {
     const tag = window.prompt("Tag to add to selected candidates (e.g. talent-pool):");
     if (tag && tag.trim()) runBulk({ ids: [...selected], action: "add_tag", tag: tag.trim() });
+  };
+  const onBulkEmail = (templateSlug: string) => {
+    start(async () => {
+      const r = await bulkEmailAction({ ids: [...selected], templateSlug });
+      if (r.ok) {
+        toast.success(`Emailed ${r.sent}${r.skipped ? `, ${r.skipped} skipped` : ""}`);
+        clear();
+        router.refresh();
+      } else {
+        toast.error(r.error);
+      }
+    });
   };
   const onBulkDelete = async () => {
     const ok = await confirm({
@@ -164,6 +181,19 @@ export function CandidatesTable({
             </details>
 
             <button type="button" disabled={pending} onClick={onAddTag} className="text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center">Tag</button>
+
+            {bulkEmailEnabled && templates.length > 0 && (
+              <details className="relative">
+                <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Email ▾</summary>
+                <div className="absolute right-0 top-full mt-2 w-56 card p-1 z-50 max-h-72 overflow-y-auto">
+                  {templates.map((t) => (
+                    <button key={t.slug} type="button" disabled={pending} onClick={() => onBulkEmail(t.slug)} className="w-full text-left px-3 h-8 rounded-md text-xs hover:bg-canvas truncate">
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            )}
 
             {isAdmin && (
               <button type="button" disabled={pending} onClick={onBulkDelete} className="text-xs px-3 h-8 rounded-full text-red-700 hover:bg-red-50 border border-red-100">Delete</button>

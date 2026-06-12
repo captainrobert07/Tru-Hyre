@@ -5,6 +5,8 @@ import { sendEmail } from "@/lib/email";
 import { renderTemplate, type TemplateContext } from "@/lib/email-templates";
 import { logAudit } from "@/lib/audit";
 import { APP_NAME } from "@/lib/utils";
+import { isFeatureEnabled } from "@/lib/features";
+import { sendSms } from "@/lib/sms";
 
 export type StageEmailInput = {
   candidate: {
@@ -12,6 +14,7 @@ export type StageEmailInput = {
     fullName: string;
     email: string | null;
     refId: string;
+    phone?: string | null;
   };
   fromStage: string | null;
   toStage: string;
@@ -108,6 +111,17 @@ export async function fireStageTransitionEmail(input: StageEmailInput): Promise<
         reason: result.reason,
       },
     });
+
+    // Optional SMS notification (feature-flagged; no-op unless an SMS provider
+    // is configured). Best-effort — never blocks the stage change.
+    try {
+      if (input.candidate.phone && (await isFeatureEnabled("sms_notifications"))) {
+        const smsBody = `${APP_NAME}: Hi ${firstName(input.candidate.fullName)}, there's an update on your application (${input.candidate.refId}). Check your email for details.`;
+        await sendSms(input.candidate.phone, smsBody);
+      }
+    } catch (e) {
+      console.error("[stage-sms] threw — ignoring", (e as Error).message);
+    }
   } catch (e) {
     console.error("[stage-email] threw — swallowing so stage change isn't blocked", (e as Error).message);
   }

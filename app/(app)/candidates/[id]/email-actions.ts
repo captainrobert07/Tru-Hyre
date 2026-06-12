@@ -4,13 +4,53 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { candidates, emailTemplates, emailOutbox } from "@/db/schema";
+import { candidates, emailTemplates, emailOutbox, inboundMessages } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { renderTemplate, type TemplateContext } from "@/lib/email-templates";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
 import { assertFeatureEnabled } from "@/lib/features";
 import { APP_NAME } from "@/lib/utils";
+
+const logReplySchema = z.object({
+  body: z.string().min(1).max(8000),
+  subject: z.string().max(240).optional().or(z.literal("")),
+});
+
+/** Manually log an inbound candidate reply into the communication timeline. */
+export async function logInboundReplyAction(
+  candidateId: number,
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireStaff();
+  await assertFeatureEnabled("gmail_sync");
+  const parsed = logReplySchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) return { ok: false, error: "Paste the reply text." };
+
+  const cand = (await db.select({ email: candidates.email }).from(candidates).where(eq(candidates.id, candidateId)))[0];
+  if (!cand) return { ok: false, error: "Candidate not found." };
+
+  await db.insert(inboundMessages).values({
+    candidateId,
+    fromEmail: cand.email,
+    subject: parsed.data.subject || null,
+    body: parsed.data.body,
+    source: "manual",
+    loggedById: Number(user.id),
+  });
+
+  await logAudit({
+    actorId: Number(user.id),
+    actorEmail: user.email,
+    action: "create",
+    targetType: "candidate",
+    targetId: candidateId,
+    summary: "Logged inbound reply",
+  });
+
+  revalidatePath(`/candidates/${candidateId}`);
+  return { ok: true };
+}
 
 const schema = z.object({
   // Either a template slug to render, or a custom subject+body.

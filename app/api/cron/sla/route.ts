@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { candidates, submissions, interviews, tasks, notifications } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { isFeatureEnabled } from "@/lib/features";
+import { processDueSequenceSteps } from "@/lib/sequences";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,10 +50,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const [slaOn, remindersOn] = await Promise.all([
+  const [slaOn, remindersOn, sequencesOn] = await Promise.all([
     isFeatureEnabled("sla_alerts"),
     isFeatureEnabled("interview_reminders"),
+    isFeatureEnabled("email_sequences"),
   ]);
+
+  // Drip sequences: send any due steps.
+  let sequenceStepsSent = 0;
+  if (sequencesOn) {
+    try {
+      sequenceStepsSent = await processDueSequenceSteps(200);
+    } catch (e) {
+      console.error("[cron] sequence processing failed", (e as Error).message);
+    }
+  }
 
   // Interview reminders: notify interviewers about interviews happening today.
   let interviewReminders = 0;
@@ -86,7 +98,7 @@ export async function GET(req: Request) {
   }
 
   if (!slaOn) {
-    return NextResponse.json({ ok: true, skipped: "sla_disabled", interviewReminders });
+    return NextResponse.json({ ok: true, skipped: "sla_disabled", interviewReminders, sequenceStepsSent });
   }
 
   // 1. Gather the three SLA breach sets in parallel.
@@ -212,6 +224,7 @@ export async function GET(req: Request) {
     overdueInterviews: overdueIvs.length,
     tasksCreated: seeds.length,
     interviewReminders,
+    sequenceStepsSent,
   };
 
   try {

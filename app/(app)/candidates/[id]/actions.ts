@@ -280,7 +280,7 @@ export async function setStageAction(
   });
 
   await fireStageTransitionEmail({
-    candidate: { id: current.id, fullName: current.fullName, email: current.email, refId: current.refId },
+    candidate: { id: current.id, fullName: current.fullName, email: current.email, refId: current.refId, phone: current.phone },
     fromStage: current.stage,
     toStage,
     actor: { id: Number(user.id), email: user.email, fullName: user.fullName },

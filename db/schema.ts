@@ -556,6 +556,39 @@ export const emailTemplates = pgTable("email_templates", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Drip email sequence enrollments. A candidate is enrolled in a named sequence
+// (definitions live in lib/sequences.ts); the daily cron sends the next step
+// when it's due and advances stepIndex until the sequence completes.
+export const sequenceEnrollments = pgTable("sequence_enrollments", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  sequenceKey: varchar("sequence_key", { length: 64 }).notNull(),
+  stepIndex: integer("step_index").notNull().default(0),
+  status: varchar("status", { length: 16 }).notNull().default("active"), // active | done | cancelled
+  nextRunAt: timestamp("next_run_at").notNull().defaultNow(),
+  enrolledById: integer("enrolled_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("sequence_enrollments_candidate_idx").on(t.candidateId),
+  dueIdx: index("sequence_enrollments_due_idx").on(t.status, t.nextRunAt),
+}));
+
+// Inbound candidate replies. Auto-populated by a Gmail/IMAP sync (external
+// setup) or logged manually by HR. Surfaced on the candidate comms timeline.
+export const inboundMessages = pgTable("inbound_messages", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").references(() => candidates.id, { onDelete: "cascade" }),
+  fromEmail: varchar("from_email", { length: 254 }),
+  subject: varchar("subject", { length: 240 }),
+  body: text("body").notNull(),
+  source: varchar("source", { length: 16 }).notNull().default("manual"), // manual | gmail | imap
+  receivedAt: timestamp("received_at").notNull().defaultNow(),
+  loggedById: integer("logged_by_id").references(() => users.id, { onDelete: "set null" }),
+}, (t) => ({
+  candidateIdx: index("inbound_messages_candidate_idx").on(t.candidateId),
+}));
+
 export const emailOutbox = pgTable("email_outbox", {
   id: serial("id").primaryKey(),
   candidateId: integer("candidate_id").references(() => candidates.id, { onDelete: "set null" }),

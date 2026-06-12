@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { getFeatureStates } from "@/lib/features";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
@@ -13,14 +13,17 @@ import { PendingShimmer } from "@/components/pending-shimmer";
 import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
 import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
-import { EmailComposer, type OutboxItem } from "@/components/email-composer";
+import { EmailComposer, type OutboxItem, type InboundItem } from "@/components/email-composer";
 import { Scorecard, type ScorecardItem } from "@/components/scorecard";
 import { AiSummaryButton } from "@/components/ai-summary-button";
 import { OffersPanel, type OfferItem } from "@/components/offers-panel";
+import { SequencePanel, type EnrollmentItem } from "@/components/sequence-panel";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
 import { createOfferAction, setOfferStatusAction } from "./offer-actions";
+import { enrollSequenceAction, cancelSequenceAction } from "./sequence-actions";
+import { SEQUENCES } from "@/lib/sequences";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
-import { sendAdHocEmailAction } from "./email-actions";
+import { sendAdHocEmailAction, logInboundReplyAction } from "./email-actions";
 import { submitScorecardAction } from "./scorecard-actions";
 import { generateCandidateSummaryAction } from "./ai-actions";
 import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
@@ -75,7 +78,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   // Fetch feedback for all submissions of this candidate, then weave a unified
   // activity timeline (stage moves + feedback events).
   const subIds = subs.map((s) => s.id);
-  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows, offerRows] = await Promise.all([
+  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows, offerRows, inboundRows, enrollmentRows] = await Promise.all([
     subIds.length === 0
       ? Promise.resolve([])
       : db
@@ -150,7 +153,35 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       .from(offers)
       .where(eq(offers.candidateId, candidateId))
       .orderBy(desc(offers.createdAt)),
+    db
+      .select({ id: inboundMessages.id, subject: inboundMessages.subject, body: inboundMessages.body, receivedAt: inboundMessages.receivedAt })
+      .from(inboundMessages)
+      .where(eq(inboundMessages.candidateId, candidateId))
+      .orderBy(desc(inboundMessages.receivedAt))
+      .limit(20),
+    db
+      .select()
+      .from(sequenceEnrollments)
+      .where(eq(sequenceEnrollments.candidateId, candidateId))
+      .orderBy(desc(sequenceEnrollments.createdAt)),
   ]);
+
+  const seqLabel = (key: string) => SEQUENCES.find((s) => s.key === key);
+  const enrollmentItems: EnrollmentItem[] = enrollmentRows.map((e) => ({
+    id: e.id,
+    sequenceKey: e.sequenceKey,
+    sequenceLabel: seqLabel(e.sequenceKey)?.label || e.sequenceKey,
+    stepIndex: e.stepIndex,
+    totalSteps: seqLabel(e.sequenceKey)?.steps.length ?? 0,
+    status: e.status,
+  }));
+
+  const inboundItems: InboundItem[] = inboundRows.map((m) => ({
+    id: m.id,
+    subject: m.subject,
+    body: m.body,
+    receivedAt: m.receivedAt.toISOString(),
+  }));
 
   const offerItems: OfferItem[] = offerRows.map((o) => ({
     id: o.id,
@@ -599,6 +630,28 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               onSend={async (fd) => {
                 "use server";
                 return await sendAdHocEmailAction(candidateId, fd);
+              }}
+              inbound={inboundItems}
+              onLogReply={flags.gmail_sync ? async (fd) => {
+                "use server";
+                return await logInboundReplyAction(candidateId, fd);
+              } : undefined}
+            />
+          </Section>
+          )}
+
+          {flags.email_sequences && (
+          <Section title="Email sequence">
+            <SequencePanel
+              enrollments={enrollmentItems}
+              sequences={SEQUENCES.map((s) => ({ key: s.key, label: s.label }))}
+              onEnroll={async (key) => {
+                "use server";
+                return await enrollSequenceAction(candidateId, key);
+              }}
+              onCancel={async (enrollmentId) => {
+                "use server";
+                return await cancelSequenceAction(candidateId, enrollmentId);
               }}
             />
           </Section>

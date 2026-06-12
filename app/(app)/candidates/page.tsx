@@ -1,7 +1,7 @@
 import { desc, ilike, or, sql, count, and, eq, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { candidates, vendorAccounts, savedViews } from "@/db/schema";
+import { candidates, vendorAccounts, savedViews, emailTemplates } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { parseListParams } from "@/lib/list-params";
@@ -24,10 +24,11 @@ export default async function CandidatesPage({
   const { q, page, pageSize, offset } = parseListParams(sp);
   const stage = sp.stage;
   const tag = sp.tag;
-  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled] = await Promise.all([
+  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled, bulkEmailEnabled] = await Promise.all([
     isFeatureEnabled("ai_search"),
     isFeatureEnabled("ai_dedupe"),
     isFeatureEnabled("talent_pool"),
+    isFeatureEnabled("bulk_email"),
   ]);
 
   const conditions: SQL[] = [];
@@ -83,6 +84,10 @@ export default async function CandidatesPage({
       .where(stageWhere)
       .groupBy(candidates.stage),
   ]);
+  const emailTemplateList = bulkEmailEnabled
+    ? await db.select({ slug: emailTemplates.slug, name: emailTemplates.name }).from(emailTemplates).where(eq(emailTemplates.isActive, true)).orderBy(emailTemplates.name)
+    : [];
+
   const total = totalRows[0]?.n ?? 0;
   const stageCounts = new Map<string, number>();
   for (const r of stageCountRows) stageCounts.set(r.stage, r.n);
@@ -162,7 +167,7 @@ export default async function CandidatesPage({
         />
       ) : (
         <>
-          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={vendorList} />
+          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={vendorList} templates={emailTemplateList} bulkEmailEnabled={bulkEmailEnabled} />
           <Pager basePath="/candidates" page={page} pageSize={pageSize} total={total} q={q} status={stage} />
         </>
       )}

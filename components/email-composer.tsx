@@ -16,8 +16,10 @@ export type OutboxItem = {
 };
 
 export type TemplateOption = { slug: string; name: string };
+export type InboundItem = { id: number; subject: string | null; body: string; receivedAt: string };
 
 type SendFn = (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+type LogReplyFn = (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 
 function fmt(iso: string): string {
   try {
@@ -34,15 +36,30 @@ export function EmailComposer({
   outbox,
   templates,
   onSend,
+  inbound = [],
+  onLogReply,
 }: {
   candidateEmail: string | null;
   outbox: OutboxItem[];
   templates: TemplateOption[];
   onSend: SendFn;
+  inbound?: InboundItem[];
+  onLogReply?: LogReplyFn;
 }) {
   const [open, setOpen] = useState(false);
+  const [replyOpen, setReplyOpen] = useState(false);
   const [mode, setMode] = useState<"template" | "custom">(templates.length > 0 ? "template" : "custom");
   const [pending, start] = useTransition();
+
+  const logReply = (formData: FormData) => {
+    if (!onLogReply) return;
+    start(async () => {
+      const r = await onLogReply(formData);
+      if (!r.ok) { toast.error(r.error || "Could not log reply."); return; }
+      toast.success("Reply logged.");
+      setReplyOpen(false);
+    });
+  };
 
   const submit = (formData: FormData) => {
     if (mode === "template") formData.delete("subject"), formData.delete("body");
@@ -85,6 +102,36 @@ export function EmailComposer({
             </li>
           ))}
         </ul>
+      )}
+
+      {inbound.length > 0 && (
+        <div className="rounded-lg border border-hairline bg-canvas p-2.5">
+          <div className="text-[11px] font-medium text-ink-muted mb-1.5">Replies received</div>
+          <ul className="space-y-1.5">
+            {inbound.map((m) => (
+              <li key={m.id} className="text-sm border-b border-hairline pb-1.5 last:border-0">
+                {m.subject && <div className="font-medium truncate">{m.subject}</div>}
+                <div className="text-xs text-ink-soft whitespace-pre-line line-clamp-4">{m.body}</div>
+                <div className="text-[11px] text-ink-muted mt-0.5">← inbound · {fmt(m.receivedAt)}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {onLogReply && (
+        replyOpen ? (
+          <form action={logReply} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
+            <input name="subject" placeholder="Subject (optional)" maxLength={240} className="input text-sm" />
+            <textarea name="body" rows={3} required placeholder="Paste the candidate's reply…" className="input text-sm py-2" />
+            <div className="flex gap-2">
+              <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">{pending ? "Saving…" : "Log reply"}</button>
+              <button type="button" onClick={() => setReplyOpen(false)} className="btn-ghost text-xs">Cancel</button>
+            </div>
+          </form>
+        ) : (
+          <button type="button" onClick={() => setReplyOpen(true)} className="btn-ghost text-xs w-full">＋ Log a reply</button>
+        )
       )}
 
       {candidateEmail && (
