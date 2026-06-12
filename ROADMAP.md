@@ -54,11 +54,11 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [~] **Interview panels / multi-round** (M) — PARTIAL: interviews already support multiple interviewers; distinct multi-round tracking deferred.
 - [~] **Candidate self-scheduling links** (L) — flag registered, UI DEFERRED (needs public tokenized slot-picker + availability model). Not faked.
 
-## Wave 6 — Communication
-- [ ] **Two-way Gmail sync** (L)
-- [ ] **SMS / WhatsApp notifications** (M)
-- [ ] **Email sequences / drip** (M)
-- [ ] **Bulk email to segments** (S)
+## Wave 6 — Communication ✅ SHIPPED (preview build green, commit ae1386e)
+- [x] **Bulk email to segments** (S) — Email dropdown in candidates bulk toolbar; templated send to selection.
+- [x] **Email sequences / drip** (M) — `sequence_enrollments` + `lib/sequences.ts`; enroll/cancel on candidate; cron sends due steps.
+- [x] **SMS / WhatsApp notifications** (M) — `lib/sms.ts` provider abstraction + optional SMS on stage-change. ⚠️ Needs SMS provider env (SMS_PROVIDER_URL/AUTH/FROM) to actually send.
+- [~] **Two-way Gmail sync** (L) — `inbound_messages` table + manual "log reply" + inbound display shipped. ⚠️ Automatic IMAP/Gmail-push sync needs external setup (not built).
 
 ## Wave 7 — Analytics & reporting
 - [ ] **Funnel metrics** (time-to-fill, time-in-stage, conversion %) (M)
