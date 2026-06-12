@@ -11,6 +11,15 @@ import {
 
 // ---------- types ----------
 export type SourceRow = { source: string; count: number };
+export type SourceEffectivenessRow = {
+  source: string;
+  candidates: number;
+  submitted: number;
+  interviewed: number;
+  offers: number;
+  joins: number;
+  joinRate: number; // joins / candidates, as a percentage
+};
 export type CycleRow = { stage: string; medianDays: number; sampleCount: number };
 export type LocationRow = { location: string; count: number };
 export type SlaRow = {
@@ -78,6 +87,60 @@ export async function getSourceOfHire(days = 90): Promise<SourceRow[]> {
     source: r.source,
     count: Number(r.count),
   }));
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  direct: "Direct",
+  referral: "Referral",
+  linkedin: "LinkedIn",
+  job_board: "Job board",
+  agency: "Agency / vendor",
+  careers: "Careers page",
+  other: "Other",
+};
+
+/**
+ * Source effectiveness: quality funnel per candidate source. Counts candidates
+ * per source and, via their submissions, how many ever reached submitted /
+ * interview / offer / joined. joinRate is joins ÷ candidates.
+ */
+export async function getSourceEffectiveness(days = 365): Promise<SourceEffectivenessRow[]> {
+  const rows = await db.execute<{
+    source: string;
+    candidates: number;
+    submitted: number;
+    interviewed: number;
+    offers: number;
+    joins: number;
+  }>(sql`
+    SELECT
+      c.source::text AS source,
+      COUNT(DISTINCT c.id)::int AS candidates,
+      COUNT(DISTINCT s.id)::int AS submitted,
+      COUNT(DISTINCT CASE WHEN s.status IN ('interview','offer','joined') THEN s.id END)::int AS interviewed,
+      COUNT(DISTINCT CASE WHEN s.status IN ('offer','joined') THEN s.id END)::int AS offers,
+      COUNT(DISTINCT CASE WHEN s.status = 'joined' THEN s.id END)::int AS joins
+    FROM ${candidates} c
+    LEFT JOIN ${submissions} s ON s.candidate_id = c.id
+    WHERE c.created_at >= now() - (${days} || ' days')::interval
+    GROUP BY c.source
+    ORDER BY candidates DESC
+  `);
+  return ((rows.rows || rows) as Array<{
+    source: string; candidates: number; submitted: number; interviewed: number; offers: number; joins: number;
+  }>).map((r) => {
+    const cands = Number(r.candidates);
+    const joins = Number(r.joins);
+    return {
+      source: SOURCE_LABELS[r.source] || r.source,
+      candidates: cands,
+      submitted: Number(r.submitted),
+      interviewed: Number(r.interviewed),
+      offers: Number(r.offers),
+      joins,
+      joinRate: cands > 0 ? Math.round((joins / cands) * 100) : 0,
+    };
+  });
 }
 
 /**

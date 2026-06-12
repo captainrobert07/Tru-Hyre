@@ -3,6 +3,7 @@ import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StatCard, Badge } from "@/components/primitives";
 import {
   getSourceOfHire,
+  getSourceEffectiveness,
   getCycleTimePerStage,
   getLocationMix,
   getOfferAcceptance,
@@ -22,6 +23,7 @@ export default async function ReportsPage() {
 
   const [
     source,
+    sourceEff,
     cycle,
     locations,
     acceptance,
@@ -33,6 +35,7 @@ export default async function ReportsPage() {
     forecast,
   ] = await Promise.all([
     getSourceOfHire(90),
+    getSourceEffectiveness(365),
     getCycleTimePerStage(180),
     getLocationMix(),
     getOfferAcceptance(365),
@@ -184,6 +187,51 @@ export default async function ReportsPage() {
           )}
         </section>
       </div>
+
+      {/* Source effectiveness funnel */}
+      <section className="card p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold">Source effectiveness</h2>
+          <span className="text-xs text-ink-muted">Last 12 months</span>
+        </div>
+        {sourceEff.length === 0 ? (
+          <Empty msg="No candidates yet." />
+        ) : (
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full text-sm min-w-[620px]">
+              <thead className="text-xs text-ink-muted uppercase tracking-wide">
+                <tr>
+                  <th className="text-left font-medium px-5 pb-2">Source</th>
+                  <th className="text-right font-medium px-3 pb-2">Candidates</th>
+                  <th className="text-right font-medium px-3 pb-2">Submitted</th>
+                  <th className="text-right font-medium px-3 pb-2">Interviewed</th>
+                  <th className="text-right font-medium px-3 pb-2">Offers</th>
+                  <th className="text-right font-medium px-3 pb-2">Joined</th>
+                  <th className="text-right font-medium px-5 pb-2">Join rate</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {sourceEff.map((s) => (
+                  <tr key={s.source} className="hover:bg-canvas">
+                    <td className="px-5 py-2.5 font-medium">{s.source}</td>
+                    <td className="text-right tabular-nums px-3 py-2.5 text-ink-soft">{s.candidates}</td>
+                    <td className="text-right tabular-nums px-3 py-2.5 text-ink-soft">{s.submitted}</td>
+                    <td className="text-right tabular-nums px-3 py-2.5 text-ink-soft">{s.interviewed}</td>
+                    <td className="text-right tabular-nums px-3 py-2.5 text-ink-soft">{s.offers}</td>
+                    <td className="text-right tabular-nums px-3 py-2.5 font-semibold text-brand-700">{s.joins}</td>
+                    <td className="text-right px-5 py-2.5">
+                      <Badge tone={s.joinRate >= 20 ? "green" : s.joinRate >= 5 ? "amber" : "default"}>{s.joinRate}%</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="text-[11px] text-ink-muted mt-3">
+          Join rate = joined ÷ candidates from that source. Set a candidate&apos;s source at upload or on their profile.
+        </p>
+      </section>
 
       {/* Cycle time + Vendor SLA */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">

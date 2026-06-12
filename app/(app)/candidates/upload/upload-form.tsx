@@ -46,6 +46,7 @@ export function UploadForm() {
             />
             <p className="text-xs text-ink-muted mt-1.5">Max 10 MB. Tru Hyre extracts name, contact, location, title, company, experience, notice, CTC, summary, and skills.</p>
           </div>
+          <SourceFields />
           <Result state={state} />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary">
@@ -68,6 +69,7 @@ export function UploadForm() {
             />
             <p className="text-xs text-ink-muted mt-1.5">No file is stored. Tru Hyre runs the same extractor over the text you paste.</p>
           </div>
+          <SourceFields />
           <Result state={state} />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary">
@@ -77,6 +79,35 @@ export function UploadForm() {
           </div>
         </form>
       )}
+    </div>
+  );
+}
+
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: "direct", label: "Direct (HR upload)" },
+  { value: "referral", label: "Referral" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "job_board", label: "Job board" },
+  { value: "agency", label: "Agency / vendor" },
+  { value: "careers", label: "Careers page" },
+  { value: "other", label: "Other" },
+];
+
+function SourceFields() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label htmlFor="source" className="label">Source</label>
+        <select id="source" name="source" defaultValue="direct" className="input text-sm">
+          {SOURCE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="sourceDetail" className="label">Source detail <span className="text-ink-muted font-normal">(optional)</span></label>
+        <input id="sourceDetail" name="sourceDetail" maxLength={160} placeholder="Referrer name, board, etc." className="input text-sm" />
+      </div>
     </div>
   );
 }

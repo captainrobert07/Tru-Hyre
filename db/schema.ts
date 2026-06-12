@@ -33,6 +33,16 @@ export const candidateStageEnum = pgEnum("candidate_stage", [
 ]);
 export const parseStatusEnum = pgEnum("parse_status", ["pending", "ok", "failed"]);
 
+export const candidateSourceEnum = pgEnum("candidate_source", [
+  "direct",
+  "referral",
+  "linkedin",
+  "job_board",
+  "agency",
+  "careers",
+  "other",
+]);
+
 export const submissionStatusEnum = pgEnum("submission_status", [
   "submitted",
   "shortlist",
@@ -53,6 +63,14 @@ export const feedbackKindEnum = pgEnum("feedback_kind", [
   "note",
 ]);
 
+export const interviewModeEnum = pgEnum("interview_mode", ["video", "phone", "onsite"]);
+export const interviewStatusEnum = pgEnum("interview_status", [
+  "scheduled",
+  "completed",
+  "no_show",
+  "cancelled",
+]);
+
 export const notificationKindEnum = pgEnum("notification_kind", [
   "stage_change",
   "feedback",
@@ -61,6 +79,7 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   "submission",
   "invitation",
   "system",
+  "interview",
 ]);
 
 export const invitationStatusEnum = pgEnum("invitation_status", ["pending", "accepted", "revoked", "expired"]);
@@ -79,6 +98,8 @@ export const auditActionEnum = pgEnum("audit_action", [
   "role_change",
   "email_send",
   "template_edit",
+  "interview_schedule",
+  "interview_cancel",
 ]);
 
 // ---------- Accounts ----------
@@ -197,6 +218,11 @@ export const candidates = pgTable("candidates", {
   parseError: text("parse_error"),
   vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
   uploadedById: integer("uploaded_by_id").references(() => users.id, { onDelete: "set null" }),
+  // How this candidate entered the pipeline. Defaults to direct (HR upload);
+  // vendor uploads are set to agency, careers-page applicants to careers.
+  source: candidateSourceEnum("source").notNull().default("direct"),
+  // Free-text detail, e.g. the referrer's name or the specific job board.
+  sourceDetail: varchar("source_detail", { length: 160 }),
   notes: text("notes"),
   refId: varchar("ref_id", { length: 24 }).notNull().unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -205,6 +231,7 @@ export const candidates = pgTable("candidates", {
   emailIdx: index("candidates_email_idx").on(t.email),
   stageIdx: index("candidates_stage_idx").on(t.stage),
   vendorIdx: index("candidates_vendor_idx").on(t.vendorAccountId),
+  sourceIdx: index("candidates_source_idx").on(t.source),
 }));
 
 export const resumeFiles = pgTable("resume_files", {
@@ -275,6 +302,38 @@ export const feedbackEvents = pgTable("feedback_events", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({
   submissionIdx: index("feedback_events_submission_idx").on(t.submissionId),
+}));
+
+// ---------- Interviews ----------
+
+export const interviews = pgTable("interviews", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  // Most interviews hang off a submission (a candidate-for-a-job), but we allow
+  // a null submission so an early-stage screening call can be booked too.
+  submissionId: integer("submission_id").references(() => submissions.id, { onDelete: "set null" }),
+  jobId: integer("job_id").references(() => jobs.id, { onDelete: "set null" }),
+  title: varchar("title", { length: 200 }).notNull(),
+  mode: interviewModeEnum("mode").notNull().default("video"),
+  // Stored in UTC; rendered in the viewer's locale.
+  scheduledStart: timestamp("scheduled_start", { withTimezone: true }).notNull(),
+  scheduledEnd: timestamp("scheduled_end", { withTimezone: true }).notNull(),
+  location: text("location"),
+  meetLink: text("meet_link"),
+  // Google Calendar event id, so we can patch/delete the event on reschedule/cancel.
+  googleEventId: text("google_event_id"),
+  // Staff user ids invited as interviewers.
+  interviewerIds: jsonb("interviewer_ids").$type<number[]>().notNull().default([]),
+  status: interviewStatusEnum("status").notNull().default("scheduled"),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("interviews_candidate_idx").on(t.candidateId),
+  submissionIdx: index("interviews_submission_idx").on(t.submissionId),
+  startIdx: index("interviews_start_idx").on(t.scheduledStart),
+  statusIdx: index("interviews_status_idx").on(t.status),
 }));
 
 // ---------- Notifications ----------
@@ -474,6 +533,7 @@ export const candidatesRelations = relations(candidates, ({ one, many }) => ({
   packets: many(clientPackets),
   history: many(stageHistory),
   submissions: many(submissions),
+  interviews: many(interviews),
 }));
 
 export const submissionsRelations = relations(submissions, ({ one, many }) => ({
@@ -481,6 +541,14 @@ export const submissionsRelations = relations(submissions, ({ one, many }) => ({
   job: one(jobs, { fields: [submissions.jobId], references: [jobs.id] }),
   packet: one(clientPackets, { fields: [submissions.packetId], references: [clientPackets.id] }),
   feedback: many(feedbackEvents),
+  interviews: many(interviews),
+}));
+
+export const interviewsRelations = relations(interviews, ({ one }) => ({
+  candidate: one(candidates, { fields: [interviews.candidateId], references: [candidates.id] }),
+  submission: one(submissions, { fields: [interviews.submissionId], references: [submissions.id] }),
+  job: one(jobs, { fields: [interviews.jobId], references: [jobs.id] }),
+  createdBy: one(users, { fields: [interviews.createdById], references: [users.id] }),
 }));
 
 // ---------- Type exports ----------
@@ -495,3 +563,5 @@ export type Submission = typeof submissions.$inferSelect;
 export type FeedbackEvent = typeof feedbackEvents.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type AuditLogEntry = typeof auditLog.$inferSelect;
+export type Interview = typeof interviews.$inferSelect;
+export type NewInterview = typeof interviews.$inferInsert;

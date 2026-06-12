@@ -114,6 +114,8 @@ const INLINE_FIELDS = [
   "willingToRelocate",
   "workAuthorization",
   "tagsCsv",
+  "source",
+  "sourceDetail",
 ] as const;
 
 const inlineSchema = z.object({
@@ -194,6 +196,13 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
       else return;
       break;
     }
+    case "source": {
+      const allowed = ["direct", "referral", "linkedin", "job_board", "agency", "careers", "other"] as const;
+      if (v === null || !allowed.includes(v as typeof allowed[number])) return;
+      update.source = v as typeof allowed[number];
+      break;
+    }
+    case "sourceDetail": update.sourceDetail = v ? v.slice(0, 160) : null; break;
   }
 
   await db.update(candidates).set(update).where(eq(candidates.id, id));

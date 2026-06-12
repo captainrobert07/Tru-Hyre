@@ -58,6 +58,12 @@ export async function importCandidatesCsvAction(formData: FormData): Promise<Imp
       .map((t) => t.trim())
       .filter(Boolean);
 
+    const SOURCES = ["direct", "referral", "linkedin", "job_board", "agency", "careers", "other"] as const;
+    const rawSource = (rec.source || "").toLowerCase().replace(/[\s-]+/g, "_");
+    const source = (SOURCES as readonly string[]).includes(rawSource)
+      ? (rawSource as typeof SOURCES[number])
+      : "other"; // CSV imports default to 'other' rather than masquerading as direct HR uploads
+
     try {
       const refId = makeRefId();
       const [created] = await db
@@ -79,6 +85,8 @@ export async function importCandidatesCsvAction(formData: FormData): Promise<Imp
           tags,
           linkedinUrl: rec.linkedin || rec.linkedinurl || null,
           githubUrl: rec.github || rec.githuburl || null,
+          source,
+          sourceDetail: rec.sourcedetail || null,
           stage: "received",
           parseStatus: "ok",
           uploadedById: Number(me.id),

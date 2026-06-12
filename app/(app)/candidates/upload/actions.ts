@@ -34,6 +34,14 @@ const EMPTY: ParsedResume = {
   githubUrl: null,
 };
 
+type CandidateSource = "direct" | "referral" | "linkedin" | "job_board" | "agency" | "careers" | "other";
+const SOURCE_VALUES: CandidateSource[] = ["direct", "referral", "linkedin", "job_board", "agency", "careers", "other"];
+
+function coerceSource(raw: FormDataEntryValue | null): CandidateSource {
+  const s = typeof raw === "string" ? raw : "";
+  return (SOURCE_VALUES as string[]).includes(s) ? (s as CandidateSource) : "direct";
+}
+
 async function persistCandidate({
   parsed,
   parseStatus,
@@ -42,6 +50,8 @@ async function persistCandidate({
   fileMeta,
   hash,
   fallbackName,
+  source,
+  sourceDetail,
   user,
 }: {
   parsed: ParsedResume;
@@ -51,6 +61,8 @@ async function persistCandidate({
   fileMeta: { name: string; contentType: string; size: number } | null;
   hash: string | null;
   fallbackName: string;
+  source: CandidateSource;
+  sourceDetail: string | null;
   user: { id: string; email: string };
 }): Promise<UploadResult> {
   const dupes = await findDuplicates({
@@ -84,6 +96,8 @@ async function persistCandidate({
       stage: "hr_review",
       parseStatus,
       parseError,
+      source,
+      sourceDetail,
       uploadedById: Number(user.id),
     })
     .returning();
@@ -115,7 +129,7 @@ async function persistCandidate({
     targetType: "candidate",
     targetId: created.id,
     summary: `Created candidate ${fullName}`,
-    meta: { refId, parseStatus, dupes: dupes.length, source: drive ? "pdf" : "paste" },
+    meta: { refId, parseStatus, dupes: dupes.length, source, channel: drive ? "pdf" : "paste" },
   });
 
   revalidatePath("/candidates");
@@ -164,6 +178,8 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
     fileMeta: { name: file.name, contentType: file.type || "application/pdf", size: file.size },
     hash,
     fallbackName: file.name.replace(/\.pdf$/i, ""),
+    source: coerceSource(formData.get("source")),
+    sourceDetail: ((formData.get("sourceDetail") as string) || "").trim().slice(0, 160) || null,
     user,
   });
 }
@@ -191,6 +207,8 @@ export async function pasteResumeAction(_prev: UploadResult | null, formData: Fo
     fileMeta: null,
     hash: null,
     fallbackName: parsed.fullName || "Pasted candidate",
+    source: coerceSource(formData.get("source")),
+    sourceDetail: ((formData.get("sourceDetail") as string) || "").trim().slice(0, 160) || null,
     user,
   });
 }

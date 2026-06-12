@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -11,7 +11,9 @@ import { SubmitButton } from "@/components/submit-button";
 import { PendingShimmer } from "@/components/pending-shimmer";
 import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
+import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
+import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
 import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
 import { DangerZone } from "./danger-zone";
 import { InlineEdit } from "@/components/inline-edit";
@@ -62,7 +64,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   // Fetch feedback for all submissions of this candidate, then weave a unified
   // activity timeline (stage moves + feedback events).
   const subIds = subs.map((s) => s.id);
-  const [feedback, candComments] = await Promise.all([
+  const [feedback, candComments, candInterviews, staff] = await Promise.all([
     subIds.length === 0
       ? Promise.resolve([])
       : db
@@ -87,7 +89,32 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       .from(comments)
       .where(and(eq(comments.targetType, "candidate"), eq(comments.targetId, candidateId)))
       .orderBy(desc(comments.createdAt)),
+    db
+      .select()
+      .from(interviews)
+      .where(eq(interviews.candidateId, candidateId))
+      .orderBy(desc(interviews.scheduledStart)),
+    db
+      .select({ id: users.id, fullName: users.fullName, email: users.email })
+      .from(users)
+      .where(and(inArray(users.role, ["admin", "hr"]), eq(users.isActive, true)))
+      .orderBy(users.fullName)
+      .limit(50),
   ]);
+
+  // Build interviewer-name lookup for the interview list.
+  const staffById = new Map(staff.map((s) => [s.id, s.fullName || s.email]));
+  const interviewItems: InterviewItem[] = candInterviews.map((iv) => ({
+    id: iv.id,
+    title: iv.title,
+    mode: iv.mode,
+    scheduledStart: iv.scheduledStart.toISOString(),
+    scheduledEnd: iv.scheduledEnd.toISOString(),
+    location: iv.location,
+    meetLink: iv.meetLink,
+    status: iv.status,
+    interviewerNames: (iv.interviewerIds || []).map((id) => staffById.get(id)).filter((n): n is string => Boolean(n)),
+  }));
 
   type Activity =
     | { kind: "stage"; at: Date; from: string | null; to: string; note: string | null }
@@ -292,6 +319,31 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 }}
               />
             </Field>
+            <Field label="Source">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge tone="blue">{(cand.source || "direct").replaceAll("_", " ")}</Badge>
+                <InlineEdit
+                  field="source"
+                  defaultValue={cand.source || "direct"}
+                  placeholder="direct / referral / linkedin / job_board / agency / careers / other"
+                  onSave={async (fd) => {
+                    "use server";
+                    await updateCandidateFieldAction(candidateId, fd);
+                  }}
+                />
+              </div>
+            </Field>
+            <Field label="Source detail">
+              <InlineEdit
+                field="sourceDetail"
+                defaultValue={cand.sourceDetail || ""}
+                placeholder="Referrer name, board, etc."
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
             <Field label="Tags">
               <div>
                 {cand.tags && cand.tags.length > 0 && (
@@ -421,6 +473,22 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               setStage={async (stage) => {
                 "use server";
                 return await setStageAction(candidateId, stage);
+              }}
+            />
+          </Section>
+
+          <Section title="Interviews">
+            <InterviewScheduler
+              interviews={interviewItems}
+              interviewers={staff.map((s) => ({ id: s.id, name: s.fullName || s.email }))}
+              submissions={subs.map((s) => ({ id: s.id, jobId: s.jobId, label: `Job #${s.jobId} · ${s.status}` }))}
+              onSchedule={async (fd) => {
+                "use server";
+                return await scheduleInterviewAction(candidateId, fd);
+              }}
+              onCancel={async (interviewId) => {
+                "use server";
+                return await cancelInterviewAction(candidateId, interviewId);
               }}
             />
           </Section>
