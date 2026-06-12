@@ -38,12 +38,12 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 
 > Shared core: `lib/ai.ts` (Claude client + callTool/callText, no-op without `ANTHROPIC_API_KEY`). All 6 are feature-flagged (AI category) and gated UI + action. ⚠️ Need `ANTHROPIC_API_KEY` in Vercel to function live (build-safe without it).
 
-## Wave 4 — Sourcing channels
-- [ ] ⭐ **Public careers page + self-apply** (L) — `/careers` feeds the parse pipeline.
-- [ ] **Employee referral portal** (M)
-- [ ] **Per-job public apply links** (S)
-- [ ] **LinkedIn/profile URL import** (M)
-- [ ] **Talent pool / silver-medalist tagging** (M)
+## Wave 4 — Sourcing channels ✅ SHIPPED (preview build green, commit 7f9d2a1)
+- [x] ⭐ **Public careers page + self-apply** (L) — `/careers` + `/careers/[id]` apply → parse pipeline, auto-submission, owner notify; honeypot + consent.
+- [x] **Employee referral portal** (M) — `/careers/refer` form; tagged referral, notifies HR.
+- [x] **Per-job public apply links** (S) — `/careers/[id]` is a shareable per-job apply link.
+- [x] **LinkedIn/profile URL import** (M) — URL fields on upload override the parser.
+- [x] **Talent pool / silver-medalist tagging** (M) — tag filter on candidates list + Talent pool quick link.
 
 ## Wave 5 — Pipeline & workflow
 - [ ] **Offer management + offer letters** (L)
