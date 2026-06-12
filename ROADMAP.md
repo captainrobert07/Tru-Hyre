@@ -45,14 +45,14 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [x] **LinkedIn/profile URL import** (M) — URL fields on upload override the parser.
 - [x] **Talent pool / silver-medalist tagging** (M) — tag filter on candidates list + Talent pool quick link.
 
-## Wave 5 — Pipeline & workflow
-- [ ] **Offer management + offer letters** (L)
-- [ ] **Job requisition approval flow** (M)
-- [ ] **Configurable pipeline stages per job** (L)
-- [ ] **Extended bulk actions** (S)
-- [ ] **Interview reminders** (S)
-- [ ] **Interview panels / multi-round** (M)
-- [ ] **Candidate self-scheduling links** (L)
+## Wave 5 — Pipeline & workflow ✅ SHIPPED (preview build green, commit db2c7de)
+- [x] **Offer management** (L) — `offers` table + panel on candidate (comp/dates/status lifecycle). (Offer-letter PDF generation: future.)
+- [x] **Job requisition approval flow** (M) — `jobs.approvalStatus`; non-admin jobs → pending; admin approve/reject banner. Flag default OFF.
+- [x] **Extended bulk actions** (S) — bulk add-tag added to existing bulk stage/vendor/delete; feeds talent pool.
+- [x] **Interview reminders** (S) — SLA cron notifies interviewers of same-day interviews.
+- [~] **Configurable pipeline stages per job** (L) — DEFERRED: reworking the core stage enum would break kanban/emails/metrics; not done to protect stability.
+- [~] **Interview panels / multi-round** (M) — PARTIAL: interviews already support multiple interviewers; distinct multi-round tracking deferred.
+- [~] **Candidate self-scheduling links** (L) — flag registered, UI DEFERRED (needs public tokenized slot-picker + availability model). Not faked.
 
 ## Wave 6 — Communication
 - [ ] **Two-way Gmail sync** (L)
