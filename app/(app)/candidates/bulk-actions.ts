@@ -9,22 +9,47 @@ import { logAudit } from "@/lib/audit";
 import { deleteDriveFile } from "@/lib/drive";
 import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireStaff } from "@/lib/rbac";
+import { assertFeatureEnabled } from "@/lib/features";
 
 const STAGES = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
 
 const bulkSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(500),
-  action: z.enum(["set_stage", "assign_vendor", "delete"]),
+  action: z.enum(["set_stage", "assign_vendor", "delete", "add_tag"]),
   stage: z.enum(STAGES).optional(),
   vendorId: z.number().int().positive().nullable().optional(),
+  tag: z.string().min(1).max(40).optional(),
 });
 
 export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; affected: number } | { ok: false; error: string }> {
   const user = await requireStaff();
+  await assertFeatureEnabled("bulk_actions");
   const parsed = bulkSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid input." };
 
-  const { ids, action, stage, vendorId } = parsed.data;
+  const { ids, action, stage, vendorId, tag } = parsed.data;
+
+  if (action === "add_tag") {
+    if (!tag) return { ok: false, error: "Tag is required." };
+    const norm = tag.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 40);
+    let affected = 0;
+    for (const id of ids) {
+      const cur = (await db.select({ tags: candidates.tags }).from(candidates).where(eq(candidates.id, id)))[0];
+      if (!cur) continue;
+      const next = Array.from(new Set([...(cur.tags || []), norm])).slice(0, 30);
+      await db.update(candidates).set({ tags: next, updatedAt: new Date() }).where(eq(candidates.id, id));
+      affected++;
+    }
+    await logAudit({
+      actorId: Number(user.id),
+      actorEmail: user.email,
+      action: "update",
+      targetType: "candidate",
+      summary: `Bulk tagged ${affected} candidates "${norm}"`,
+    });
+    revalidatePath("/candidates");
+    return { ok: true, affected };
+  }
 
   if (action === "set_stage") {
     if (!stage) return { ok: false, error: "Stage is required." };

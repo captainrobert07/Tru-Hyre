@@ -78,6 +78,16 @@ export const scorecardVerdictEnum = pgEnum("scorecard_verdict", [
   "strong_no",
 ]);
 
+export const offerStatusEnum = pgEnum("offer_status", [
+  "draft",
+  "extended",
+  "accepted",
+  "declined",
+  "withdrawn",
+]);
+
+export const jobApprovalEnum = pgEnum("job_approval", ["draft", "pending", "approved", "rejected"]);
+
 export const notificationKindEnum = pgEnum("notification_kind", [
   "stage_change",
   "feedback",
@@ -180,6 +190,9 @@ export const jobs = pgTable("jobs", {
   description: text("description"),
   skills: jsonb("skills").$type<string[]>().notNull().default([]),
   closeBy: date("close_by"),
+  // Requisition approval gate (feature-flagged). Existing jobs default to
+  // approved so the flag can be turned on without hiding live jobs.
+  approvalStatus: jobApprovalEnum("approval_status").notNull().default("approved"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({
@@ -358,6 +371,28 @@ export const interviewFeedback = pgTable("interview_feedback", {
 }, (t) => ({
   candidateIdx: index("interview_feedback_candidate_idx").on(t.candidateId),
   submissionIdx: index("interview_feedback_submission_idx").on(t.submissionId),
+}));
+
+// ---------- Offers ----------
+
+export const offers = pgTable("offers", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  jobId: integer("job_id").references(() => jobs.id, { onDelete: "set null" }),
+  submissionId: integer("submission_id").references(() => submissions.id, { onDelete: "set null" }),
+  title: varchar("title", { length: 200 }),
+  ctc: numeric("ctc", { precision: 12, scale: 2 }),
+  currency: varchar("currency", { length: 8 }).notNull().default("INR"),
+  joiningDate: date("joining_date"),
+  expiresOn: date("expires_on"),
+  status: offerStatusEnum("status").notNull().default("draft"),
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("offers_candidate_idx").on(t.candidateId),
+  statusIdx: index("offers_status_idx").on(t.status),
 }));
 
 // ---------- Notifications ----------
@@ -628,3 +663,4 @@ export type Interview = typeof interviews.$inferSelect;
 export type NewInterview = typeof interviews.$inferInsert;
 export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
 export type CandidateScore = typeof candidateScores.$inferSelect;
+export type Offer = typeof offers.$inferSelect;

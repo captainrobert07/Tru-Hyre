@@ -49,8 +49,44 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  if (!(await isFeatureEnabled("sla_alerts"))) {
-    return NextResponse.json({ ok: true, skipped: "feature_disabled" });
+  const [slaOn, remindersOn] = await Promise.all([
+    isFeatureEnabled("sla_alerts"),
+    isFeatureEnabled("interview_reminders"),
+  ]);
+
+  // Interview reminders: notify interviewers about interviews happening today.
+  let interviewReminders = 0;
+  if (remindersOn) {
+    const todayIvs = await db
+      .select({ id: interviews.id, candidateId: interviews.candidateId, title: interviews.title, interviewerIds: interviews.interviewerIds, createdById: interviews.createdById })
+      .from(interviews)
+      .where(and(
+        eq(interviews.status, "scheduled"),
+        sql`${interviews.scheduledStart}::date = now()::date`,
+      ))
+      .limit(200);
+    const notifRows: { userId: number; kind: "interview"; title: string; body: string; url: string }[] = [];
+    for (const iv of todayIvs) {
+      const recipients = new Set<number>([...(iv.interviewerIds || [])]);
+      if (iv.createdById) recipients.add(iv.createdById);
+      for (const userId of recipients) {
+        notifRows.push({
+          userId,
+          kind: "interview",
+          title: `Interview today: ${iv.title}`,
+          body: "You have an interview scheduled today.",
+          url: `/candidates/${iv.candidateId}`,
+        });
+      }
+    }
+    if (notifRows.length) {
+      await db.insert(notifications).values(notifRows);
+      interviewReminders = notifRows.length;
+    }
+  }
+
+  if (!slaOn) {
+    return NextResponse.json({ ok: true, skipped: "sla_disabled", interviewReminders });
   }
 
   // 1. Gather the three SLA breach sets in parallel.
@@ -175,6 +211,7 @@ export async function GET(req: Request) {
     staleSubmissions: staleSubs.length,
     overdueInterviews: overdueIvs.length,
     tasksCreated: seeds.length,
+    interviewReminders,
   };
 
   try {

@@ -7,7 +7,8 @@ import { z } from "zod";
 import { db } from "@/db";
 import { jobs, jobVendors } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
-import { requireStaff } from "@/lib/rbac";
+import { requireStaff, requireAdmin } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
 import { withToast } from "@/lib/toast";
 
 const jobSchema = z.object({
@@ -49,6 +50,9 @@ export async function createJobAction(formData: FormData): Promise<void> {
   if (!parsed.success) redirect("/jobs/new?error=invalid");
 
   const v = parsed.data;
+  // Requisition approval: when on, non-admins create jobs as pending approval.
+  const approvalOn = await isFeatureEnabled("requisition_approval");
+  const approvalStatus = approvalOn && user.role !== "admin" ? "pending" : "approved";
   const [created] = await db
     .insert(jobs)
     .values({
@@ -67,6 +71,7 @@ export async function createJobAction(formData: FormData): Promise<void> {
       description: v.description || null,
       skills: parseSkills(v.skillsCsv),
       closeBy: v.closeBy || null,
+      approvalStatus,
     })
     .returning();
 
@@ -85,7 +90,27 @@ export async function createJobAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/jobs");
-  redirect(withToast(`/jobs/${created.id}`, `Job "${v.title}" created`));
+  const msg = approvalStatus === "pending" ? `Job "${v.title}" submitted for approval` : `Job "${v.title}" created`;
+  redirect(withToast(`/jobs/${created.id}`, msg));
+}
+
+export async function approveJobAction(id: number, approve: boolean): Promise<{ ok: boolean }> {
+  const user = await requireAdmin();
+  await db
+    .update(jobs)
+    .set({ approvalStatus: approve ? "approved" : "rejected", updatedAt: new Date() })
+    .where(eq(jobs.id, id));
+  await logAudit({
+    actorId: Number(user.id),
+    actorEmail: user.email,
+    action: "update",
+    targetType: "job",
+    targetId: id,
+    summary: `${approve ? "Approved" : "Rejected"} job requisition`,
+  });
+  revalidatePath(`/jobs/${id}`);
+  revalidatePath("/jobs");
+  return { ok: true };
 }
 
 export async function updateJobAction(id: number, formData: FormData): Promise<void> {

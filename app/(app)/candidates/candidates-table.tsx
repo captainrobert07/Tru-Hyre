@@ -91,6 +91,10 @@ export function CandidatesTable({
 
   const onSetStage = (stage: (typeof STAGES)[number]) => runBulk({ ids: [...selected], action: "set_stage", stage });
   const onAssignVendor = (vendorId: number | null) => runBulk({ ids: [...selected], action: "assign_vendor", vendorId });
+  const onAddTag = () => {
+    const tag = window.prompt("Tag to add to selected candidates (e.g. talent-pool):");
+    if (tag && tag.trim()) runBulk({ ids: [...selected], action: "add_tag", tag: tag.trim() });
+  };
   const onBulkDelete = async () => {
     const ok = await confirm({
       title: `Delete ${selected.size} candidate${selected.size === 1 ? "" : "s"}?`,
@@ -158,6 +162,8 @@ export function CandidatesTable({
                 ))}
               </div>
             </details>
+
+            <button type="button" disabled={pending} onClick={onAddTag} className="text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center">Tag</button>
 
             {isAdmin && (
               <button type="button" disabled={pending} onClick={onBulkDelete} className="text-xs px-3 h-8 rounded-full text-red-700 hover:bg-red-50 border border-red-100">Delete</button>

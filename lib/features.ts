@@ -28,9 +28,14 @@ export type FeatureKey =
   | "careers_page"
   | "referral_portal"
   | "linkedin_import"
-  | "talent_pool";
+  | "talent_pool"
+  | "offers"
+  | "requisition_approval"
+  | "interview_reminders"
+  | "self_scheduling"
+  | "bulk_actions";
 
-export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI";
+export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline";
 
 export type FeatureDef = {
   key: FeatureKey;
@@ -158,6 +163,41 @@ export const FEATURES: FeatureDef[] = [
     label: "Talent pool tagging",
     description: "Tag and re-engage past candidates (silver medalists) as a searchable talent pool.",
     category: "Sourcing",
+    defaultEnabled: true,
+  },
+  {
+    key: "offers",
+    label: "Offer management",
+    description: "Record offers (comp, dates, status) on a candidate and track accept/decline outcomes.",
+    category: "Pipeline",
+    defaultEnabled: true,
+  },
+  {
+    key: "requisition_approval",
+    label: "Requisition approval",
+    description: "New jobs start as drafts needing admin approval before they go open.",
+    category: "Pipeline",
+    defaultEnabled: false,
+  },
+  {
+    key: "interview_reminders",
+    label: "Interview reminders",
+    description: "The daily SLA job reminds interviewers about interviews happening that day.",
+    category: "Pipeline",
+    defaultEnabled: true,
+  },
+  {
+    key: "self_scheduling",
+    label: "Candidate self-scheduling",
+    description: "Generate a link a candidate can use to request an interview slot.",
+    category: "Pipeline",
+    defaultEnabled: false,
+  },
+  {
+    key: "bulk_actions",
+    label: "Extended bulk actions",
+    description: "Bulk stage-change and tag candidates from the candidates list.",
+    category: "Pipeline",
     defaultEnabled: true,
   },
 ];

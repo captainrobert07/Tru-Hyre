@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { getFeatureStates } from "@/lib/features";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
@@ -16,7 +16,9 @@ import { InterviewScheduler, type InterviewItem } from "@/components/interview-s
 import { EmailComposer, type OutboxItem } from "@/components/email-composer";
 import { Scorecard, type ScorecardItem } from "@/components/scorecard";
 import { AiSummaryButton } from "@/components/ai-summary-button";
+import { OffersPanel, type OfferItem } from "@/components/offers-panel";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
+import { createOfferAction, setOfferStatusAction } from "./offer-actions";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
 import { sendAdHocEmailAction } from "./email-actions";
 import { submitScorecardAction } from "./scorecard-actions";
@@ -73,7 +75,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   // Fetch feedback for all submissions of this candidate, then weave a unified
   // activity timeline (stage moves + feedback events).
   const subIds = subs.map((s) => s.id);
-  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows] = await Promise.all([
+  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows, offerRows] = await Promise.all([
     subIds.length === 0
       ? Promise.resolve([])
       : db
@@ -143,7 +145,23 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       .leftJoin(users, eq(interviewFeedback.reviewerId, users.id))
       .where(eq(interviewFeedback.candidateId, candidateId))
       .orderBy(desc(interviewFeedback.createdAt)),
+    db
+      .select()
+      .from(offers)
+      .where(eq(offers.candidateId, candidateId))
+      .orderBy(desc(offers.createdAt)),
   ]);
+
+  const offerItems: OfferItem[] = offerRows.map((o) => ({
+    id: o.id,
+    title: o.title,
+    ctc: o.ctc,
+    currency: o.currency,
+    joiningDate: o.joiningDate,
+    expiresOn: o.expiresOn,
+    status: o.status,
+    notes: o.notes,
+  }));
 
   const scorecardItems: ScorecardItem[] = scorecardRows.map((s) => ({
     id: s.id,
@@ -595,6 +613,22 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               onSubmit={async (fd) => {
                 "use server";
                 return await submitScorecardAction(candidateId, fd);
+              }}
+            />
+          </Section>
+          )}
+
+          {flags.offers && (
+          <Section title="Offers">
+            <OffersPanel
+              offers={offerItems}
+              onCreate={async (fd) => {
+                "use server";
+                return await createOfferAction(candidateId, fd);
+              }}
+              onSetStatus={async (offerId, status) => {
+                "use server";
+                return await setOfferStatusAction(candidateId, offerId, status);
               }}
             />
           </Section>

@@ -10,12 +10,14 @@ import { PageHeader, JobStatusBadge, Badge, StatCard } from "@/components/primit
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RecentTracker } from "@/components/recently-viewed";
 import { MatchPanel } from "@/components/match-panel";
+import { JobApproval } from "@/components/job-approval";
 import { refreshMatchScoresAction } from "./match-actions";
+import { approveJobAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function JobDetail({ params }: { params: Promise<{ id: string }> }) {
-  await requireStaff();
+  const user = await requireStaff();
   const { id } = await params;
   const jobId = Number(id);
   const j = (
@@ -35,6 +37,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
         description: jobs.description,
         skills: jobs.skills,
         closeBy: jobs.closeBy,
+        approvalStatus: jobs.approvalStatus,
         clientName: clientAccounts.name,
         clientId: clientAccounts.id,
       })
@@ -64,7 +67,10 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
       .orderBy(desc(submissions.createdAt)),
   ]);
 
-  const matchEnabled = await isFeatureEnabled("ai_match");
+  const [matchEnabled, approvalEnabled] = await Promise.all([
+    isFeatureEnabled("ai_match"),
+    isFeatureEnabled("requisition_approval"),
+  ]);
   const cachedScores = matchEnabled ? await getCachedScores(jobId) : [];
   const lastComputed = cachedScores[0]?.computedAt ?? null;
 
@@ -94,6 +100,17 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
           </>
         }
       />
+
+      {approvalEnabled && (
+        <JobApproval
+          status={j.approvalStatus}
+          isAdmin={user.role === "admin"}
+          onDecide={async (approve) => {
+            "use server";
+            return await approveJobAction(jobId, approve);
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Positions" value={j.positions} />
