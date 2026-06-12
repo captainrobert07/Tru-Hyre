@@ -25,6 +25,9 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [x] ⭐ **Candidate comms timeline + ad-hoc email composer** (M) — emailOutbox history + template/custom send on the profile, logged + audited.
 - [x] ⭐ **Structured interview scorecards** (M) — 1–5 per-criterion ratings + verdict, mirrored into the activity timeline.
 
+## Feature flags ✅ SHIPPED (preview build green, commit 002a386)
+- [x] **Admin enable/disable per feature** — `feature_flags` table + `lib/features.ts` registry; `/settings/features` toggles grouped by category; each feature gated at UI + server action (defense in depth). Disabling hides UI and blocks the action immediately. New features should register here.
+
 ## Wave 3 — AI multipliers (Claude already wired in `lib/parse-ai.ts`)
 - [ ] ⭐ **Candidate ↔ job match scoring** (L) — SQL prefilter → Claude scores shortlist 0–100 with reasons; `candidate_scores` table.
 - [ ] **AI candidate summary / highlights** (S)
