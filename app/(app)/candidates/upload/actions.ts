@@ -170,6 +170,8 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
 
   const drive = await uploadResume(buf, file.name, file.type || "application/pdf");
 
+  applyLinkOverrides(parsed, formData);
+
   return persistCandidate({
     parsed,
     parseStatus,
@@ -182,6 +184,15 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
     sourceDetail: ((formData.get("sourceDetail") as string) || "").trim().slice(0, 160) || null,
     user,
   });
+}
+
+// A manually-entered LinkedIn/GitHub URL on the upload form overrides whatever
+// the parser found (or fills it when the parser found nothing).
+function applyLinkOverrides(parsed: ParsedResume, formData: FormData): void {
+  const li = ((formData.get("linkedinUrl") as string) || "").trim();
+  const gh = ((formData.get("githubUrl") as string) || "").trim();
+  if (li) parsed.linkedinUrl = li.slice(0, 254);
+  if (gh) parsed.githubUrl = gh.slice(0, 254);
 }
 
 export async function pasteResumeAction(_prev: UploadResult | null, formData: FormData): Promise<UploadResult> {
@@ -198,6 +209,8 @@ export async function pasteResumeAction(_prev: UploadResult | null, formData: Fo
   } catch (e) {
     return { ok: false, error: `Parse failed: ${(e as Error).message}` };
   }
+
+  applyLinkOverrides(parsed, formData);
 
   return persistCandidate({
     parsed,

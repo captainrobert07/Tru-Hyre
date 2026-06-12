@@ -7,7 +7,10 @@ export const metadata = { title: "Upload resume" };
 
 export default async function UploadPage() {
   await requireStaff();
-  const showSource = await isFeatureEnabled("source_tracking");
+  const [showSource, showLinks] = await Promise.all([
+    isFeatureEnabled("source_tracking"),
+    isFeatureEnabled("linkedin_import"),
+  ]);
   return (
     <>
       <PageHeader
@@ -15,7 +18,7 @@ export default async function UploadPage() {
         subtitle="Upload a PDF or paste resume text. Tru Hyre extracts the full profile and runs duplicate detection automatically."
       />
       <div className="card max-w-2xl p-6">
-        <UploadForm showSource={showSource} />
+        <UploadForm showSource={showSource} showLinks={showLinks} />
       </div>
     </>
   );

@@ -17,14 +17,18 @@ export const metadata = { title: "Candidates" };
 export default async function CandidatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string; stage?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; stage?: string; tag?: string }>;
 }) {
   const user = await requireStaff();
   const sp = await searchParams;
   const { q, page, pageSize, offset } = parseListParams(sp);
   const stage = sp.stage;
-  const aiSearchEnabled = await isFeatureEnabled("ai_search");
-  const dedupeEnabled = await isFeatureEnabled("ai_dedupe");
+  const tag = sp.tag;
+  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled] = await Promise.all([
+    isFeatureEnabled("ai_search"),
+    isFeatureEnabled("ai_dedupe"),
+    isFeatureEnabled("talent_pool"),
+  ]);
 
   const conditions: SQL[] = [];
   if (q) {
@@ -40,6 +44,8 @@ export default async function CandidatesPage({
     if (orExpr) conditions.push(orExpr);
   }
   if (stage) conditions.push(sql`${candidates.stage} = ${stage}`);
+  // Talent-pool filter: candidates carrying a given tag (jsonb array contains).
+  if (tag) conditions.push(sql`${candidates.tags} @> ${JSON.stringify([tag])}::jsonb`);
 
   const whereExpr = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -88,10 +94,11 @@ export default async function CandidatesPage({
     <>
       <PageHeader
         title="Candidates"
-        subtitle={`${total} candidate${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}`}
+        subtitle={`${total} candidate${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}${tag ? ` tagged "${tag}"` : ""}`}
         actions={
           <>
             {aiSearchEnabled && <Link href="/candidates/ai-search" className="btn-ghost">✨ AI search</Link>}
+            {talentPoolEnabled && <Link href="/candidates?tag=talent-pool" className="btn-ghost">Talent pool</Link>}
             {dedupeEnabled && <Link href="/candidates/duplicates" className="btn-ghost">Duplicates</Link>}
             <Link href="/candidates/import" className="btn-ghost">Import CSV</Link>
             <Link href="/candidates/upload" className="btn-primary">Upload resume</Link>

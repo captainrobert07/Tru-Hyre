@@ -6,7 +6,7 @@ import { uploadResumeAction, pasteResumeAction } from "./actions";
 
 type UploadResult = Awaited<ReturnType<typeof uploadResumeAction>>;
 
-export function UploadForm({ showSource = true }: { showSource?: boolean }) {
+export function UploadForm({ showSource = true, showLinks = true }: { showSource?: boolean; showLinks?: boolean }) {
   const [mode, setMode] = useState<"pdf" | "paste">("pdf");
   const [pdfState, pdfAction, pdfPending] = useActionState<UploadResult | null, FormData>(uploadResumeAction, null);
   const [pasteState, pasteAction, pastePending] = useActionState<UploadResult | null, FormData>(pasteResumeAction, null);
@@ -47,6 +47,7 @@ export function UploadForm({ showSource = true }: { showSource?: boolean }) {
             <p className="text-xs text-ink-muted mt-1.5">Max 10 MB. Tru Hyre extracts name, contact, location, title, company, experience, notice, CTC, summary, and skills.</p>
           </div>
           {showSource && <SourceFields />}
+          {showLinks && <LinkFields />}
           <Result state={state} />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary">
@@ -70,6 +71,7 @@ export function UploadForm({ showSource = true }: { showSource?: boolean }) {
             <p className="text-xs text-ink-muted mt-1.5">No file is stored. Tru Hyre runs the same extractor over the text you paste.</p>
           </div>
           {showSource && <SourceFields />}
+          {showLinks && <LinkFields />}
           <Result state={state} />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary">
@@ -107,6 +109,21 @@ function SourceFields() {
       <div>
         <label htmlFor="sourceDetail" className="label">Source detail <span className="text-ink-muted font-normal">(optional)</span></label>
         <input id="sourceDetail" name="sourceDetail" maxLength={160} placeholder="Referrer name, board, etc." className="input text-sm" />
+      </div>
+    </div>
+  );
+}
+
+function LinkFields() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label htmlFor="linkedinUrl" className="label">LinkedIn URL <span className="text-ink-muted font-normal">(optional)</span></label>
+        <input id="linkedinUrl" name="linkedinUrl" maxLength={254} placeholder="https://linkedin.com/in/…" className="input text-sm" />
+      </div>
+      <div>
+        <label htmlFor="githubUrl" className="label">GitHub / portfolio <span className="text-ink-muted font-normal">(optional)</span></label>
+        <input id="githubUrl" name="githubUrl" maxLength={254} placeholder="https://github.com/…" className="input text-sm" />
       </div>
     </div>
   );

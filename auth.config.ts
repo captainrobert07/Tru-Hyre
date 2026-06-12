@@ -14,8 +14,12 @@ export const authConfig = {
         path === "/" ||
         path === "/login" ||
         path.startsWith("/invite/") ||
+        path.startsWith("/careers") ||
+        path.startsWith("/refer/") ||
         path.startsWith("/api/auth") ||
         path.startsWith("/api/health") ||
+        path.startsWith("/api/cron") ||
+        path.startsWith("/api/careers") ||
         path.startsWith("/_next") ||
         path === "/favicon.ico";
 

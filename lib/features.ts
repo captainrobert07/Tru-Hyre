@@ -24,7 +24,11 @@ export type FeatureKey =
   | "ai_jd"
   | "ai_screening"
   | "ai_search"
-  | "ai_dedupe";
+  | "ai_dedupe"
+  | "careers_page"
+  | "referral_portal"
+  | "linkedin_import"
+  | "talent_pool";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI";
 
@@ -126,6 +130,34 @@ export const FEATURES: FeatureDef[] = [
     label: "AI duplicate suggestions",
     description: "Surface likely duplicate candidates beyond exact email/phone matches, for review.",
     category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "careers_page",
+    label: "Public careers page",
+    description: "A public /careers listing of open jobs with a self-apply form that feeds the candidate pipeline.",
+    category: "Sourcing",
+    defaultEnabled: true,
+  },
+  {
+    key: "referral_portal",
+    label: "Employee referrals",
+    description: "Let staff submit referrals from a /refer link; referred candidates enter tagged as referrals.",
+    category: "Sourcing",
+    defaultEnabled: true,
+  },
+  {
+    key: "linkedin_import",
+    label: "Profile URL import",
+    description: "Paste a LinkedIn/profile URL on upload to prefill the candidate's links.",
+    category: "Sourcing",
+    defaultEnabled: true,
+  },
+  {
+    key: "talent_pool",
+    label: "Talent pool tagging",
+    description: "Tag and re-engage past candidates (silver medalists) as a searchable talent pool.",
+    category: "Sourcing",
     defaultEnabled: true,
   },
 ];
