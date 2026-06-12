@@ -8,11 +8,17 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 
 ---
 
-## Wave 1 — Flagship + quick wins (in progress)
-- [ ] ⭐ **Interview scheduling + Google Calendar invites** (L) — schedule from candidate/kanban, create Calendar event + Meet link, email candidate & interviewers. `interviews` table, `lib/calendar.ts`.
-- [ ] ⭐ **Source attribution + analytics** (S) — `candidates.source`, surfaced in upload/edit/import + reports funnel.
-- [ ] ⭐ **SLA aging alerts via Vercel Cron** (S) — daily job → notifications/tasks for idle candidates, stale feedback, overdue interviews.
+## Wave 1 — Flagship + quick wins ✅ SHIPPED (preview build green, commit b742513)
+- [x] ⭐ **Interview scheduling + Google Calendar invites** (L) — schedule/cancel from candidate page, Calendar event + Meet link, email candidate & interviewers, in-app notifications. `interviews` table, `lib/calendar.ts`, `lib/interviews.ts`.
+- [x] ⭐ **Source attribution + analytics** (S) — `candidates.source` + `sourceDetail`; upload form, CSV import, inline edit; `getSourceEffectiveness` + reports funnel table.
+- [x] ⭐ **SLA aging alerts via Vercel Cron** (S) — `/api/cron/sla` daily → reminder tasks + notifications for idle candidates, stale feedback, overdue interviews.
 - [x] **Global command palette** (S) — ⌘K nav/search. **Already shipped** (`components/command-palette.tsx`).
+
+> ⚠️ Live-cutover prerequisite for interviews: in Google Workspace Admin, grant the
+> service account's client id domain-wide delegation for
+> `https://www.googleapis.com/auth/calendar.events`, and set `GCAL_IMPERSONATE_USER`
+> to the shared recruiting mailbox. Without it, scheduling still records the interview
+> and emails the candidate, but no Calendar invite/Meet link is created.
 
 ## Wave 2 — Daily-loop leverage
 - [ ] ⭐ **Recruiter "My action items" inbox** (M) — `/inbox`: my tasks, idle candidates, stale submissions, @mentions, my interviews.
