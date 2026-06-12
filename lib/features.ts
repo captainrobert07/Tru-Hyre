@@ -18,9 +18,15 @@ export type FeatureKey =
   | "source_tracking"
   | "inbox"
   | "sla_alerts"
-  | "command_palette";
+  | "command_palette"
+  | "ai_match"
+  | "ai_summary"
+  | "ai_jd"
+  | "ai_screening"
+  | "ai_search"
+  | "ai_dedupe";
 
-export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity";
+export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI";
 
 export type FeatureDef = {
   key: FeatureKey;
@@ -78,6 +84,48 @@ export const FEATURES: FeatureDef[] = [
     label: "Command palette (⌘K)",
     description: "Quick keyboard navigation and search across candidates, jobs, clients, and vendors.",
     category: "Productivity",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_match",
+    label: "AI candidate–job match scoring",
+    description: "Rank candidates for a job 0–100 with match reasons, using a SQL prefilter then Claude on the shortlist.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_summary",
+    label: "AI candidate summary",
+    description: "Generate a concise recruiter-facing summary and highlights for a candidate from their profile.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_jd",
+    label: "AI job-description generator",
+    description: "Draft a job description from the title, skills, and parameters on the job form.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_screening",
+    label: "AI screening questions",
+    description: "Generate role-specific screening questions for a job.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_search",
+    label: "AI semantic candidate search",
+    description: "Search candidates with a natural-language query; Claude turns it into structured filters.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_dedupe",
+    label: "AI duplicate suggestions",
+    description: "Surface likely duplicate candidates beyond exact email/phone matches, for review.",
+    category: "AI",
     defaultEnabled: true,
   },
 ];

@@ -12,6 +12,7 @@ import {
   date,
   numeric,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["admin", "hr", "client", "vendor"]);
@@ -475,6 +476,23 @@ export const auditLog = pgTable("audit_log", {
   createdIdx: index("audit_log_created_idx").on(t.createdAt),
 }));
 
+// ---------- AI candidate↔job match scores ----------
+
+// Cached AI fit scores for a (candidate, job) pair. Recomputed on demand
+// ("Refresh scores"); one row per pair.
+export const candidateScores = pgTable("candidate_scores", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  jobId: integer("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  score: integer("score").notNull(), // 0-100
+  reasons: jsonb("reasons").$type<string[]>().notNull().default([]),
+  model: varchar("model", { length: 64 }),
+  computedAt: timestamp("computed_at").notNull().defaultNow(),
+}, (t) => ({
+  pairIdx: uniqueIndex("candidate_scores_pair_idx").on(t.candidateId, t.jobId),
+  jobIdx: index("candidate_scores_job_idx").on(t.jobId),
+}));
+
 // ---------- Feature flags ----------
 
 // On/off state for optional features. The catalogue (label/description/
@@ -609,3 +627,4 @@ export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type Interview = typeof interviews.$inferSelect;
 export type NewInterview = typeof interviews.$inferInsert;
 export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
+export type CandidateScore = typeof candidateScores.$inferSelect;

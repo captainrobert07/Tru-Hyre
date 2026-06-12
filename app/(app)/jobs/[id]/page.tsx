@@ -4,9 +4,13 @@ import Link from "next/link";
 import { db } from "@/db";
 import { jobs, clientAccounts, jobVendors, vendorAccounts, submissions, candidates } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
+import { getCachedScores } from "@/lib/match";
 import { PageHeader, JobStatusBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RecentTracker } from "@/components/recently-viewed";
+import { MatchPanel } from "@/components/match-panel";
+import { refreshMatchScoresAction } from "./match-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +63,10 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
       .where(eq(submissions.jobId, jobId))
       .orderBy(desc(submissions.createdAt)),
   ]);
+
+  const matchEnabled = await isFeatureEnabled("ai_match");
+  const cachedScores = matchEnabled ? await getCachedScores(jobId) : [];
+  const lastComputed = cachedScores[0]?.computedAt ?? null;
 
   return (
     <>
@@ -132,6 +140,17 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </section>
+
+          {matchEnabled && (
+            <MatchPanel
+              initialRows={cachedScores}
+              lastComputed={lastComputed}
+              onRefresh={async () => {
+                "use server";
+                return await refreshMatchScoresAction(jobId);
+              }}
+            />
+          )}
         </div>
       </div>
     </>
