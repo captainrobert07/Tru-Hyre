@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 type Option = { id: number; name: string };
 
@@ -9,10 +10,12 @@ export function JobForm({
   clients,
   vendors,
   initial,
+  aiButtons,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   clients: Option[];
   vendors: Option[];
+  aiButtons?: ReactNode;
   initial?: {
     title?: string;
     clientAccountId?: number | null;
@@ -119,6 +122,8 @@ export function JobForm({
           <input type="hidden" name="vendorIdsCsv" id="vendorIdsCsv" defaultValue={vendorIdsCsv} />
           <VendorChips vendors={vendors} initial={v.vendorIds || []} />
         </div>
+
+        {aiButtons}
 
         <div className="md:col-span-2">
           <label htmlFor="description" className="label">Description</label>

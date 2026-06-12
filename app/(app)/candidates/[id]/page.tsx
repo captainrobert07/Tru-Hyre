@@ -15,10 +15,12 @@ import { StageButtons } from "@/components/stage-buttons";
 import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
 import { EmailComposer, type OutboxItem } from "@/components/email-composer";
 import { Scorecard, type ScorecardItem } from "@/components/scorecard";
+import { AiSummaryButton } from "@/components/ai-summary-button";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
 import { sendAdHocEmailAction } from "./email-actions";
 import { submitScorecardAction } from "./scorecard-actions";
+import { generateCandidateSummaryAction } from "./ai-actions";
 import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
 import { DangerZone } from "./danger-zone";
 import { InlineEdit } from "@/components/inline-edit";
@@ -302,7 +304,17 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               />
             </Field>
             <div className="pt-3 border-t border-hairline mt-3">
-              <div className="text-xs text-ink-muted uppercase tracking-wide mb-1">Summary</div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs text-ink-muted uppercase tracking-wide">Summary</div>
+                {flags.ai_summary && (
+                  <AiSummaryButton
+                    onGenerate={async () => {
+                      "use server";
+                      return await generateCandidateSummaryAction(candidateId);
+                    }}
+                  />
+                )}
+              </div>
               <InlineEdit
                 field="summary"
                 defaultValue={cand.summary || ""}

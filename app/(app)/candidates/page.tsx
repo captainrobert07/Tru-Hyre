@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { candidates, vendorAccounts, savedViews } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
 import { parseListParams } from "@/lib/list-params";
 import { PageHeader, EmptyState } from "@/components/primitives";
 import { ListToolbar, Pager } from "@/components/list-toolbar";
@@ -22,6 +23,8 @@ export default async function CandidatesPage({
   const sp = await searchParams;
   const { q, page, pageSize, offset } = parseListParams(sp);
   const stage = sp.stage;
+  const aiSearchEnabled = await isFeatureEnabled("ai_search");
+  const dedupeEnabled = await isFeatureEnabled("ai_dedupe");
 
   const conditions: SQL[] = [];
   if (q) {
@@ -88,6 +91,8 @@ export default async function CandidatesPage({
         subtitle={`${total} candidate${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}`}
         actions={
           <>
+            {aiSearchEnabled && <Link href="/candidates/ai-search" className="btn-ghost">✨ AI search</Link>}
+            {dedupeEnabled && <Link href="/candidates/duplicates" className="btn-ghost">Duplicates</Link>}
             <Link href="/candidates/import" className="btn-ghost">Import CSV</Link>
             <Link href="/candidates/upload" className="btn-primary">Upload resume</Link>
           </>
