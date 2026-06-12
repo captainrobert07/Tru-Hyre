@@ -70,6 +70,12 @@ export const interviewStatusEnum = pgEnum("interview_status", [
   "no_show",
   "cancelled",
 ]);
+export const scorecardVerdictEnum = pgEnum("scorecard_verdict", [
+  "strong_yes",
+  "yes",
+  "no",
+  "strong_no",
+]);
 
 export const notificationKindEnum = pgEnum("notification_kind", [
   "stage_change",
@@ -336,6 +342,23 @@ export const interviews = pgTable("interviews", {
   statusIdx: index("interviews_status_idx").on(t.status),
 }));
 
+// Structured interview scorecard — one row per reviewer per interview/submission.
+export const interviewFeedback = pgTable("interview_feedback", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  submissionId: integer("submission_id").references(() => submissions.id, { onDelete: "set null" }),
+  interviewId: integer("interview_id").references(() => interviews.id, { onDelete: "set null" }),
+  reviewerId: integer("reviewer_id").references(() => users.id, { onDelete: "set null" }),
+  verdict: scorecardVerdictEnum("verdict").notNull(),
+  // Per-criterion 1-5 ratings, e.g. { technical: 4, communication: 5, culture: 3 }.
+  scores: jsonb("scores").$type<Record<string, number>>().notNull().default({}),
+  body: text("body"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("interview_feedback_candidate_idx").on(t.candidateId),
+  submissionIdx: index("interview_feedback_submission_idx").on(t.submissionId),
+}));
+
 // ---------- Notifications ----------
 
 export const notifications = pgTable("notifications", {
@@ -551,6 +574,13 @@ export const interviewsRelations = relations(interviews, ({ one }) => ({
   createdBy: one(users, { fields: [interviews.createdById], references: [users.id] }),
 }));
 
+export const interviewFeedbackRelations = relations(interviewFeedback, ({ one }) => ({
+  candidate: one(candidates, { fields: [interviewFeedback.candidateId], references: [candidates.id] }),
+  submission: one(submissions, { fields: [interviewFeedback.submissionId], references: [submissions.id] }),
+  interview: one(interviews, { fields: [interviewFeedback.interviewId], references: [interviews.id] }),
+  reviewer: one(users, { fields: [interviewFeedback.reviewerId], references: [users.id] }),
+}));
+
 // ---------- Type exports ----------
 
 export type User = typeof users.$inferSelect;
@@ -565,3 +595,4 @@ export type Notification = typeof notifications.$inferSelect;
 export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type Interview = typeof interviews.$inferSelect;
 export type NewInterview = typeof interviews.$inferInsert;
+export type InterviewFeedback = typeof interviewFeedback.$inferSelect;

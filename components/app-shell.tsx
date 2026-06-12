@@ -10,6 +10,7 @@ import { QuickAdd } from "./quick-add";
 import { Avatar } from "./avatar";
 import {
   LayoutDashboard,
+  Inbox,
   Users,
   Briefcase,
   Building2,
@@ -25,6 +26,7 @@ type Role = "admin" | "hr" | "client" | "vendor";
 
 const NAV: { href: string; label: string; icon: ReactNode; roles: Role[] }[] = [
   { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={16} />, roles: ["admin", "hr"] },
+  { href: "/inbox", label: "Inbox", icon: <Inbox size={16} />, roles: ["admin", "hr"] },
   { href: "/candidates", label: "Candidates", icon: <Users size={16} />, roles: ["admin", "hr"] },
   { href: "/jobs", label: "Jobs", icon: <Briefcase size={16} />, roles: ["admin", "hr"] },
   { href: "/clients", label: "Clients", icon: <Building2 size={16} />, roles: ["admin", "hr"] },
@@ -47,14 +49,18 @@ function NotificationDot({ count }: { count: number }) {
 export function AppShell({
   user,
   unreadCount,
+  inboxCount,
   children,
 }: {
   user: { fullName: string; email: string; role: Role };
   unreadCount?: number;
+  inboxCount?: number;
   children: ReactNode;
 }) {
   const items = NAV.filter((n) => n.roles.includes(user.role));
   const unread = unreadCount ?? 0;
+  const inbox = inboxCount ?? 0;
+  const dotFor = (href: string) => (href === "/notifications" ? unread : href === "/inbox" ? inbox : 0);
   const primary = items.slice(0, 4);
   const overflow = items.slice(4);
 
@@ -74,7 +80,7 @@ export function AppShell({
           {primary.map((n) => (
             <Link key={n.href} href={n.href} className="nav-pill-item">
               {n.label}
-              {n.href === "/notifications" && <NotificationDot count={unread} />}
+              <NotificationDot count={dotFor(n.href)} />
             </Link>
           ))}
           {overflow.length > 0 && (
@@ -89,7 +95,7 @@ export function AppShell({
                   >
                     <span className="text-ink-muted">{n.icon}</span>
                     {n.label}
-                    {n.href === "/notifications" && <NotificationDot count={unread} />}
+                    <NotificationDot count={dotFor(n.href)} />
                   </Link>
                 ))}
               </div>
@@ -158,7 +164,7 @@ export function AppShell({
           <Link key={n.href} href={n.href} className="flex flex-col items-center justify-center text-[10px] text-ink-soft gap-0.5 relative">
             <span className="text-ink-muted">{n.icon}</span>
             <span>{n.label}</span>
-            {n.href === "/notifications" && unread > 0 && (
+            {dotFor(n.href) > 0 && (
               <span className="absolute top-2 right-1/3 translate-x-2 size-1.5 rounded-full bg-attention-500" />
             )}
           </Link>

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -12,8 +12,12 @@ import { PendingShimmer } from "@/components/pending-shimmer";
 import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
 import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
+import { EmailComposer, type OutboxItem } from "@/components/email-composer";
+import { Scorecard, type ScorecardItem } from "@/components/scorecard";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
+import { sendAdHocEmailAction } from "./email-actions";
+import { submitScorecardAction } from "./scorecard-actions";
 import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
 import { DangerZone } from "./danger-zone";
 import { InlineEdit } from "@/components/inline-edit";
@@ -64,7 +68,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   // Fetch feedback for all submissions of this candidate, then weave a unified
   // activity timeline (stage moves + feedback events).
   const subIds = subs.map((s) => s.id);
-  const [feedback, candComments, candInterviews, staff] = await Promise.all([
+  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows] = await Promise.all([
     subIds.length === 0
       ? Promise.resolve([])
       : db
@@ -100,7 +104,61 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       .where(and(inArray(users.role, ["admin", "hr"]), eq(users.isActive, true)))
       .orderBy(users.fullName)
       .limit(50),
+    db
+      .select({
+        id: emailOutbox.id,
+        templateSlug: emailOutbox.templateSlug,
+        subject: emailOutbox.subject,
+        toEmail: emailOutbox.toEmail,
+        status: emailOutbox.status,
+        error: emailOutbox.error,
+        sentAt: emailOutbox.sentAt,
+        createdAt: emailOutbox.createdAt,
+      })
+      .from(emailOutbox)
+      .where(eq(emailOutbox.candidateId, candidateId))
+      .orderBy(desc(emailOutbox.createdAt))
+      .limit(30),
+    db
+      .select({ slug: emailTemplates.slug, name: emailTemplates.name })
+      .from(emailTemplates)
+      .where(eq(emailTemplates.isActive, true))
+      .orderBy(emailTemplates.name),
+    db
+      .select({
+        id: interviewFeedback.id,
+        verdict: interviewFeedback.verdict,
+        scores: interviewFeedback.scores,
+        body: interviewFeedback.body,
+        createdAt: interviewFeedback.createdAt,
+        reviewerName: users.fullName,
+        reviewerEmail: users.email,
+      })
+      .from(interviewFeedback)
+      .leftJoin(users, eq(interviewFeedback.reviewerId, users.id))
+      .where(eq(interviewFeedback.candidateId, candidateId))
+      .orderBy(desc(interviewFeedback.createdAt)),
   ]);
+
+  const scorecardItems: ScorecardItem[] = scorecardRows.map((s) => ({
+    id: s.id,
+    verdict: s.verdict,
+    scores: s.scores || {},
+    body: s.body,
+    reviewerName: s.reviewerName || s.reviewerEmail || "Unknown",
+    createdAt: s.createdAt.toISOString(),
+  }));
+
+  const outboxItems: OutboxItem[] = outboxRows.map((m) => ({
+    id: m.id,
+    templateSlug: m.templateSlug,
+    subject: m.subject,
+    toEmail: m.toEmail,
+    status: m.status,
+    error: m.error,
+    sentAt: m.sentAt ? m.sentAt.toISOString() : null,
+    createdAt: m.createdAt.toISOString(),
+  }));
 
   // Build interviewer-name lookup for the interview list.
   const staffById = new Map(staff.map((s) => [s.id, s.fullName || s.email]));
@@ -489,6 +547,30 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               onCancel={async (interviewId) => {
                 "use server";
                 return await cancelInterviewAction(candidateId, interviewId);
+              }}
+            />
+          </Section>
+
+          <Section title="Communication">
+            <EmailComposer
+              candidateEmail={cand.email}
+              outbox={outboxItems}
+              templates={activeTemplates}
+              onSend={async (fd) => {
+                "use server";
+                return await sendAdHocEmailAction(candidateId, fd);
+              }}
+            />
+          </Section>
+
+          <Section title="Scorecards">
+            <Scorecard
+              scorecards={scorecardItems}
+              submissions={subs.map((s) => ({ id: s.id, jobId: s.jobId, label: `Job #${s.jobId} · ${s.status}` }))}
+              interviews={interviewItems.map((i) => ({ id: i.id, label: `${i.title} · ${new Date(i.scheduledStart).toLocaleDateString()}` }))}
+              onSubmit={async (fd) => {
+                "use server";
+                return await submitScorecardAction(candidateId, fd);
               }}
             />
           </Section>

@@ -1,4 +1,4 @@
-import { sql, and, eq, count, isNull } from "drizzle-orm";
+import { sql, and, eq, count, isNull, desc, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   candidates,
@@ -7,6 +7,9 @@ import {
   vendorAccounts,
   users,
   stageHistory,
+  tasks,
+  notifications,
+  interviews,
 } from "@/db/schema";
 
 // ---------- types ----------
@@ -58,6 +61,15 @@ export type AcceptanceRow = {
   offers: number;
   joins: number;
   acceptanceRate: number;
+};
+
+export type ActionItems = {
+  tasks: Array<{ id: number; title: string; body: string | null; dueAt: string | null; candidateId: number | null; jobId: number | null }>;
+  idleCandidates: Array<{ id: number; fullName: string; stage: string; updatedAt: string }>;
+  staleSubmissions: Array<{ id: number; candidateId: number; jobId: number; candidateName: string; createdAt: string }>;
+  upcomingInterviews: Array<{ id: number; candidateId: number; title: string; scheduledStart: string; mode: string }>;
+  unreadNotifications: number;
+  total: number;
 };
 
 // ---------- queries ----------
@@ -473,7 +485,97 @@ export async function getSubmissionForecast(): Promise<ForecastRow> {
   };
 }
 
-// suppress unused-import warning for and/eq/isNull if imports get pruned
+/**
+ * "What needs me today?" — assembles a per-recruiter action list from existing
+ * signals, each scoped to the current user. Five independent queries run in
+ * parallel; no schema change required.
+ */
+export async function getMyActionItems(userId: number): Promise<ActionItems> {
+  const [myTasks, idle, stale, ivs, unread] = await Promise.all([
+    db
+      .select({ id: tasks.id, title: tasks.title, body: tasks.body, dueAt: tasks.dueAt, candidateId: tasks.candidateId, jobId: tasks.jobId })
+      .from(tasks)
+      .where(and(eq(tasks.ownerId, userId), eq(tasks.status, "open")))
+      .orderBy(tasks.dueAt, desc(tasks.createdAt))
+      .limit(25),
+    db
+      .select({ id: candidates.id, fullName: candidates.fullName, stage: candidates.stage, updatedAt: candidates.updatedAt })
+      .from(candidates)
+      .where(and(
+        eq(candidates.uploadedById, userId),
+        sql`${candidates.updatedAt} <= now() - interval '14 days'`,
+        sql`${candidates.stage} not in ('joined', 'rejected', 'offer')`,
+      ))
+      .orderBy(candidates.updatedAt)
+      .limit(25),
+    db
+      .select({
+        id: submissions.id,
+        candidateId: submissions.candidateId,
+        jobId: submissions.jobId,
+        candidateName: candidates.fullName,
+        createdAt: submissions.createdAt,
+      })
+      .from(submissions)
+      .innerJoin(candidates, eq(submissions.candidateId, candidates.id))
+      .where(and(
+        eq(submissions.submittedById, userId),
+        eq(submissions.status, "submitted"),
+        sql`${submissions.createdAt} <= now() - interval '5 days'`,
+      ))
+      .orderBy(submissions.createdAt)
+      .limit(25),
+    db
+      .select({
+        id: interviews.id,
+        candidateId: interviews.candidateId,
+        title: interviews.title,
+        scheduledStart: interviews.scheduledStart,
+        mode: interviews.mode,
+      })
+      .from(interviews)
+      .where(and(
+        eq(interviews.status, "scheduled"),
+        sql`${interviews.scheduledStart} >= now()`,
+        sql`${interviews.scheduledStart} <= now() + interval '7 days'`,
+        // I created it, or I'm a listed interviewer (jsonb array containment).
+        sql`(${interviews.createdById} = ${userId} OR ${interviews.interviewerIds} @> ${JSON.stringify([userId])}::jsonb)`,
+      ))
+      .orderBy(interviews.scheduledStart)
+      .limit(25),
+    db
+      .select({ n: count() })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt))),
+  ]);
+
+  const unreadNotifications = unread[0]?.n ?? 0;
+  const items: ActionItems = {
+    tasks: myTasks.map((t) => ({
+      id: t.id, title: t.title, body: t.body,
+      dueAt: t.dueAt ? t.dueAt.toISOString() : null,
+      candidateId: t.candidateId, jobId: t.jobId,
+    })),
+    idleCandidates: idle.map((c) => ({ id: c.id, fullName: c.fullName, stage: c.stage, updatedAt: c.updatedAt.toISOString() })),
+    staleSubmissions: stale.map((s) => ({ id: s.id, candidateId: s.candidateId, jobId: s.jobId, candidateName: s.candidateName, createdAt: s.createdAt.toISOString() })),
+    upcomingInterviews: ivs.map((i) => ({ id: i.id, candidateId: i.candidateId, title: i.title, scheduledStart: i.scheduledStart.toISOString(), mode: i.mode })),
+    unreadNotifications,
+    total: 0,
+  };
+  items.total =
+    items.tasks.length + items.idleCandidates.length + items.staleSubmissions.length + items.upcomingInterviews.length + unreadNotifications;
+  return items;
+}
+
+/** Lightweight count for the sidebar badge — avoids fetching full rows. */
+export async function getMyActionItemCount(userId: number): Promise<number> {
+  const items = await getMyActionItems(userId);
+  return items.total;
+}
+
+// suppress unused-import warning for helpers that may be pruned
 void and;
 void eq;
 void isNull;
+void inArray;
+void ne;
