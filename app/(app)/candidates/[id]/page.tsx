@@ -389,7 +389,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
             )}
           </Section>
 
-          <Section title="Career details">
+          <Section title="Career details" defaultOpen={false}>
             <Field label="LinkedIn">
               <InlineEdit
                 field="linkedinUrl"
@@ -495,7 +495,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
 
           {!lite && (
-          <Section title="Internal notes">
+          <Section title="Internal notes" defaultOpen={false}>
             <p className="text-[11px] text-ink-muted mb-2">Visible to HR/admin only. Never shown to clients or vendors.</p>
             <InlineEdit
               field="notes"
@@ -511,7 +511,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && (
-          <Section title="Submissions">
+          <Section title="Submissions" defaultOpen={false} count={subs.length}>
             {subs.length === 0 ? (
               <div className="text-sm text-ink-soft px-1 py-2">Not submitted yet.</div>
             ) : (
@@ -612,7 +612,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
 
           {!lite && (flags.ai_outreach || flags.ai_redflags) && (
-          <Section title="AI tools">
+          <Section title="AI tools" defaultOpen={false}>
             <AiToolsPanel
               outreach={flags.ai_outreach ? async () => {
                 "use server";
@@ -627,7 +627,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && flags.interviews && (
-          <Section title="Interviews">
+          <Section title="Interviews" defaultOpen={false} count={interviewItems.length}>
             <InterviewScheduler
               interviews={interviewItems}
               interviewers={staff.map((s) => ({ id: s.id, name: s.fullName || s.email }))}
@@ -645,7 +645,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && flags.email_composer && (
-          <Section title="Communication">
+          <Section title="Communication" defaultOpen={false} count={outboxItems.length + inboundItems.length}>
             <EmailComposer
               candidateEmail={cand.email}
               outbox={outboxItems}
@@ -664,7 +664,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && flags.email_sequences && (
-          <Section title="Email sequence">
+          <Section title="Email sequence" defaultOpen={false}>
             <SequencePanel
               enrollments={enrollmentItems}
               sequences={SEQUENCES.map((s) => ({ key: s.key, label: s.label }))}
@@ -681,7 +681,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && flags.scorecards && (
-          <Section title="Scorecards">
+          <Section title="Scorecards" defaultOpen={false} count={scorecardItems.length}>
             <Scorecard
               scorecards={scorecardItems}
               submissions={subs.map((s) => ({ id: s.id, jobId: s.jobId, label: `Job #${s.jobId} · ${s.status}` }))}
@@ -695,7 +695,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && flags.offers && (
-          <Section title="Offers">
+          <Section title="Offers" defaultOpen={false} count={offerItems.length}>
             <OffersPanel
               offers={offerItems}
               onCreate={async (fd) => {
@@ -741,7 +741,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
 
           {!lite && (
-          <Section title="Client packet">
+          <Section title="Client packet" defaultOpen={false}>
             <form
               action={async () => {
                 "use server";
@@ -766,7 +766,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && (
-          <Section title="Reminder">
+          <Section title="Reminder" defaultOpen={false}>
             <form
               action={async (fd) => {
                 "use server";
@@ -784,7 +784,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           )}
 
           {!lite && (
-          <Section title="Submit to job">
+          <Section title="Submit to job" defaultOpen={false}>
             <form action={submitToJobAction.bind(null, candidateId)} className="space-y-2">
               <select name="jobId" className="input text-sm" required>
                 <option value="">Select an open job…</option>
@@ -824,12 +824,37 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// Collapsible card section. Key sections open by default; the rest are
+// collapsed so the candidate page isn't one giant 16-panel scroll. Native
+// <details> — accessible, no JS, no hydration cost. `count` shows a badge
+// (e.g. number of interviews) so collapsed sections still signal content.
+function Section({
+  title,
+  children,
+  defaultOpen = true,
+  count,
+  hint,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  count?: number;
+  hint?: string;
+}) {
   return (
-    <section className="card p-4">
-      <h2 className="text-sm font-semibold mb-3">{title}</h2>
-      {children}
-    </section>
+    <details open={defaultOpen} className="card p-4 group [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex items-center justify-between cursor-pointer select-none list-none -m-1 p-1 rounded-lg">
+        <span className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{title}</span>
+          {typeof count === "number" && count > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-canvas text-ink-soft tabular-nums">{count}</span>
+          )}
+          {hint && <span className="text-[11px] text-ink-muted font-normal">{hint}</span>}
+        </span>
+        <span className="text-ink-muted transition-transform group-open:rotate-180" aria-hidden>▾</span>
+      </summary>
+      <div className="mt-3">{children}</div>
+    </details>
   );
 }
 
