@@ -46,9 +46,9 @@ export async function submitClientScoreAction(
   const v = parsed.data;
 
   const criteriaScores: Record<string, number> = {};
-  if (v.technical && v.technical !== "") criteriaScores.technical = Number(v.technical);
-  if (v.cultural_fit && v.cultural_fit !== "") criteriaScores.cultural_fit = Number(v.cultural_fit);
-  if (v.communication && v.communication !== "") criteriaScores.communication = Number(v.communication);
+  if (typeof v.technical === "number") criteriaScores.technical = v.technical;
+  if (typeof v.cultural_fit === "number") criteriaScores.cultural_fit = v.cultural_fit;
+  if (typeof v.communication === "number") criteriaScores.communication = v.communication;
 
   const existing = (
     await db.select().from(clientFeedbackScores)
