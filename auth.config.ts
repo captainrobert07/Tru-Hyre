@@ -46,7 +46,17 @@ export const authConfig = {
 
       const isFullStaff = role === "admin" || role === "hr";
       const isAnyStaff = isFullStaff || role === "hr_lite";
-      const homeForRole = role === "client" ? "/portal/client" : role === "vendor" ? "/portal/vendor" : "/dashboard";
+      // hr_lite's home is the candidate list (no org-wide dashboard).
+      const homeForRole = role === "client" ? "/portal/client"
+        : role === "vendor" ? "/portal/vendor"
+        : role === "hr_lite" ? "/candidates"
+        : "/dashboard";
+
+      // hr_lite must never reach the org-wide dashboard — bounce at the edge,
+      // before the page computes any cross-candidate data.
+      if (path === "/dashboard" && role === "hr_lite") {
+        return Response.redirect(new URL("/candidates", nextUrl));
+      }
 
       if (adminOnly && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
       if (fullStaffOnly && !isFullStaff) return Response.redirect(new URL(homeForRole, nextUrl));
