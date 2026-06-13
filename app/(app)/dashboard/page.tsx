@@ -8,6 +8,7 @@ import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState, Badge } from "@/components/primitives";
 import { TasksCard } from "@/components/tasks-card";
 import { OnboardingBanner } from "@/components/onboarding-banner";
+import { FirstRunChecklist } from "@/components/first-run-checklist";
 import { createTaskAction, completeTaskAction, snoozeTaskAction, deleteTaskAction } from "../tasks/actions";
 import {
   getCoverageRatio,
@@ -264,6 +265,11 @@ export default async function DashboardPage() {
       />
 
       {onboardingEnabled && <OnboardingBanner firstName={(user.fullName || user.email).split(" ")[0]} />}
+
+      {/* First-run guide while the workspace is still being set up. */}
+      {(candTotal === 0 || openJobsCount === 0 || subsTotal === 0) && (
+        <FirstRunChecklist jobs={openJobsCount} candidates={candTotal} submissions={subsTotal} />
+      )}
 
       <MyDayBanner
         awaitingFeedback={awaitingFeedback}
