@@ -51,6 +51,7 @@ export function CandidatesTable({
   templates = [],
   bulkEmailEnabled = false,
   lite = false,
+  blind = false,
 }: {
   rows: Row[];
   isAdmin: boolean;
@@ -58,6 +59,7 @@ export function CandidatesTable({
   templates?: { slug: string; name: string }[];
   bulkEmailEnabled?: boolean;
   lite?: boolean;
+  blind?: boolean;
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -234,27 +236,32 @@ export function CandidatesTable({
                 checked={checked}
                 onChange={() => toggleOne(c.id)}
                 className="size-4 rounded border-hairline text-brand-500 focus:ring-brand-500"
-                aria-label={`Select ${c.fullName}`}
+                aria-label={`Select ${blind ? c.refId : c.fullName}`}
               />
-              <Avatar name={c.fullName} size="sm" />
+              <Avatar name={blind ? c.refId : c.fullName} size="sm" />
               <Link href={`/candidates/${c.id}`} className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate flex items-center gap-2">
-                  {c.fullName}
-                  <span className="text-[10px] text-ink-muted font-mono">{c.refId}</span>
+                  {blind ? <span className="font-mono">{c.refId}</span> : c.fullName}
+                  {!blind && <span className="text-[10px] text-ink-muted font-mono">{c.refId}</span>}
                 </div>
                 <div className="text-xs text-ink-soft truncate mt-0.5">
-                  {[c.currentTitle, c.location, c.experienceYears ? `${c.experienceYears} yrs` : null].filter(Boolean).join(" · ")}
+                  {/* Title/location omitted in blind mode (can hint at identity); show only neutral facts. */}
+                  {blind
+                    ? [c.experienceYears ? `${c.experienceYears} yrs` : null].filter(Boolean).join(" · ")
+                    : [c.currentTitle, c.location, c.experienceYears ? `${c.experienceYears} yrs` : null].filter(Boolean).join(" · ")}
                 </div>
               </Link>
-              <button
-                type="button"
-                onClick={() => openPreview(c.id)}
-                className="size-8 rounded-full text-ink-muted hover:text-ink hover:bg-surface inline-flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                aria-label={`Preview ${c.fullName}`}
-                title="Quick preview"
-              >
-                <Eye size={14} />
-              </button>
+              {!blind && (
+                <button
+                  type="button"
+                  onClick={() => openPreview(c.id)}
+                  className="size-8 rounded-full text-ink-muted hover:text-ink hover:bg-surface inline-flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                  aria-label={`Preview ${c.fullName}`}
+                  title="Quick preview"
+                >
+                  <Eye size={14} />
+                </button>
+              )}
               <StageBadge stage={c.stage} />
             </div>
           );

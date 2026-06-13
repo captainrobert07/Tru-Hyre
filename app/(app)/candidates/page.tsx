@@ -17,7 +17,7 @@ export const metadata = { title: "Candidates" };
 export default async function CandidatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string; stage?: string; tag?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; stage?: string; tag?: string; blind?: string }>;
 }) {
   const user = await requireStaffOrLite();
   const lite = isLite(user);
@@ -25,6 +25,7 @@ export default async function CandidatesPage({
   const { q, page, pageSize, offset } = parseListParams(sp);
   const stage = sp.stage;
   const tag = sp.tag;
+  const blind = sp.blind === "1";
   const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled, bulkEmailEnabled] = await Promise.all([
     isFeatureEnabled("ai_search"),
     isFeatureEnabled("ai_dedupe"),
@@ -118,6 +119,15 @@ export default async function CandidatesPage({
         subtitle={`${total} candidate${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}${tag ? ` tagged "${tag}"` : ""}`}
         actions={
           <>
+            {!lite && (
+              <Link
+                href={blindHref({ q, stage, tag }, !blind)}
+                className={`btn-ghost ${blind ? "bg-brand-50 text-brand-700 border-brand-100" : ""}`}
+                title="Hide names & contact for unbiased screening"
+              >
+                {blind ? "Blind: on" : "Blind mode"}
+              </Link>
+            )}
             {!lite && aiSearchEnabled && <Link href="/candidates/ai-search" className="btn-ghost">✨ AI search</Link>}
             {!lite && talentPoolEnabled && <Link href="/candidates?tag=talent-pool" className="btn-ghost">Talent pool</Link>}
             {!lite && dedupeEnabled && <Link href="/candidates/duplicates" className="btn-ghost">Duplicates</Link>}
@@ -193,7 +203,7 @@ export default async function CandidatesPage({
         />
       ) : (
         <>
-          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={lite ? [] : vendorList} templates={lite ? [] : emailTemplateList} bulkEmailEnabled={!lite && bulkEmailEnabled} lite={lite} />
+          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={lite ? [] : vendorList} templates={lite ? [] : emailTemplateList} bulkEmailEnabled={!lite && bulkEmailEnabled} lite={lite} blind={blind} />
           <Pager basePath="/candidates" page={page} pageSize={pageSize} total={total} q={q} status={stage} />
         </>
       )}
@@ -206,6 +216,15 @@ function chipHref(params: { q?: string; stage?: string; tag?: string }): string 
   if (params.q) sp.set("q", params.q);
   if (params.stage) sp.set("stage", params.stage);
   if (params.tag) sp.set("tag", params.tag);
+  return `/candidates${sp.toString() ? `?${sp}` : ""}`;
+}
+
+function blindHref(params: { q?: string; stage?: string; tag?: string }, on: boolean): string {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  if (params.stage) sp.set("stage", params.stage);
+  if (params.tag) sp.set("tag", params.tag);
+  if (on) sp.set("blind", "1");
   return `/candidates${sp.toString() ? `?${sp}` : ""}`;
 }
 
