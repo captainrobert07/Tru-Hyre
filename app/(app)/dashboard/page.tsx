@@ -3,8 +3,10 @@ import Link from "next/link";
 import { db } from "@/db";
 import { candidates, jobs, submissions, notifications, vendorAccounts, clientAccounts, tasks } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState, Badge } from "@/components/primitives";
 import { TasksCard } from "@/components/tasks-card";
+import { OnboardingBanner } from "@/components/onboarding-banner";
 import { createTaskAction, completeTaskAction, snoozeTaskAction, deleteTaskAction } from "../tasks/actions";
 import {
   getCoverageRatio,
@@ -20,6 +22,7 @@ const FUNNEL_STEPS = ["received", "screening", "submitted", "shortlist", "interv
 
 export default async function DashboardPage() {
   const user = await requireStaff();
+  const onboardingEnabled = await isFeatureEnabled("onboarding");
 
   const [
     candTotalRow,
@@ -256,6 +259,8 @@ export default async function DashboardPage() {
           </>
         }
       />
+
+      {onboardingEnabled && <OnboardingBanner firstName={(user.fullName || user.email).split(" ")[0]} />}
 
       <MyDayBanner
         awaitingFeedback={awaitingFeedback}

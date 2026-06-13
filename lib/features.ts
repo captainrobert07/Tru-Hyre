@@ -45,9 +45,12 @@ export type FeatureKey =
   | "saved_view_sharing"
   | "webhooks"
   | "public_api"
-  | "gdpr_tools";
+  | "gdpr_tools"
+  | "pwa"
+  | "onboarding"
+  | "keyboard_shortcuts";
 
-export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform";
+export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
 export type FeatureDef = {
   key: FeatureKey;
@@ -294,6 +297,27 @@ export const FEATURES: FeatureDef[] = [
     label: "GDPR tools",
     description: "Candidate data export and right-to-erasure, plus a retention overview, in one admin place.",
     category: "Platform",
+    defaultEnabled: true,
+  },
+  {
+    key: "pwa",
+    label: "Installable app (PWA)",
+    description: "Serve a web app manifest so Tru Hyre can be installed to the home screen / desktop.",
+    category: "Experience",
+    defaultEnabled: true,
+  },
+  {
+    key: "onboarding",
+    label: "Onboarding hint",
+    description: "Show a dismissible welcome banner on the dashboard for first-time orientation.",
+    category: "Experience",
+    defaultEnabled: true,
+  },
+  {
+    key: "keyboard_shortcuts",
+    label: "Keyboard shortcuts",
+    description: "⌘K command palette, list navigation, and the shortcut help dialog.",
+    category: "Experience",
     defaultEnabled: true,
   },
 ];
