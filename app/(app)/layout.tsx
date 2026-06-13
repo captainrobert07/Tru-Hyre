@@ -40,7 +40,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <AppShell
-      user={{ fullName: u.fullName || u.email || "", email: u.email || "", role: u.role as "admin" | "hr" }}
+      user={{ fullName: u.fullName || u.email || "", email: u.email || "", role: u.role as "admin" | "hr" | "hr_lite" }}
       unreadCount={unreadCount}
       inboxCount={inboxCount}
       enabledFeatures={{ inbox: flags.inbox, command_palette: flags.command_palette, analytics_reports: flags.analytics_reports, activity_feed: flags.activity_feed, keyboard_shortcuts: flags.keyboard_shortcuts, dark_mode: flags.dark_mode }}

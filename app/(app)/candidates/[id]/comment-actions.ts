@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { comments, users, notifications, candidates } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
-import { requireStaff } from "@/lib/rbac";
+import { requireStaff, authorizeCandidate } from "@/lib/rbac";
 
 const schema = z.object({
   body: z.string().min(1).max(4000),
@@ -20,13 +20,15 @@ function extractMentions(body: string): string[] {
 }
 
 export async function addCandidateCommentAction(candidateId: number, formData: FormData): Promise<void> {
-  const me = await requireStaff();
   const parsed = schema.safeParse({ body: (formData.get("body") || "").toString().trim() });
   if (!parsed.success) return;
   const body = parsed.data.body;
 
-  const cand = (await db.select({ fullName: candidates.fullName }).from(candidates).where(eq(candidates.id, candidateId)))[0];
+  const cand = (await db.select({ fullName: candidates.fullName, uploadedById: candidates.uploadedById }).from(candidates).where(eq(candidates.id, candidateId)))[0];
   if (!cand) return;
+  // Full staff comment on anyone; hr_lite only on candidates they uploaded.
+  const me = await authorizeCandidate(cand.uploadedById);
+  if (!me) return;
 
   const mentionedEmails = extractMentions(body);
   let mentionedIds: number[] = [];

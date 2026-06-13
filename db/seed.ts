@@ -86,6 +86,7 @@ async function main() {
   const seedUsers = [
     { email: "admin@truhyre.app", fullName: "Tru Hyre Admin", role: "admin" as const, clientAccountId: null, vendorAccountId: null },
     { email: "hr@truhyre.app", fullName: "Recruiter Demo", role: "hr" as const, clientAccountId: null, vendorAccountId: null },
+    { email: "hrlite@truhyre.app", fullName: "HR Lite Demo", role: "hr_lite" as const, clientAccountId: null, vendorAccountId: null },
     { email: "client@truhyre.app", fullName: "Allianz Hiring Mgr", role: "client" as const, clientAccountId: allianz.id, vendorAccountId: null },
     { email: "vendor@truhyre.app", fullName: "Vendor Partner", role: "vendor" as const, clientAccountId: null, vendorAccountId: talentBridge.id },
   ];

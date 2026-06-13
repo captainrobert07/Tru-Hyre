@@ -2,7 +2,7 @@ import { desc, ilike, or, sql, count, and, eq, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { candidates, vendorAccounts, savedViews, emailTemplates } from "@/db/schema";
-import { requireStaff } from "@/lib/rbac";
+import { requireStaffOrLite, isLite } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { parseListParams } from "@/lib/list-params";
 import { PageHeader, EmptyState } from "@/components/primitives";
@@ -19,7 +19,8 @@ export default async function CandidatesPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string; stage?: string; tag?: string }>;
 }) {
-  const user = await requireStaff();
+  const user = await requireStaffOrLite();
+  const lite = isLite(user);
   const sp = await searchParams;
   const { q, page, pageSize, offset } = parseListParams(sp);
   const stage = sp.stage;
@@ -47,12 +48,27 @@ export default async function CandidatesPage({
   if (stage) conditions.push(sql`${candidates.stage} = ${stage}`);
   // Talent-pool filter: candidates carrying a given tag (jsonb array contains).
   if (tag) conditions.push(sql`${candidates.tags} @> ${JSON.stringify([tag])}::jsonb`);
+  // hr_lite only ever sees candidates they uploaded.
+  if (lite) conditions.push(sql`${candidates.uploadedById} = ${Number(user.id)}`);
 
   const whereExpr = conditions.length > 0 ? and(...conditions) : undefined;
 
-  // Stage counts respect the q filter but ignore the stage filter (so the
-  // pills show "all" totals, not just the currently-selected stage).
-  const stageCondsQ: SQL[] = q ? [conditions[0]!] : [];
+  // Stage counts respect the q filter + lite ownership, but ignore the stage
+  // filter (so pills show totals within the user's visible set).
+  const stageCondsQ: SQL[] = [];
+  if (q) {
+    const like = `%${q}%`;
+    const orExpr = or(
+      ilike(candidates.fullName, like),
+      ilike(candidates.email, like),
+      ilike(candidates.currentTitle, like),
+      ilike(candidates.location, like),
+      sql`${candidates.skills}::text ilike ${like}`,
+      ilike(candidates.refId, like),
+    );
+    if (orExpr) stageCondsQ.push(orExpr);
+  }
+  if (lite) stageCondsQ.push(sql`${candidates.uploadedById} = ${Number(user.id)}`);
   const stageWhere = stageCondsQ.length > 0 ? and(...stageCondsQ) : undefined;
 
   const [rows, totalRows, vendorList, mySavedViews, stageCountRows] = await Promise.all([
@@ -102,10 +118,10 @@ export default async function CandidatesPage({
         subtitle={`${total} candidate${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}${tag ? ` tagged "${tag}"` : ""}`}
         actions={
           <>
-            {aiSearchEnabled && <Link href="/candidates/ai-search" className="btn-ghost">✨ AI search</Link>}
-            {talentPoolEnabled && <Link href="/candidates?tag=talent-pool" className="btn-ghost">Talent pool</Link>}
-            {dedupeEnabled && <Link href="/candidates/duplicates" className="btn-ghost">Duplicates</Link>}
-            <Link href="/candidates/import" className="btn-ghost">Import CSV</Link>
+            {!lite && aiSearchEnabled && <Link href="/candidates/ai-search" className="btn-ghost">✨ AI search</Link>}
+            {!lite && talentPoolEnabled && <Link href="/candidates?tag=talent-pool" className="btn-ghost">Talent pool</Link>}
+            {!lite && dedupeEnabled && <Link href="/candidates/duplicates" className="btn-ghost">Duplicates</Link>}
+            {!lite && <Link href="/candidates/import" className="btn-ghost">Import CSV</Link>}
             <Link href="/candidates/upload" className="btn-primary">Upload resume</Link>
           </>
         }
@@ -167,7 +183,7 @@ export default async function CandidatesPage({
         />
       ) : (
         <>
-          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={vendorList} templates={emailTemplateList} bulkEmailEnabled={bulkEmailEnabled} />
+          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={lite ? [] : vendorList} templates={lite ? [] : emailTemplateList} bulkEmailEnabled={!lite && bulkEmailEnabled} lite={lite} />
           <Pager basePath="/candidates" page={page} pageSize={pageSize} total={total} q={q} status={stage} />
         </>
       )}

@@ -15,7 +15,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["admin", "hr", "client", "vendor"]);
+export const roleEnum = pgEnum("role", ["admin", "hr", "hr_lite", "client", "vendor"]);
 
 export const jobStatusEnum = pgEnum("job_status", ["open", "hold", "closing", "closed"]);
 export const jobPriorityEnum = pgEnum("job_priority", ["low", "normal", "high", "urgent"]);

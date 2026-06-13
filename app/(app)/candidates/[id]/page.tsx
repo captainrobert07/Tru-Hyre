@@ -3,7 +3,7 @@ import Link from "next/link";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments } from "@/db/schema";
-import { requireStaff } from "@/lib/rbac";
+import { requireStaffOrLite, isLite } from "@/lib/rbac";
 import { getFeatureStates } from "@/lib/features";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -34,13 +34,16 @@ import { Comments } from "@/components/comments";
 export const dynamic = "force-dynamic";
 
 export default async function CandidateDetail({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireStaff();
+  const user = await requireStaffOrLite();
+  const lite = isLite(user);
   const { id } = await params;
   const candidateId = Number(id);
   if (!Number.isFinite(candidateId)) notFound();
 
   const cand = (await db.select().from(candidates).where(eq(candidates.id, candidateId)))[0];
   if (!cand) notFound();
+  // hr_lite may only view candidates they uploaded.
+  if (lite && cand.uploadedById !== Number(user.id)) notFound();
 
   const flags = await getFeatureStates();
 
@@ -490,6 +493,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
             </Field>
           </Section>
 
+          {!lite && (
           <Section title="Internal notes">
             <p className="text-[11px] text-ink-muted mb-2">Visible to HR/admin only. Never shown to clients or vendors.</p>
             <InlineEdit
@@ -503,7 +507,9 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
             />
           </Section>
+          )}
 
+          {!lite && (
           <Section title="Submissions">
             {subs.length === 0 ? (
               <div className="text-sm text-ink-soft px-1 py-2">Not submitted yet.</div>
@@ -518,6 +524,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               </ul>
             )}
           </Section>
+          )}
 
           <Section title="Activity">
             {activity.length === 0 ? (
@@ -603,7 +610,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
             />
           </Section>
 
-          {flags.interviews && (
+          {!lite && flags.interviews && (
           <Section title="Interviews">
             <InterviewScheduler
               interviews={interviewItems}
@@ -621,7 +628,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
           )}
 
-          {flags.email_composer && (
+          {!lite && flags.email_composer && (
           <Section title="Communication">
             <EmailComposer
               candidateEmail={cand.email}
@@ -640,7 +647,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
           )}
 
-          {flags.email_sequences && (
+          {!lite && flags.email_sequences && (
           <Section title="Email sequence">
             <SequencePanel
               enrollments={enrollmentItems}
@@ -657,7 +664,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
           )}
 
-          {flags.scorecards && (
+          {!lite && flags.scorecards && (
           <Section title="Scorecards">
             <Scorecard
               scorecards={scorecardItems}
@@ -671,7 +678,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
           )}
 
-          {flags.offers && (
+          {!lite && flags.offers && (
           <Section title="Offers">
             <OffersPanel
               offers={offerItems}
@@ -717,6 +724,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
             )}
           </Section>
 
+          {!lite && (
           <Section title="Client packet">
             <form
               action={async () => {
@@ -739,7 +747,9 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               </a>
             )}
           </Section>
+          )}
 
+          {!lite && (
           <Section title="Reminder">
             <form
               action={async (fd) => {
@@ -755,7 +765,9 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               <button type="submit" className="btn-ghost text-xs w-full">Add reminder</button>
             </form>
           </Section>
+          )}
 
+          {!lite && (
           <Section title="Submit to job">
             <form action={submitToJobAction.bind(null, candidateId)} className="space-y-2">
               <select name="jobId" className="input text-sm" required>
@@ -774,7 +786,9 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               </SubmitButton>
             </form>
           </Section>
+          )}
 
+          {!lite && (
           <DangerZone
             candidateId={candidateId}
             candidateName={cand.fullName}
@@ -785,6 +799,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               await deleteCandidateAction(candidateId);
             }}
           />
+          )}
         </div>
       </div>
 

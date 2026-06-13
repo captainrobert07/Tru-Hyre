@@ -50,12 +50,14 @@ export function CandidatesTable({
   vendors,
   templates = [],
   bulkEmailEnabled = false,
+  lite = false,
 }: {
   rows: Row[];
   isAdmin: boolean;
   vendors: { id: number; name: string }[];
   templates?: { slug: string; name: string }[];
   bulkEmailEnabled?: boolean;
+  lite?: boolean;
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -142,7 +144,7 @@ export function CandidatesTable({
 
   return (
     <>
-      {selected.size > 0 && (
+      {!lite && selected.size > 0 && (
         <div className="sticky top-[68px] z-30 mb-3 card flex items-center gap-2 px-3 py-2 flex-wrap shadow-pop">
           <span className="text-sm font-medium px-2">{selected.size} selected</span>
           <button onClick={clear} className="text-xs text-ink-soft hover:text-ink px-2">Clear</button>

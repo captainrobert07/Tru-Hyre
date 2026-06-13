@@ -10,7 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { uploadPacket, deleteDriveFile } from "@/lib/drive";
 import { renderPacketPdf } from "@/lib/packet";
 import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
-import { requireAdmin, requireStaff } from "@/lib/rbac";
+import { requireAdmin, requireStaff, authorizeCandidate } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { fireWebhook } from "@/lib/webhooks";
 import { withToast } from "@/lib/toast";
@@ -251,12 +251,14 @@ export async function setStageAction(
   id: number,
   toStage: string,
 ): Promise<{ ok: true; previousStage: string | null } | { ok: false; error: string }> {
-  const user = await requireStaff();
   const allowed = ["received", "hr_review", "screening", "submitted", "shortlist", "interview", "hold", "offer", "joined", "rejected"] as const;
   if (!allowed.includes(toStage as typeof allowed[number])) return { ok: false, error: "Invalid stage" };
 
   const current = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
   if (!current) return { ok: false, error: "Candidate not found" };
+  // Full staff act on anyone; hr_lite only on candidates they uploaded.
+  const user = await authorizeCandidate(current.uploadedById);
+  if (!user) return { ok: false, error: "Not allowed for this candidate." };
   if (current.stage === toStage) return { ok: true, previousStage: current.stage };
 
   await db

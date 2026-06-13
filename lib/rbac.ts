@@ -5,7 +5,7 @@ export type SessionUser = {
   id: string;
   email: string;
   fullName: string;
-  role: "admin" | "hr" | "client" | "vendor";
+  role: "admin" | "hr" | "hr_lite" | "client" | "vendor";
 };
 
 export async function requireUser(): Promise<SessionUser> {
@@ -19,6 +19,38 @@ export async function requireStaff(): Promise<SessionUser> {
   const u = await requireUser();
   if (u.role !== "admin" && u.role !== "hr") redirect("/");
   return u;
+}
+
+/**
+ * Full staff (admin/hr) OR the limited hr_lite role. Used on the candidate
+ * surfaces hr_lite is allowed into (list, detail, upload). Callers MUST further
+ * restrict hr_lite to their own uploaded candidates via isLite()/ownership.
+ */
+export async function requireStaffOrLite(): Promise<SessionUser> {
+  const u = await requireUser();
+  if (u.role !== "admin" && u.role !== "hr" && u.role !== "hr_lite") redirect("/");
+  return u;
+}
+
+/** True for the limited uploader role. */
+export function isLite(u: SessionUser): boolean {
+  return u.role === "hr_lite";
+}
+
+/**
+ * Authorize a mutation on a specific candidate for staff-or-lite. Full staff
+ * (admin/hr) may act on any candidate; hr_lite only on candidates they
+ * uploaded. Returns the user, or null when not authorized (caller should
+ * no-op/return an error — never throw into a server action).
+ */
+export async function authorizeCandidate(
+  uploadedById: number | null,
+): Promise<SessionUser | null> {
+  const u = await requireStaffOrLite();
+  if (u.role === "admin" || u.role === "hr") return u;
+  // hr_lite
+  if (uploadedById != null && uploadedById === Number(u.id)) return u;
+  return null;
 }
 
 export async function requireAdmin(): Promise<SessionUser> {

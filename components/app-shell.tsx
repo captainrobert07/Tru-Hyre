@@ -24,12 +24,12 @@ import {
   LogOut,
 } from "lucide-react";
 
-type Role = "admin" | "hr" | "client" | "vendor";
+type Role = "admin" | "hr" | "hr_lite" | "client" | "vendor";
 
 const NAV: { href: string; label: string; icon: ReactNode; roles: Role[] }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={16} />, roles: ["admin", "hr"] },
+  { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={16} />, roles: ["admin", "hr", "hr_lite"] },
   { href: "/inbox", label: "Inbox", icon: <Inbox size={16} />, roles: ["admin", "hr"] },
-  { href: "/candidates", label: "Candidates", icon: <Users size={16} />, roles: ["admin", "hr"] },
+  { href: "/candidates", label: "Candidates", icon: <Users size={16} />, roles: ["admin", "hr", "hr_lite"] },
   { href: "/jobs", label: "Jobs", icon: <Briefcase size={16} />, roles: ["admin", "hr"] },
   { href: "/clients", label: "Clients", icon: <Building2 size={16} />, roles: ["admin", "hr"] },
   { href: "/vendors", label: "Vendors", icon: <Truck size={16} />, roles: ["admin", "hr"] },

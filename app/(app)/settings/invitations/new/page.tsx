@@ -20,7 +20,8 @@ export default async function NewInvitationPage() {
           <label htmlFor="role" className="label">Role</label>
           <select id="role" name="role" defaultValue="hr" className="input">
             <option value="admin">Admin</option>
-            <option value="hr">HR / Recruiter</option>
+            <option value="hr">HR / Recruiter (full)</option>
+            <option value="hr_lite">HR Lite (own resumes only)</option>
             <option value="client">Client</option>
             <option value="vendor">Vendor</option>
           </select>

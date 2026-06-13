@@ -10,7 +10,7 @@ import { mergeParse, parseResumeWithAi } from "@/lib/parse-ai";
 import { contentHash, findDuplicates } from "@/lib/dedupe";
 import { logAudit } from "@/lib/audit";
 import { makeRefId } from "@/lib/refid";
-import { requireStaff } from "@/lib/rbac";
+import { requireStaffOrLite } from "@/lib/rbac";
 
 type UploadResult =
   | { ok: false; error: string }
@@ -145,7 +145,7 @@ async function persistCandidate({
 }
 
 export async function uploadResumeAction(_prev: UploadResult | null, formData: FormData): Promise<UploadResult> {
-  const user = await requireStaff();
+  const user = await requireStaffOrLite();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a PDF file." };
   if (file.size > 10 * 1024 * 1024) return { ok: false, error: "File too large (max 10 MB)." };
@@ -196,7 +196,7 @@ function applyLinkOverrides(parsed: ParsedResume, formData: FormData): void {
 }
 
 export async function pasteResumeAction(_prev: UploadResult | null, formData: FormData): Promise<UploadResult> {
-  const user = await requireStaff();
+  const user = await requireStaffOrLite();
   const text = ((formData.get("text") as string) || "").trim();
   if (text.length < 30) return { ok: false, error: "Paste the resume text (at least 30 characters)." };
   if (text.length > 200_000) return { ok: false, error: "Text too long (max 200 KB)." };

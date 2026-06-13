@@ -1,4 +1,4 @@
-import { requireStaff } from "@/lib/rbac";
+import { requireStaffOrLite } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader } from "@/components/primitives";
 import { UploadForm } from "./upload-form";
@@ -6,7 +6,7 @@ import { UploadForm } from "./upload-form";
 export const metadata = { title: "Upload resume" };
 
 export default async function UploadPage() {
-  await requireStaff();
+  await requireStaffOrLite();
   const [showSource, showLinks] = await Promise.all([
     isFeatureEnabled("source_tracking"),
     isFeatureEnabled("linkedin_import"),

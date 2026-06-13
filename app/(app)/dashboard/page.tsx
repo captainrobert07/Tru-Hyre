@@ -2,7 +2,8 @@ import { count, eq, desc, sql, and, isNull, ne } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { candidates, jobs, submissions, notifications, vendorAccounts, clientAccounts, tasks } from "@/db/schema";
-import { requireStaff } from "@/lib/rbac";
+import { redirect } from "next/navigation";
+import { requireStaffOrLite } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, StatCard, ListRow, StageBadge, EmptyState, Badge } from "@/components/primitives";
 import { TasksCard } from "@/components/tasks-card";
@@ -21,7 +22,9 @@ export const metadata = { title: "Dashboard" };
 const FUNNEL_STEPS = ["received", "screening", "submitted", "shortlist", "interview", "offer", "joined"] as const;
 
 export default async function DashboardPage() {
-  const user = await requireStaff();
+  const user = await requireStaffOrLite();
+  // hr_lite has no org-wide dashboard — send them to their candidate workspace.
+  if (user.role === "hr_lite") redirect("/candidates");
   const onboardingEnabled = await isFeatureEnabled("onboarding");
 
   const [
