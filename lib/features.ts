@@ -49,7 +49,12 @@ export type FeatureKey =
   | "pwa"
   | "onboarding"
   | "keyboard_shortcuts"
-  | "dark_mode";
+  | "dark_mode"
+  | "ai_outreach"
+  | "ai_redflags"
+  | "ai_chatbot"
+  | "slack_notifications"
+  | "hris_handoff";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -327,6 +332,41 @@ export const FEATURES: FeatureDef[] = [
     description: "Show a light/dark theme toggle in the top bar. Each user's choice is remembered on their device.",
     category: "Experience",
     defaultEnabled: true,
+  },
+  {
+    key: "ai_outreach",
+    label: "AI outreach drafting",
+    description: "Draft a personalized first-contact email to a candidate from their profile.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_redflags",
+    label: "AI resume red-flags",
+    description: "Surface potential concerns (gaps, job-hopping, inconsistencies) from a candidate's profile.",
+    category: "AI",
+    defaultEnabled: true,
+  },
+  {
+    key: "ai_chatbot",
+    label: "Careers FAQ chatbot",
+    description: "An AI assistant on the public careers page that answers applicant questions.",
+    category: "AI",
+    defaultEnabled: false,
+  },
+  {
+    key: "slack_notifications",
+    label: "Slack / Teams notifications",
+    description: "Post hiring events to a Slack/Teams webhook (configure under Integrations).",
+    category: "Communication",
+    defaultEnabled: false,
+  },
+  {
+    key: "hris_handoff",
+    label: "HRIS handoff on hire",
+    description: "POST a hire record to your HRIS when a candidate is marked joined (configure under Integrations).",
+    category: "Platform",
+    defaultEnabled: false,
   },
 ];
 

@@ -16,6 +16,7 @@ import { InterviewScheduler, type InterviewItem } from "@/components/interview-s
 import { EmailComposer, type OutboxItem, type InboundItem } from "@/components/email-composer";
 import { Scorecard, type ScorecardItem } from "@/components/scorecard";
 import { AiSummaryButton } from "@/components/ai-summary-button";
+import { AiToolsPanel } from "@/components/ai-tools-panel";
 import { OffersPanel, type OfferItem } from "@/components/offers-panel";
 import { SequencePanel, type EnrollmentItem } from "@/components/sequence-panel";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
@@ -25,7 +26,7 @@ import { SEQUENCES } from "@/lib/sequences";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
 import { sendAdHocEmailAction, logInboundReplyAction } from "./email-actions";
 import { submitScorecardAction } from "./scorecard-actions";
-import { generateCandidateSummaryAction } from "./ai-actions";
+import { generateCandidateSummaryAction, generateOutreachAction, generateRedFlagsAction } from "./ai-actions";
 import { addCandidateCommentAction, deleteCandidateCommentAction } from "./comment-actions";
 import { DangerZone } from "./danger-zone";
 import { InlineEdit } from "@/components/inline-edit";
@@ -609,6 +610,21 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
             />
           </Section>
+
+          {!lite && (flags.ai_outreach || flags.ai_redflags) && (
+          <Section title="AI tools">
+            <AiToolsPanel
+              outreach={flags.ai_outreach ? async () => {
+                "use server";
+                return await generateOutreachAction(candidateId);
+              } : undefined}
+              redflags={flags.ai_redflags ? async () => {
+                "use server";
+                return await generateRedFlagsAction(candidateId);
+              } : undefined}
+            />
+          </Section>
+          )}
 
           {!lite && flags.interviews && (
           <Section title="Interviews">
