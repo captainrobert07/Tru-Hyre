@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/primitives";
-import { saveIntegrationAction } from "./actions";
+import { saveIntegrationAction, testIntegrationAction } from "./actions";
 
 export type FieldView = { key: string; label: string; secret: boolean; placeholder?: string; help?: string; hasValue: boolean; value: string };
 export type IntegrationView = {
@@ -21,7 +21,9 @@ const MASK = "••••••••";
 export function IntegrationCard({ integration }: { integration: IntegrationView }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
+  const [testing, startTest] = useTransition();
   const [enabled, setEnabled] = useState(integration.enabled);
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; message: string } | null>(null);
 
   const save = (formData: FormData) => {
     start(async () => {
@@ -29,6 +31,16 @@ export function IntegrationCard({ integration }: { integration: IntegrationView 
       if (!r.ok) { toast.error(r.error || "Save failed."); return; }
       toast.success(`${integration.label} saved.`);
       setOpen(false);
+    });
+  };
+
+  const test = () => {
+    setTestMsg(null);
+    startTest(async () => {
+      const r = await testIntegrationAction(integration.key);
+      setTestMsg(r);
+      if (r.ok) toast.success(`${integration.label}: connected`);
+      else toast.error(`${integration.label}: ${r.message}`);
     });
   };
 
@@ -44,10 +56,21 @@ export function IntegrationCard({ integration }: { integration: IntegrationView 
           </div>
           <p className="text-xs text-ink-soft mt-1 max-w-xl">{integration.description}</p>
         </div>
-        <button type="button" onClick={() => setOpen((o) => !o)} className="btn-ghost text-xs shrink-0">
-          {open ? "Close" : "Configure"}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button type="button" onClick={test} disabled={testing} className="btn-ghost text-xs">
+            {testing ? "Testing…" : "Test connection"}
+          </button>
+          <button type="button" onClick={() => setOpen((o) => !o)} className="btn-ghost text-xs">
+            {open ? "Close" : "Configure"}
+          </button>
+        </div>
       </div>
+
+      {testMsg && (
+        <div className={`mt-2 text-xs rounded-lg px-3 py-2 border ${testMsg.ok ? "bg-brand-50 text-brand-800 border-brand-100" : "bg-red-50 text-red-800 border-red-100"}`}>
+          {testMsg.ok ? "✓ " : "✗ "}{testMsg.message}
+        </div>
+      )}
 
       {open && (
         <form action={save} className="mt-3 pt-3 border-t border-hairline space-y-3">

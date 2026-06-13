@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { integrations } from "@/db/schema";
 import { requireAdmin } from "@/lib/rbac";
 import { INTEGRATIONS } from "@/lib/integrations";
+import { testIntegration, type TestResult } from "@/lib/integration-test";
 import { logAudit } from "@/lib/audit";
 
 const MAP = Object.fromEntries(INTEGRATIONS.map((i) => [i.key, i]));
@@ -65,4 +66,11 @@ export async function saveIntegrationAction(
 
   revalidatePath("/settings/integrations");
   return { ok: true };
+}
+
+/** Live connectivity test for an integration (admin-only). */
+export async function testIntegrationAction(key: string): Promise<TestResult> {
+  await requireAdmin();
+  if (!MAP[key]) return { ok: false, message: "Unknown integration." };
+  return testIntegration(key);
 }
