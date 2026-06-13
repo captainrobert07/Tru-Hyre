@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm";
+import { useListKeyboard } from "@/components/use-list-keyboard";
 import { JobStatusBadge } from "@/components/primitives";
 import { bulkJobAction } from "./bulk-actions";
 
@@ -36,6 +37,11 @@ export function JobsBulkTable({ rows }: { rows: Row[] }) {
     setSelected(next);
   };
   const clear = () => setSelected(new Set());
+
+  const { focusedId } = useListKeyboard({
+    rows: rows.map((r) => ({ id: r.id, href: `/jobs/${r.id}` })),
+    onToggleSelect: toggleOne,
+  });
 
   const setStatus = (status: (typeof STATUS_VALUES)[number]) => {
     start(async () => {
@@ -125,8 +131,9 @@ export function JobsBulkTable({ rows }: { rows: Row[] }) {
 
         {rows.map((j) => {
           const checked = selected.has(j.id);
+          const focused = focusedId === j.id;
           return (
-            <div key={j.id} className={`px-5 py-3 flex items-center gap-3 transition-colors ${checked ? "bg-brand-50/40" : "hover:bg-canvas"}`}>
+            <div key={j.id} id={`row-${j.id}`} className={`px-5 py-3 flex items-center gap-3 transition-colors ${checked ? "bg-brand-50/40" : focused ? "bg-canvas ring-1 ring-inset ring-brand-200" : "hover:bg-canvas"}`}>
               <input
                 type="checkbox"
                 checked={checked}
