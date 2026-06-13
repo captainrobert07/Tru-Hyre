@@ -180,7 +180,7 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
           <p className="text-[11px] text-amber-700 mb-3">{APP_NAME} HR can&apos;t see these. Use for internal back-and-forth.</p>
 
           <form action={addClientInternalCommentAction.bind(null, submissionId)} className="space-y-2 mb-3">
-            <textarea name="body" rows={2} placeholder="Note for your team…" className="input py-2 text-sm bg-white" />
+            <textarea name="body" rows={2} placeholder="Note for your team…" className="input py-2 text-sm" />
             <button type="submit" className="btn-ghost text-xs">Add internal note</button>
           </form>
 

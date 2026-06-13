@@ -121,6 +121,21 @@
       #f4f5f7;
   }
 
+  /* Dark-mode variants — muted emerald glows on a dark canvas so these public
+     surfaces aren't a blinding white when the user prefers dark. */
+  .dark .login-bg {
+    background:
+      radial-gradient(60rem 30rem at 50% -10%, rgba(16,185,129,0.18) 0%, transparent 60%),
+      radial-gradient(50rem 25rem at 100% 100%, rgba(16,185,129,0.12) 0%, transparent 60%),
+      rgb(11 15 23);
+  }
+  .dark .marketing-bg {
+    background:
+      radial-gradient(70rem 36rem at 80% -10%, rgba(16,185,129,0.16) 0%, transparent 55%),
+      radial-gradient(60rem 28rem at 0% 110%, rgba(251,146,60,0.10) 0%, transparent 60%),
+      rgb(11 15 23);
+  }
+
   .blob-emerald {
     background: radial-gradient(circle at 30% 30%, #34d399 0%, #10b981 35%, #047857 100%);
     filter: drop-shadow(0 24px 48px rgba(5,150,105,0.35));

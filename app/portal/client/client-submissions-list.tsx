@@ -260,7 +260,7 @@ function DecisionBtn({
       disabled={pending}
       title={title}
       aria-label={title}
-      className={`size-8 rounded-full border bg-white inline-flex items-center justify-center transition-colors disabled:opacity-50 ${cls}`}
+      className={`size-8 rounded-full border bg-surface inline-flex items-center justify-center transition-colors disabled:opacity-50 ${cls}`}
     >
       {children}
     </button>
