@@ -8,6 +8,7 @@ import { candidates, offers } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { assertFeatureEnabled } from "@/lib/features";
 import { logAudit } from "@/lib/audit";
+import { callTool } from "@/lib/ai";
 
 const createSchema = z.object({
   title: z.string().max(200).optional().or(z.literal("")),
@@ -87,4 +88,48 @@ export async function setOfferStatusAction(
 
   revalidatePath(`/candidates/${candidateId}`);
   return { ok: true };
+}
+
+const PREDICT_TOOL = {
+  name: "predict_acceptance",
+  description: "Estimate the probability (0-100) the candidate accepts this offer, with brief factors.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      probability: { type: "number", description: "0-100 likelihood of acceptance" },
+      factors: { type: "array", items: { type: "string" }, description: "2-4 short factors driving the estimate" },
+    },
+    required: ["probability"],
+  },
+};
+
+/** AI estimate of offer-acceptance likelihood for a given offer. */
+export async function predictOfferAcceptanceAction(
+  candidateId: number,
+  offerId: number,
+): Promise<{ ok: boolean; probability?: number; factors?: string[]; error?: string }> {
+  await requireStaff();
+  await assertFeatureEnabled("offer_prediction");
+  const cand = (await db.select().from(candidates).where(eq(candidates.id, candidateId)))[0];
+  const offer = (await db.select().from(offers).where(eq(offers.id, offerId)))[0];
+  if (!cand || !offer) return { ok: false, error: "Offer not found." };
+
+  const r = await callTool<{ probability: number; factors?: string[] }>({
+    system:
+      "You are a recruiting analyst estimating offer-acceptance likelihood. Weigh offered CTC vs the candidate's " +
+      "expected CTC, current CTC, notice period, and how far along they are. Be calibrated and concise.",
+    prompt:
+      `Candidate: expected CTC ${cand.expectedCtc || "?"}, current CTC ${cand.currentCtc || "?"}, ` +
+      `notice ${cand.noticePeriodDays ?? "?"} days, stage ${cand.stage}.\n` +
+      `Offer: CTC ${offer.ctc || "?"} ${offer.currency}, joining ${offer.joiningDate || "TBD"}, status ${offer.status}.\n` +
+      `Predict acceptance probability and factors.`,
+    tool: PREDICT_TOOL,
+    maxTokens: 400,
+  });
+  if (!r) return { ok: false, error: "AI unavailable (configure Anthropic under Integrations)." };
+  return {
+    ok: true,
+    probability: Math.max(0, Math.min(100, Math.round(r.probability))),
+    factors: (r.factors || []).slice(0, 4),
+  };
 }

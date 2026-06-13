@@ -21,7 +21,7 @@ import { OffersPanel, type OfferItem } from "@/components/offers-panel";
 import { SequencePanel, type EnrollmentItem } from "@/components/sequence-panel";
 import { ReferencesPanel, type ReferenceItem } from "@/components/references-panel";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
-import { createOfferAction, setOfferStatusAction } from "./offer-actions";
+import { createOfferAction, setOfferStatusAction, predictOfferAcceptanceAction } from "./offer-actions";
 import { enrollSequenceAction, cancelSequenceAction } from "./sequence-actions";
 import { requestReferenceAction, markReferenceReceivedAction } from "./reference-actions";
 import { SEQUENCES } from "@/lib/sequences";
@@ -734,6 +734,10 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 "use server";
                 return await setOfferStatusAction(candidateId, offerId, status);
               }}
+              onPredict={flags.offer_prediction ? async (offerId) => {
+                "use server";
+                return await predictOfferAcceptanceAction(candidateId, offerId);
+              } : undefined}
             />
           </Section>
           )}

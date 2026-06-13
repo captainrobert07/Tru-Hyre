@@ -62,6 +62,7 @@ export const feedbackKindEnum = pgEnum("feedback_kind", [
   "offer",
   "joined",
   "note",
+  "score",
 ]);
 
 export const interviewModeEnum = pgEnum("interview_mode", ["video", "phone", "onsite"]);
@@ -695,6 +696,32 @@ export const emailOutbox = pgTable("email_outbox", {
   createdIdx: index("email_outbox_created_idx").on(t.createdAt),
 }));
 
+// ---------- Client feedback scores ----------
+
+export const clientFeedbackScores = pgTable("client_feedback_scores", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").notNull().references(() => submissions.id, { onDelete: "cascade" }),
+  authorId: integer("author_id").references(() => users.id, { onDelete: "set null" }),
+  overallScore: integer("overall_score").notNull(),
+  criteriaScores: jsonb("criteria_scores").$type<Record<string, number>>().notNull().default({}),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  submissionIdx: index("client_feedback_scores_submission_idx").on(t.submissionId),
+  authorIdx: index("client_feedback_scores_author_idx").on(t.authorId),
+}));
+
+// ---------- Granular per-user permissions ----------
+// Additive capability grants that layer on top of a user's base role. Permission
+// keys are a TS union in lib/permissions.ts (not a DB enum). Admin bypasses.
+export const userPermissions = pgTable("user_permissions", {
+  userId: integer("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  permissions: jsonb("permissions").$type<string[]>().notNull().default([]),
+  updatedById: integer("updated_by_id").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ---------- Relations ----------
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -784,3 +811,5 @@ export type CandidateScore = typeof candidateScores.$inferSelect;
 export type Offer = typeof offers.$inferSelect;
 export type InterviewKit = typeof interviewKits.$inferSelect;
 export type CandidateReference = typeof candidateReferences.$inferSelect;
+export type ClientFeedbackScore = typeof clientFeedbackScores.$inferSelect;
+export type UserPermissions = typeof userPermissions.$inferSelect;

@@ -6,7 +6,14 @@ export type SessionUser = {
   email: string;
   fullName: string;
   role: "admin" | "hr" | "hr_lite" | "client" | "vendor";
+  permissions?: string[];
 };
+
+/** True if the user holds a granular permission. Admin always passes. */
+export function hasPermission(user: SessionUser, key: string): boolean {
+  if (user.role === "admin") return true;
+  return Array.isArray(user.permissions) && user.permissions.includes(key);
+}
 
 export async function requireUser(): Promise<SessionUser> {
   const session = await auth();

@@ -2,12 +2,14 @@ import { eq, desc, and } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { users, submissions, candidates, jobs, feedbackEvents, clientPackets, comments as commentsTable } from "@/db/schema";
+import { users, submissions, candidates, jobs, feedbackEvents, clientPackets, comments as commentsTable, clientFeedbackScores } from "@/db/schema";
 import { requireClient } from "@/lib/rbac";
+import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, Badge, StatCard } from "@/components/primitives";
 import { signOut } from "@/auth";
 import { APP_NAME } from "@/lib/utils";
 import { clientFeedbackAction } from "../../actions";
+import { ClientScoreForm } from "./client-score-form";
 import { toggleStarAction, addClientInternalCommentAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +40,8 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
     redirect("/portal/client");
   }
 
-  const [feedback, internalNotes] = await Promise.all([
+  const scoringEnabled = await isFeatureEnabled("client_feedback_scores");
+  const [feedback, internalNotes, myScoreRow] = await Promise.all([
     db
       .select()
       .from(feedbackEvents)
@@ -49,6 +52,11 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
       .from(commentsTable)
       .where(and(eq(commentsTable.targetType, "submission"), eq(commentsTable.targetId, submissionId)))
       .orderBy(desc(commentsTable.createdAt)),
+    scoringEnabled
+      ? db.select().from(clientFeedbackScores)
+          .where(and(eq(clientFeedbackScores.submissionId, submissionId), eq(clientFeedbackScores.authorId, Number(user.id))))
+          .then((r) => r[0])
+      : Promise.resolve(undefined),
   ]);
 
   const c = row.cand;
@@ -121,6 +129,17 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
             <a href={`/api/files/${row.packet.driveFileId}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs">
               Download sanitized PDF
             </a>
+          </section>
+        )}
+
+        {scoringEnabled && (
+          <section className="card p-5 mb-4">
+            <h2 className="text-sm font-semibold mb-1">Score this candidate</h2>
+            <p className="text-xs text-ink-soft mb-3">Your rating is shared with the recruiting team.</p>
+            <ClientScoreForm
+              submissionId={submissionId}
+              existing={myScoreRow ? { overallScore: myScoreRow.overallScore, criteriaScores: myScoreRow.criteriaScores || {}, comment: myScoreRow.comment } : undefined}
+            />
           </section>
         )}
 

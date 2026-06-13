@@ -79,6 +79,7 @@ export const authConfig = {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
         (session.user as { fullName?: string }).fullName = token.fullName as string;
+        (session.user as { permissions?: string[] }).permissions = (token.permissions as string[] | undefined) ?? [];
       }
       return session;
     },

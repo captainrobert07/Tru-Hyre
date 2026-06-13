@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
 import { db } from "./db";
-import { users } from "./db/schema";
+import { users, userPermissions } from "./db/schema";
 
 const credentialsSchema = z.object({
   email: z.string().email().toLowerCase().trim(),
@@ -37,6 +37,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.id = String(f.id);
           token.role = f.role;
           token.fullName = f.fullName;
+          // Load granular permissions (best-effort; table may not exist pre-migration).
+          try {
+            const perm = await db
+              .select({ permissions: userPermissions.permissions })
+              .from(userPermissions)
+              .where(eq(userPermissions.userId, f.id))
+              .limit(1);
+            token.permissions = perm[0]?.permissions ?? [];
+          } catch {
+            token.permissions = [];
+          }
         } catch {
           // Swallow: keep stale token rather than 500ing the layout.
         }

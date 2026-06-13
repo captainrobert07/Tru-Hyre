@@ -17,6 +17,7 @@ export type OfferItem = {
 
 type CreateFn = (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 type StatusFn = (offerId: number, status: string) => Promise<{ ok: boolean; error?: string }>;
+type PredictFn = (offerId: number) => Promise<{ ok: boolean; probability?: number; factors?: string[]; error?: string }>;
 
 const STATUS_TONE: Record<string, "green" | "amber" | "red" | "blue" | "default"> = {
   draft: "default",
@@ -46,13 +47,25 @@ export function OffersPanel({
   offers,
   onCreate,
   onSetStatus,
+  onPredict,
 }: {
   offers: OfferItem[];
   onCreate: CreateFn;
   onSetStatus: StatusFn;
+  onPredict?: PredictFn;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
+  const [predictions, setPredictions] = useState<Record<number, { probability: number; factors: string[] }>>({});
+
+  const predict = (offerId: number) => {
+    start(async () => {
+      if (!onPredict) return;
+      const r = await onPredict(offerId);
+      if (!r.ok || r.probability === undefined) { toast.error(r.error || "Prediction failed."); return; }
+      setPredictions((p) => ({ ...p, [offerId]: { probability: r.probability!, factors: r.factors || [] } }));
+    });
+  };
 
   const create = (formData: FormData) => {
     start(async () => {
@@ -89,14 +102,31 @@ export function OffersPanel({
                 {o.expiresOn && <span>expires {o.expiresOn}</span>}
               </div>
               {o.notes && <p className="text-xs text-ink-soft mt-1 whitespace-pre-line">{o.notes}</p>}
-              <a
-                href={`/api/offers/${o.id}/letter`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] text-brand-700 hover:underline mt-1 inline-block"
-              >
-                Download offer letter (PDF)
-              </a>
+              <div className="flex items-center gap-3 mt-1">
+                <a
+                  href={`/api/offers/${o.id}/letter`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-brand-700 hover:underline inline-block"
+                >
+                  Download offer letter (PDF)
+                </a>
+                {onPredict && (
+                  <button type="button" disabled={pending} onClick={() => predict(o.id)} className="text-[11px] text-brand-700 hover:underline disabled:opacity-50">
+                    ✨ Predict acceptance
+                  </button>
+                )}
+              </div>
+              {predictions[o.id] && (
+                <div className="mt-1.5 text-[11px] rounded-md bg-canvas border border-hairline px-2 py-1.5">
+                  <span className="font-medium">{predictions[o.id].probability}% likely to accept</span>
+                  {predictions[o.id].factors.length > 0 && (
+                    <ul className="list-disc pl-4 mt-0.5 text-ink-soft">
+                      {predictions[o.id].factors.map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
               {NEXT_STATUSES[o.status]?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {NEXT_STATUSES[o.status].map((s) => (

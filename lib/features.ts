@@ -56,7 +56,10 @@ export type FeatureKey =
   | "slack_notifications"
   | "hris_handoff"
   | "vendor_commission"
-  | "reference_checks";
+  | "reference_checks"
+  | "client_feedback_scores"
+  | "granular_permissions"
+  | "offer_prediction";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -382,6 +385,27 @@ export const FEATURES: FeatureDef[] = [
     label: "Reference checks",
     description: "Request and record candidate references; email the referee and log their response.",
     category: "Pipeline",
+    defaultEnabled: true,
+  },
+  {
+    key: "client_feedback_scores",
+    label: "Client feedback scores",
+    description: "Let clients score submitted candidates (1–5 + comments) from their portal.",
+    category: "Communication",
+    defaultEnabled: true,
+  },
+  {
+    key: "granular_permissions",
+    label: "Granular role permissions",
+    description: "Grant individual hr/hr_lite users extra capabilities on top of their base role.",
+    category: "Platform",
+    defaultEnabled: false,
+  },
+  {
+    key: "offer_prediction",
+    label: "AI offer-acceptance prediction",
+    description: "Estimate how likely a candidate is to accept an offer, with contributing factors.",
+    category: "AI",
     defaultEnabled: true,
   },
 ];
