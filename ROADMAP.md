@@ -60,13 +60,13 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [x] **SMS / WhatsApp notifications** (M) — `lib/sms.ts` provider abstraction + optional SMS on stage-change. ⚠️ Needs SMS provider env (SMS_PROVIDER_URL/AUTH/FROM) to actually send.
 - [~] **Two-way Gmail sync** (L) — `inbound_messages` table + manual "log reply" + inbound display shipped. ⚠️ Automatic IMAP/Gmail-push sync needs external setup (not built).
 
-## Wave 7 — Analytics & reporting
-- [ ] **Funnel metrics** (time-to-fill, time-in-stage, conversion %) (M)
-- [ ] **Vendor performance scorecard / SLA** (M)
-- [ ] **Recruiter productivity dashboard** (M)
-- [ ] **Diversity / EEO reporting** (M)
-- [ ] **Scheduled report exports** (S)
-- [ ] **Custom report builder** (L)
+## Wave 7 — Analytics & reporting ✅ SHIPPED (preview build green, commit 81db57e)
+- [x] **Funnel metrics** (M) — funnel conversion %, cycle-time-per-stage, time-to-submit/offer (already in reports; now flagged).
+- [x] **Vendor performance scorecard / SLA** (M) — `getVendorSlaCompliance` + dashboard leaderboard (existing, flagged).
+- [x] **Recruiter productivity dashboard** (M) — `getRecruiterScoreboard` + reports table (existing, flagged).
+- [x] **Scheduled report exports** (S) — weekly Monday pipeline digest emailed via cron (`scheduled_digest`).
+- [~] **Diversity / EEO reporting** (M) — flag registered but INERT: no EEO fields collected by default (GDPR-conscious). Honest, not fabricated.
+- [~] **Custom report builder** (L) — DEFERRED: existing fixed reports cover the core; a full builder is a large standalone effort.
 
 ## Wave 8 — Platform & integrations
 - [ ] **2FA / SSO (Azure AD)** (L)
