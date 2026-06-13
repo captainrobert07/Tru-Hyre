@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { candidates, emailTemplates, emailOutbox } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
-import { renderTemplate, type TemplateContext } from "@/lib/email-templates";
+import { renderTemplate, buildTemplateContext, defaultFromAddress } from "@/lib/email-templates";
 import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
 import { assertFeatureEnabled } from "@/lib/features";
@@ -16,13 +16,6 @@ const schema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(200),
   templateSlug: z.string().min(1).max(64),
 });
-
-function firstName(n: string): string {
-  return n.split(/\s+/)[0] || n;
-}
-function fromAddress(): string {
-  return process.env.EMAIL_FROM || process.env.GMAIL_USER || "noreply@truhyre.app";
-}
 
 export async function bulkEmailAction(
   input: unknown,
@@ -43,19 +36,18 @@ export async function bulkEmailAction(
 
   let sent = 0;
   let skipped = 0;
-  const from = fromAddress();
+  const from = defaultFromAddress();
 
   // Render + send per recipient (their tokens differ). Each send is independent.
   await Promise.all(
     rows.map(async (c) => {
       if (!c.email) { skipped++; return; }
-      const ctx: TemplateContext = {
-        candidate: { fullName: c.fullName, firstName: firstName(c.fullName), email: c.email, refId: c.refId },
-        stage: { from: "", to: c.stage },
-        recruiter: { fullName: user.fullName, email: user.email },
-        job: { title: "" },
+      const ctx = buildTemplateContext({
+        candidate: { fullName: c.fullName, email: c.email, refId: c.refId },
         appName: APP_NAME,
-      };
+        stageTo: c.stage,
+        recruiter: { fullName: user.fullName, email: user.email },
+      });
       const subject = renderTemplate(tmpl.subject, ctx, "text");
       const bodyText = renderTemplate(tmpl.bodyText, ctx, "text");
       const bodyHtml = renderTemplate(tmpl.bodyHtml, ctx, "html");

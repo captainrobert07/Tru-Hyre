@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates } from "@/db/schema";
-import { verifyApiKey } from "@/lib/api-keys";
+import { verifyApiKeyRow } from "@/lib/api-keys";
 import { isFeatureEnabled } from "@/lib/features";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,9 +18,17 @@ export async function GET(req: Request) {
   if (!(await isFeatureEnabled("public_api"))) {
     return NextResponse.json({ error: "API disabled" }, { status: 404 });
   }
-  if (!(await verifyApiKey(bearer(req)))) {
+  const keyRow = await verifyApiKeyRow(bearer(req));
+  if (!keyRow) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // Audit each authenticated API read so leaked-key use is traceable.
+  await logAudit({
+    action: "view",
+    targetType: "api_key",
+    targetId: keyRow.id,
+    summary: `API read /api/v1/candidates via key ${keyRow.prefix}…`,
+  });
 
   const url = new URL(req.url);
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 50));

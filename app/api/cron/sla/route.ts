@@ -32,12 +32,15 @@ const FEEDBACK_DAYS = 5;
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  // Vercel sets this header on cron invocations; treat its presence as trusted
-  // when no explicit secret is configured.
+  // When a secret IS set it is the ONLY accepted credential — the
+  // `x-vercel-cron` header is client-spoofable and must never bypass it.
+  if (secret) {
+    return (req.headers.get("authorization") || "") === `Bearer ${secret}`;
+  }
+  // No secret configured: Vercel's own cron invocations carry x-vercel-cron;
+  // allow those, plus any caller in non-production (local/dev) for testing.
   const isVercelCron = req.headers.get("x-vercel-cron") === "1";
-  if (!secret) return isVercelCron || process.env.NODE_ENV !== "production";
-  const auth = req.headers.get("authorization") || "";
-  return auth === `Bearer ${secret}` || isVercelCron;
+  return isVercelCron || process.env.NODE_ENV !== "production";
 }
 
 type TaskSeed = {

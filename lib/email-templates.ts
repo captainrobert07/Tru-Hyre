@@ -50,6 +50,43 @@ export function renderTemplate(template: string, ctx: TemplateContext, mode: "ht
   });
 }
 
+/** First word of a full name (falls back to the whole string). */
+export function firstName(fullName: string): string {
+  return fullName.split(/\s+/)[0] || fullName;
+}
+
+/**
+ * Resolve the outbound "From" address. NOTE: lib/email.ts resolves the From
+ * header from the Gmail integration config; this env-only helper is a fallback
+ * for callers that build a TemplateContext.recruiter.email default.
+ */
+export function defaultFromAddress(): string {
+  return process.env.EMAIL_FROM || process.env.GMAIL_USER || "noreply@truhyre.app";
+}
+
+/** Build a TemplateContext with sensible defaults for unused fields. */
+export function buildTemplateContext(input: {
+  candidate: { fullName: string; email: string; refId: string };
+  appName: string;
+  stageFrom?: string;
+  stageTo?: string;
+  recruiter?: { fullName: string; email: string };
+  jobTitle?: string;
+}): TemplateContext {
+  return {
+    candidate: {
+      fullName: input.candidate.fullName,
+      firstName: firstName(input.candidate.fullName),
+      email: input.candidate.email,
+      refId: input.candidate.refId,
+    },
+    stage: { from: input.stageFrom || "", to: input.stageTo || "" },
+    recruiter: input.recruiter || { fullName: input.appName, email: defaultFromAddress() },
+    job: { title: input.jobTitle || "" },
+    appName: input.appName,
+  };
+}
+
 export function sampleContext(appName: string): TemplateContext {
   return {
     candidate: {

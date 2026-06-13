@@ -32,6 +32,7 @@ export async function GET(
         id: resumeFiles.id,
         candidateId: resumeFiles.candidateId,
         vendorAccountId: candidates.vendorAccountId,
+        uploadedById: candidates.uploadedById,
         contentType: resumeFiles.contentType,
         originalName: resumeFiles.originalName,
       })
@@ -55,6 +56,9 @@ export async function GET(
   if (resumeRow) {
     if (user.role === "admin" || user.role === "hr") {
       allowed = true;
+    } else if (user.role === "hr_lite") {
+      // hr_lite may view resumes of candidates they uploaded.
+      allowed = resumeRow.uploadedById === Number(user.id);
     } else if (user.role === "vendor") {
       const u = (await db.select().from(users).where(eq(users.id, Number(user.id))))[0];
       allowed = !!(u && u.vendorAccountId && resumeRow.vendorAccountId === u.vendorAccountId);

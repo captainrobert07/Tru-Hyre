@@ -6,6 +6,7 @@ import { db } from "@/db";
 import {
   candidates, resumeFiles, clientPackets, stageHistory, submissions,
   interviews, interviewFeedback, offers, emailOutbox, inboundMessages, comments,
+  tasks, candidateScores, sequenceEnrollments,
 } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { assertFeatureEnabled } from "@/lib/features";
@@ -31,7 +32,8 @@ export async function mergeCandidatesAction(
   ]);
   if (!winner || !loser) return { ok: false, error: "One of the candidates no longer exists." };
 
-  // 1. Reparent child records to the winner.
+  // 1. Reparent child records to the winner. Covers EVERY table with a
+  // candidateId FK so nothing cascade-deletes when the loser is removed.
   await Promise.all([
     db.update(resumeFiles).set({ candidateId: winnerId }).where(eq(resumeFiles.candidateId, loserId)),
     db.update(clientPackets).set({ candidateId: winnerId }).where(eq(clientPackets.candidateId, loserId)),
@@ -42,7 +44,13 @@ export async function mergeCandidatesAction(
     db.update(offers).set({ candidateId: winnerId }).where(eq(offers.candidateId, loserId)),
     db.update(emailOutbox).set({ candidateId: winnerId }).where(eq(emailOutbox.candidateId, loserId)),
     db.update(inboundMessages).set({ candidateId: winnerId }).where(eq(inboundMessages.candidateId, loserId)),
+    db.update(tasks).set({ candidateId: winnerId }).where(eq(tasks.candidateId, loserId)),
+    db.update(sequenceEnrollments).set({ candidateId: winnerId }).where(eq(sequenceEnrollments.candidateId, loserId)),
   ]);
+  // candidateScores has a unique(candidateId, jobId) index, so a blind reparent
+  // could collide where both candidates were scored for the same job. Drop the
+  // loser's cached scores (they recompute on demand) rather than risk a conflict.
+  await db.delete(candidateScores).where(eq(candidateScores.candidateId, loserId));
   // Comments reference candidate by (targetType,targetId) — reparent those too.
   await db.execute(sql`
     UPDATE comments SET target_id = ${winnerId}

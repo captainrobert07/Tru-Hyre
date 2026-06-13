@@ -10,8 +10,11 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const role = (session.user as { role?: string }).role;
-  if (role !== "admin" && role !== "hr") return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const su = session.user as { role?: string; id?: string };
+  const role = su.role;
+  if (role !== "admin" && role !== "hr" && role !== "hr_lite") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const candidateId = Number(id);
@@ -36,6 +39,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         skills: candidates.skills,
         stage: candidates.stage,
         vendorName: vendorAccounts.name,
+        uploadedById: candidates.uploadedById,
         createdAt: candidates.createdAt,
       })
       .from(candidates)
@@ -44,5 +48,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   )[0];
 
   if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // hr_lite may only preview candidates they uploaded.
+  if (role === "hr_lite" && row.uploadedById !== Number(su.id)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   return NextResponse.json(row);
 }

@@ -17,15 +17,22 @@ export function hashApiKey(raw: string): string {
 
 /** Validate a bearer token against active API keys. Returns true if valid. */
 export async function verifyApiKey(raw: string | null): Promise<boolean> {
-  if (!raw) return false;
+  return Boolean(await verifyApiKeyRow(raw));
+}
+
+/**
+ * Validate a bearer token and return the matched key row (id + prefix) for
+ * audit logging, or null if invalid/revoked. Stamps lastUsedAt best-effort.
+ */
+export async function verifyApiKeyRow(raw: string | null): Promise<{ id: number; prefix: string } | null> {
+  if (!raw) return null;
   const hash = hashApiKey(raw.trim());
   const row = (await db.select().from(apiKeys).where(eq(apiKeys.keyHash, hash)))[0];
-  if (!row || !row.isActive) return false;
-  // Best-effort last-used stamp; don't block the request on it.
+  if (!row || !row.isActive) return null;
   try {
     await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id));
   } catch {
-    // ignore
+    // ignore — don't block the request on the stamp
   }
-  return true;
+  return { id: row.id, prefix: row.prefix };
 }
