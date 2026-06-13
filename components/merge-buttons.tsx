@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm";
 
 type MergeFn = (winnerId: number, loserId: number) => Promise<{ ok: boolean; error?: string }>;
 
@@ -13,12 +14,20 @@ export function MergeButtons({
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
+  const confirm = useConfirm();
 
   if (!isAdmin) return <p className="text-[11px] text-ink-muted mt-2">Only admins can merge.</p>;
 
   const merge = (winnerId: number, winnerName: string, loserId: number, loserName: string) => {
-    if (!window.confirm(`Merge "${loserName}" INTO "${winnerName}"? All resumes, submissions, interviews and history move to ${winnerName}, then ${loserName} is deleted. This cannot be undone.`)) return;
     start(async () => {
+      const ok = await confirm({
+        title: `Merge into ${winnerName}?`,
+        description: `All resumes, submissions, interviews, offers and history from "${loserName}" move to "${winnerName}", then ${loserName} is permanently deleted. This cannot be undone.`,
+        destructive: true,
+        typeToConfirm: "merge",
+        confirmLabel: "Merge & delete",
+      });
+      if (!ok) return;
       const r = await onMerge(winnerId, loserId);
       if (!r.ok) { toast.error(r.error || "Merge failed."); return; }
       toast.success("Candidates merged.");

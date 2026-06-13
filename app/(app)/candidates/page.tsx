@@ -132,6 +132,16 @@ export default async function CandidatesPage({
         placeholder="Search by name, email, title, location, skill, or ref id…"
       />
 
+      {(q || stage || tag) && (
+        <div className="flex items-center gap-1.5 flex-wrap mb-3 text-xs">
+          <span className="text-ink-muted">Filters:</span>
+          {q && <FilterChip label={`“${q}”`} removeHref={chipHref({ stage, tag })} />}
+          {stage && <FilterChip label={`stage: ${stage.replaceAll("_", " ")}`} removeHref={chipHref({ q, tag })} />}
+          {tag && <FilterChip label={`tag: ${tag}`} removeHref={chipHref({ q, stage })} />}
+          <Link href="/candidates" className="text-brand-700 hover:underline ml-1">Clear all</Link>
+        </div>
+      )}
+
       <SavedViews
         scope="candidates"
         basePath="/candidates"
@@ -188,5 +198,25 @@ export default async function CandidatesPage({
         </>
       )}
     </>
+  );
+}
+
+function chipHref(params: { q?: string; stage?: string; tag?: string }): string {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  if (params.stage) sp.set("stage", params.stage);
+  if (params.tag) sp.set("tag", params.tag);
+  return `/candidates${sp.toString() ? `?${sp}` : ""}`;
+}
+
+function FilterChip({ label, removeHref }: { label: string; removeHref: string }) {
+  return (
+    <Link
+      href={removeHref}
+      className="inline-flex items-center gap-1 pl-2.5 pr-1.5 h-6 rounded-full bg-canvas border border-hairline text-ink-soft hover:text-ink hover:border-ink-muted transition-colors"
+    >
+      {label}
+      <span className="text-ink-muted" aria-hidden>×</span>
+    </Link>
   );
 }

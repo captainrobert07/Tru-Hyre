@@ -69,6 +69,10 @@ export function ListToolbar({
       >
         {pending ? "Searching…" : "Search"}
       </button>
+      <span className="hidden lg:inline-flex items-center gap-1 px-2 text-[11px] text-ink-muted select-none" aria-hidden="true">
+        or press
+        <kbd className="px-1.5 py-0.5 rounded bg-canvas border border-hairline text-[10px] font-medium">⌘K</kbd>
+      </span>
     </div>
   );
 }
