@@ -12,6 +12,7 @@ import { renderPacketPdf } from "@/lib/packet";
 import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireAdmin, requireStaff } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
+import { fireWebhook } from "@/lib/webhooks";
 import { withToast } from "@/lib/toast";
 
 const editSchema = z.object({
@@ -284,6 +285,13 @@ export async function setStageAction(
     fromStage: current.stage,
     toStage,
     actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
+  });
+
+  await fireWebhook("candidate.stage_changed", {
+    candidateId: current.id,
+    refId: current.refId,
+    fromStage: current.stage,
+    toStage,
   });
 
   revalidatePath(`/candidates/${id}`);

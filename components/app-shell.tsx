@@ -18,6 +18,7 @@ import {
   Send,
   Bell,
   BarChart3,
+  Activity,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -34,6 +35,7 @@ const NAV: { href: string; label: string; icon: ReactNode; roles: Role[] }[] = [
   { href: "/submissions", label: "Submissions", icon: <Send size={16} />, roles: ["admin", "hr"] },
   { href: "/notifications", label: "Notifications", icon: <Bell size={16} />, roles: ["admin", "hr", "client", "vendor"] },
   { href: "/reports", label: "Reports", icon: <BarChart3 size={16} />, roles: ["admin", "hr"] },
+  { href: "/activity", label: "Activity", icon: <Activity size={16} />, roles: ["admin", "hr"] },
   { href: "/settings", label: "Settings", icon: <Settings size={16} />, roles: ["admin"] },
 ];
 
@@ -56,16 +58,18 @@ export function AppShell({
   user: { fullName: string; email: string; role: Role };
   unreadCount?: number;
   inboxCount?: number;
-  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean };
+  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean; activity_feed?: boolean };
   children: ReactNode;
 }) {
   const inboxEnabled = enabledFeatures?.inbox ?? true;
   const paletteEnabled = enabledFeatures?.command_palette ?? true;
   const reportsEnabled = enabledFeatures?.analytics_reports ?? true;
+  const activityEnabled = enabledFeatures?.activity_feed ?? true;
   const items = NAV
     .filter((n) => n.roles.includes(user.role))
     .filter((n) => (n.href === "/inbox" ? inboxEnabled : true))
-    .filter((n) => (n.href === "/reports" ? reportsEnabled : true));
+    .filter((n) => (n.href === "/reports" ? reportsEnabled : true))
+    .filter((n) => (n.href === "/activity" ? activityEnabled : true));
   const unread = unreadCount ?? 0;
   const inbox = inboxCount ?? 0;
   const dotFor = (href: string) => (href === "/notifications" ? unread : href === "/inbox" ? inbox : 0);

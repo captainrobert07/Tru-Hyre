@@ -20,6 +20,7 @@ export const authConfig = {
         path.startsWith("/api/health") ||
         path.startsWith("/api/cron") ||
         path.startsWith("/api/careers") ||
+        path.startsWith("/api/v1") ||
         path.startsWith("/_next") ||
         path === "/favicon.ico";
 

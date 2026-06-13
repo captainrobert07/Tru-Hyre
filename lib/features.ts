@@ -40,9 +40,14 @@ export type FeatureKey =
   | "gmail_sync"
   | "analytics_reports"
   | "scheduled_digest"
-  | "diversity_reporting";
+  | "diversity_reporting"
+  | "activity_feed"
+  | "saved_view_sharing"
+  | "webhooks"
+  | "public_api"
+  | "gdpr_tools";
 
-export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics";
+export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform";
 
 export type FeatureDef = {
   key: FeatureKey;
@@ -255,6 +260,41 @@ export const FEATURES: FeatureDef[] = [
     description: "Aggregate diversity reporting. Off by default and inert unless diversity fields are collected (GDPR-sensitive).",
     category: "Analytics",
     defaultEnabled: false,
+  },
+  {
+    key: "activity_feed",
+    label: "Activity feed",
+    description: "An org-wide feed of who-did-what, drawn from the audit log.",
+    category: "Platform",
+    defaultEnabled: true,
+  },
+  {
+    key: "saved_view_sharing",
+    label: "Shared saved views",
+    description: "Let a saved candidate view be shared with all staff, not just its creator.",
+    category: "Platform",
+    defaultEnabled: true,
+  },
+  {
+    key: "webhooks",
+    label: "Webhooks",
+    description: "POST key events (candidate created, stage changed, offer accepted) to external URLs.",
+    category: "Platform",
+    defaultEnabled: false,
+  },
+  {
+    key: "public_api",
+    label: "Read API + API keys",
+    description: "Issue API keys for a read-only JSON API over candidates and jobs.",
+    category: "Platform",
+    defaultEnabled: false,
+  },
+  {
+    key: "gdpr_tools",
+    label: "GDPR tools",
+    description: "Candidate data export and right-to-erasure, plus a retention overview, in one admin place.",
+    category: "Platform",
+    defaultEnabled: true,
   },
 ];
 

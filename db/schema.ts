@@ -486,11 +486,39 @@ export const savedViews = pgTable("saved_views", {
   name: varchar("name", { length: 80 }).notNull(),
   query: jsonb("query").$type<Record<string, string>>().notNull().default({}),
   pinned: boolean("pinned").notNull().default(false),
+  shared: boolean("shared").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({
   userIdx: index("saved_views_user_idx").on(t.userId, t.scope),
 }));
+
+// ---------- Platform: webhooks + API keys ----------
+
+export const webhooks = pgTable("webhooks", {
+  id: serial("id").primaryKey(),
+  url: varchar("url", { length: 500 }).notNull(),
+  // jsonb array of event names this hook subscribes to.
+  events: jsonb("events").$type<string[]>().notNull().default([]),
+  secret: varchar("secret", { length: 80 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  lastFiredAt: timestamp("last_fired_at"),
+  lastStatus: varchar("last_status", { length: 16 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  // SHA-256 of the raw key; the raw value is shown once at creation.
+  keyHash: varchar("key_hash", { length: 64 }).notNull().unique(),
+  prefix: varchar("prefix", { length: 12 }).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
 
 // ---------- Audit ----------
 
