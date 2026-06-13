@@ -29,6 +29,16 @@ ALL Tier-2 (configurable stages, self-scheduling, report builder, candidate port
 granular RBAC — L-effort architectural, need a supervised session);
 Tier-3 connector send-flows (config+Test ready, wiring pending).
 
+## Run 3 (fan-out blueprints → single-writer integration) ✅ main @ 2a46b50, prod green, E2E 12/12+11/11
+20-agent fan-out blueprinted all 10 remaining; I integrated sequentially. SHIPPED:
+client-feedback-scores, granular RBAC (userPermissions + lib/permissions), offer-acceptance
+prediction, custom report builder, vendor self-onboarding, intake auto-match (suggested jobs).
+org-charts = already covered by existing multi-contact client UI. stage_checklists = flag+table
+shipped, UI deferred.
+NOT BUILT (auth/public-surface risk — need supervised session): candidate-portal (adds a
+'candidate' auth role + public login + per-candidate data-isolation; blueprint itself flagged
+HIGH risk), self-scheduling (public tokenized write surface). Blueprints saved in workflow output.
+
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
 - [ ] T1b · Candidate availability + saved-view share UI + skill taxonomy
