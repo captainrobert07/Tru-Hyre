@@ -556,6 +556,21 @@ export const candidateScores = pgTable("candidate_scores", {
   jobIdx: index("candidate_scores_job_idx").on(t.jobId),
 }));
 
+// ---------- Integrations (admin-managed API config) ----------
+
+// One row per integration (Anthropic, Google, Gmail, SMS, Slack, etc.).
+// `config` holds the key/value settings (including secrets) entered by an admin
+// in /settings/integrations. Code reads via lib/integrations.ts which falls
+// back to env vars when a config value is absent — so existing env-based setups
+// keep working and admins can override per-deployment without a redeploy.
+export const integrations = pgTable("integrations", {
+  key: varchar("key", { length: 48 }).primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  config: jsonb("config").$type<Record<string, string>>().notNull().default({}),
+  updatedById: integer("updated_by_id").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ---------- Feature flags ----------
 
 // On/off state for optional features. The catalogue (label/description/

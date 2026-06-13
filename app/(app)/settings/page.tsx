@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { users, invitations, auditLog } from "@/db/schema";
 import { requireAdmin } from "@/lib/rbac";
 import { PageHeader, StatCard } from "@/components/primitives";
-import { Users, MailPlus, Building2, ScrollText, ChevronRight, Mail, ToggleRight, Plug } from "lucide-react";
+import { Users, MailPlus, Building2, ScrollText, ChevronRight, Mail, ToggleRight, Plug, KeyRound } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
@@ -31,7 +31,8 @@ export default async function SettingsPage() {
         <SectionLink href="/settings/users" icon={<Users size={18} />} title="Users" subtitle="Manage user accounts and roles" />
         <SectionLink href="/settings/invitations" icon={<MailPlus size={18} />} title="Invitations" subtitle="Send + revoke role-locked invites" />
         <SectionLink href="/settings/features" icon={<ToggleRight size={18} />} title="Features" subtitle="Enable or disable each feature for everyone" />
-        <SectionLink href="/settings/platform" icon={<Plug size={18} />} title="Platform & integrations" subtitle="API keys, webhooks, data governance" />
+        <SectionLink href="/settings/integrations" icon={<KeyRound size={18} />} title="Integrations" subtitle="Connect Claude, Google, Gmail, Slack, DocuSign, HRIS & more — enter API keys here" />
+        <SectionLink href="/settings/platform" icon={<Plug size={18} />} title="Platform" subtitle="API keys, webhooks, data governance" />
         <SectionLink href="/settings/email-templates" icon={<Mail size={18} />} title="Email templates" subtitle="Auto-emails fired on candidate stage transitions" />
         <SectionLink href="/settings/company" icon={<Building2 size={18} />} title="Company" subtitle="Brand and parsing toggles" />
         <SectionLink href="/settings/audit" icon={<ScrollText size={18} />} title="Audit log" subtitle="Append-only activity record" />

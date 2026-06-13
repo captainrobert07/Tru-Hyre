@@ -1,4 +1,5 @@
 import { google, type calendar_v3 } from "googleapis";
+import { getIntegration } from "@/lib/integrations";
 
 /**
  * Google Calendar integration for interview scheduling.
@@ -21,20 +22,12 @@ import { google, type calendar_v3 } from "googleapis";
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 
-let cachedClient: calendar_v3.Calendar | null = null;
-
-function impersonatedUser(): string | null {
-  return process.env.GCAL_IMPERSONATE_USER || process.env.GMAIL_USER || null;
-}
-
-export function calendarEnabled(): boolean {
-  return Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON && impersonatedUser());
-}
-
-function getCalendarClient(): calendar_v3.Calendar | null {
-  if (cachedClient) return cachedClient;
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  const subject = impersonatedUser();
+// Service-account JSON + impersonation mailbox resolved from admin Integrations
+// (DB) → env fallback (GMAIL_USER as last resort for the mailbox).
+async function getCalendarClient(): Promise<calendar_v3.Calendar | null> {
+  const r = await getIntegration("google");
+  const raw = r.values.serviceAccountJson;
+  const subject = r.values.calendarImpersonate || process.env.GMAIL_USER || undefined;
   if (!raw || !subject) return null;
 
   let creds: { client_email: string; private_key: string };
@@ -44,7 +37,7 @@ function getCalendarClient(): calendar_v3.Calendar | null {
       : Buffer.from(raw, "base64").toString("utf-8");
     creds = JSON.parse(decoded);
   } catch (e) {
-    console.error("[calendar] failed to parse GOOGLE_SERVICE_ACCOUNT_JSON", (e as Error).message);
+    console.error("[calendar] failed to parse Google service account JSON", (e as Error).message);
     return null;
   }
 
@@ -59,8 +52,7 @@ function getCalendarClient(): calendar_v3.Calendar | null {
     subject, // domain-wide delegation — act as the real recruiting mailbox
   });
 
-  cachedClient = google.calendar({ version: "v3", auth });
-  return cachedClient;
+  return google.calendar({ version: "v3", auth });
 }
 
 export type CalendarEventInput = {
@@ -83,7 +75,7 @@ export type CalendarEventResult = {
 };
 
 export async function createCalendarEvent(input: CalendarEventInput): Promise<CalendarEventResult> {
-  const calendar = getCalendarClient();
+  const calendar = await getCalendarClient();
   if (!calendar) {
     console.warn("[calendar] (dev) skipping event create — no credentials", { title: input.title });
     return { eventId: null, meetLink: null, htmlLink: null, created: false };
@@ -131,7 +123,7 @@ export async function createCalendarEvent(input: CalendarEventInput): Promise<Ca
 
 export async function deleteCalendarEvent(eventId: string | null): Promise<void> {
   if (!eventId) return;
-  const calendar = getCalendarClient();
+  const calendar = await getCalendarClient();
   if (!calendar) return;
   try {
     await calendar.events.delete({

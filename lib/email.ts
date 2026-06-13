@@ -1,4 +1,5 @@
-import nodemailer, { type Transporter } from "nodemailer";
+import nodemailer from "nodemailer";
+import { getIntegration } from "@/lib/integrations";
 
 export type SendInput = {
   to: string;
@@ -9,16 +10,22 @@ export type SendInput = {
 
 export type SendResult = { delivered: boolean; reason?: string; id?: string };
 
-let cachedTransport: Transporter | null = null;
+// Resolve Gmail SMTP config from admin Integrations (DB) → env fallback.
+async function resolveGmail(): Promise<{ user?: string; pass?: string; from: string }> {
+  const r = await getIntegration("gmail");
+  const user = r.values.user;
+  const pass = r.values.appPassword?.replace(/\s/g, "");
+  const from = r.values.from || (user ? `Tru Hyre Recruitment <${user}>` : "Tru Hyre <noreply@truhyre.app>");
+  return { user, pass, from };
+}
 
-function getTransport(): Transporter | null {
-  if (cachedTransport) return cachedTransport;
-  const user = process.env.GMAIL_USER;
-  // Gmail shows App Passwords as "xxxx xxxx xxxx xxxx" — strip whitespace
-  // so a copy-paste with spaces still authenticates.
-  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, "");
-  if (!user || !pass) return null;
-  cachedTransport = nodemailer.createTransport({
+export async function sendEmail(input: SendInput): Promise<SendResult> {
+  const { user, pass, from } = await resolveGmail();
+  if (!user || !pass) {
+    console.log("[email] (dev) skipping send →", { to: input.to, subject: input.subject });
+    return { delivered: false, reason: "no_smtp_credentials" };
+  }
+  const transport = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
@@ -26,25 +33,10 @@ function getTransport(): Transporter | null {
     connectionTimeout: 8_000,
     socketTimeout: 8_000,
   });
-  return cachedTransport;
-}
-
-function defaultFrom(): string {
-  if (process.env.EMAIL_FROM) return process.env.EMAIL_FROM;
-  if (process.env.GMAIL_USER) return `Tru Hyre Recruitment <${process.env.GMAIL_USER}>`;
-  return "Tru Hyre <noreply@truhyre.app>";
-}
-
-export async function sendEmail(input: SendInput): Promise<SendResult> {
-  const transport = getTransport();
-  if (!transport) {
-    console.log("[email] (dev) skipping send →", { to: input.to, subject: input.subject });
-    return { delivered: false, reason: "no_smtp_credentials" };
-  }
 
   try {
     const info = await transport.sendMail({
-      from: defaultFrom(),
+      from,
       to: input.to,
       subject: input.subject,
       text: input.text,

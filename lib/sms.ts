@@ -10,27 +10,32 @@
  * Without these, sendSms() logs and returns { delivered: false }.
  */
 
+import { getIntegration } from "@/lib/integrations";
+
 export type SmsResult = { delivered: boolean; reason?: string };
 
-export function smsConfigured(): boolean {
-  return Boolean(process.env.SMS_PROVIDER_URL && process.env.SMS_PROVIDER_AUTH && process.env.SMS_FROM);
+export async function smsConfigured(): Promise<boolean> {
+  const r = await getIntegration("sms");
+  return r.enabled && Boolean(r.values.url && r.values.auth && r.values.from);
 }
 
 export async function sendSms(to: string, body: string): Promise<SmsResult> {
-  if (!smsConfigured()) {
+  const r = await getIntegration("sms");
+  const url = r.values.url, auth = r.values.auth, from = r.values.from;
+  if (!r.enabled || !url || !auth || !from) {
     console.log("[sms] (dev) skipping send →", { to, body: body.slice(0, 40) });
     return { delivered: false, reason: "no_provider" };
   }
   if (!to) return { delivered: false, reason: "no_recipient" };
 
   try {
-    const res = await fetch(process.env.SMS_PROVIDER_URL as string, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: process.env.SMS_PROVIDER_AUTH as string,
+        Authorization: auth,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ To: to, From: process.env.SMS_FROM as string, Body: body.slice(0, 1000) }),
+      body: new URLSearchParams({ To: to, From: from, Body: body.slice(0, 1000) }),
     });
     if (!res.ok) {
       return { delivered: false, reason: `provider_${res.status}` };

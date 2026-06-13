@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ParsedResume } from "./parse";
+import { getIntegration } from "@/lib/integrations";
 
 const SYSTEM = `You extract structured candidate data from resume text. Reply ONLY by calling the extract_candidate tool. Be conservative: leave a field null if it isn't explicitly stated. For experienceYears, sum the work-history dates if there's no explicit total. For CTC, return absolute numbers (LPA -> *100000, lakhs -> *100000, crore -> *10000000, k -> *1000). For noticePeriodDays, convert weeks/months to days (1 week = 7, 1 month = 30). Skills should be specific tools/technologies/methodologies, not generic words.`;
 
@@ -27,19 +28,22 @@ const TOOL = {
   },
 };
 
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
 
 export type AiResume = Omit<ParsedResume, "text">;
 
 export async function parseResumeWithAi(rawText: string): Promise<AiResume | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
   if (!rawText || rawText.trim().length < 30) return null;
+  // Resolve key + model from admin Integrations (DB) → env fallback.
+  const r = await getIntegration("anthropic");
+  const apiKey = r.values.apiKey;
+  const model = r.values.model || DEFAULT_MODEL;
+  if (!apiKey) return null;
 
   const client = new Anthropic({ apiKey });
   try {
     const msg = await client.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 1500,
       system: SYSTEM,
       tools: [TOOL],

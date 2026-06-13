@@ -1,27 +1,32 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { getIntegration } from "@/lib/integrations";
 
 /**
- * Shared Claude access for Tru Hyre's AI features. Mirrors lib/parse-ai.ts:
- * graceful no-op (returns null) when ANTHROPIC_API_KEY is absent, so every
- * AI feature degrades cleanly in dev / when the key isn't configured.
+ * Shared Claude access for Tru Hyre's AI features. Resolves the API key + model
+ * from the admin Integrations config (DB) with env-var fallback, so an admin
+ * can supply/rotate the key at /settings/integrations and it reflects
+ * everywhere. Graceful no-op (returns null) when no key is configured.
  *
- * All AI features funnel through callTool() — a single forced-tool-call path —
- * so retries, error handling, and the no-key fallback live in one place.
+ * All AI features funnel through callTool()/callText() so retries, error
+ * handling, and the no-key fallback live in one place.
  */
 
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
 
-export function aiEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+async function resolveAi(): Promise<{ apiKey?: string; model: string }> {
+  const r = await getIntegration("anthropic");
+  return { apiKey: r.values.apiKey, model: r.values.model || DEFAULT_MODEL };
 }
 
-let cachedClient: Anthropic | null = null;
+export async function aiEnabled(): Promise<boolean> {
+  const { apiKey } = await resolveAi();
+  return Boolean(apiKey);
+}
 
-function getClient(): Anthropic | null {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+async function getClient(): Promise<{ client: Anthropic; model: string } | null> {
+  const { apiKey, model } = await resolveAi();
   if (!apiKey) return null;
-  if (!cachedClient) cachedClient = new Anthropic({ apiKey });
-  return cachedClient;
+  return { client: new Anthropic({ apiKey }), model };
 }
 
 export type ToolSpec = {
@@ -45,12 +50,13 @@ export async function callTool<T = Record<string, unknown>>(opts: {
   tool: ToolSpec;
   maxTokens?: number;
 }): Promise<T | null> {
-  const client = getClient();
-  if (!client) return null;
+  const c = await getClient();
+  if (!c) return null;
+  const { client, model } = c;
 
   try {
     const msg = await client.messages.create({
-      model: MODEL,
+      model,
       max_tokens: opts.maxTokens ?? 1500,
       system: opts.system,
       tools: [opts.tool as unknown as Anthropic.Tool],
@@ -72,12 +78,13 @@ export async function callText(opts: {
   prompt: string;
   maxTokens?: number;
 }): Promise<string | null> {
-  const client = getClient();
-  if (!client) return null;
+  const c = await getClient();
+  if (!c) return null;
+  const { client, model } = c;
 
   try {
     const msg = await client.messages.create({
-      model: MODEL,
+      model,
       max_tokens: opts.maxTokens ?? 1200,
       system: opts.system,
       messages: [{ role: "user", content: opts.prompt }],

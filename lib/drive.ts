@@ -1,5 +1,6 @@
 import { google, type drive_v3 } from "googleapis";
 import { Readable } from "node:stream";
+import { getIntegration } from "@/lib/integrations";
 
 export type DriveUploadResult = {
   driveFileId: string;
@@ -7,11 +8,10 @@ export type DriveUploadResult = {
   name: string;
 };
 
-let cachedClient: drive_v3.Drive | null = null;
-
-function getDriveClient(): drive_v3.Drive | null {
-  if (cachedClient) return cachedClient;
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+// Resolve the Google service-account client from admin Integrations (DB) → env.
+async function getDriveClient(): Promise<drive_v3.Drive | null> {
+  const r = await getIntegration("google");
+  const raw = r.values.serviceAccountJson;
   if (!raw) return null;
 
   let creds: { client_email: string; private_key: string };
@@ -21,7 +21,7 @@ function getDriveClient(): drive_v3.Drive | null {
       : Buffer.from(raw, "base64").toString("utf-8");
     creds = JSON.parse(decoded);
   } catch (e) {
-    console.error("[drive] failed to parse GOOGLE_SERVICE_ACCOUNT_JSON", (e as Error).message);
+    console.error("[drive] failed to parse Google service account JSON", (e as Error).message);
     return null;
   }
 
@@ -35,12 +35,12 @@ function getDriveClient(): drive_v3.Drive | null {
     scopes: ["https://www.googleapis.com/auth/drive.file"],
   });
 
-  cachedClient = google.drive({ version: "v3", auth });
-  return cachedClient;
+  return google.drive({ version: "v3", auth });
 }
 
-function getFolderId(): string | null {
-  return process.env.GDRIVE_RESUMES_FOLDER_ID || null;
+async function getFolderId(): Promise<string | null> {
+  const r = await getIntegration("google");
+  return r.values.driveFolderId || null;
 }
 
 function safeName(filename: string): string {
@@ -53,8 +53,7 @@ async function uploadToDrive(
   mimeType: string,
   subPrefix: string,
 ): Promise<DriveUploadResult> {
-  const drive = getDriveClient();
-  const folderId = getFolderId();
+  const [drive, folderId] = await Promise.all([getDriveClient(), getFolderId()]);
 
   if (!drive || !folderId) {
     console.warn("[drive] (dev) skipping upload — missing service account or folder id", { name });
@@ -97,7 +96,7 @@ export function uploadPacket(buffer: Buffer, refId: string) {
 
 export async function deleteDriveFile(driveFileId: string): Promise<void> {
   if (!driveFileId || driveFileId.startsWith("dev-")) return;
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   if (!drive) return;
   await drive.files.delete({ fileId: driveFileId, supportsAllDrives: true });
 }
@@ -111,7 +110,7 @@ export type DriveStream = {
 
 export async function streamDriveFile(driveFileId: string): Promise<DriveStream | null> {
   if (!driveFileId || driveFileId.startsWith("dev-")) return null;
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   if (!drive) return null;
 
   const meta = await drive.files.get({
