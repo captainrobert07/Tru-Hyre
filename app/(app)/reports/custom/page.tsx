@@ -107,7 +107,13 @@ export default async function CustomReportPage({ searchParams }: { searchParams:
         )}
       </section>
 
-      <form action={saveReportAction} className="card p-4 mb-4 flex flex-wrap items-end gap-3">
+      <form
+        action={async (fd) => {
+          "use server";
+          await saveReportAction(fd);
+        }}
+        className="card p-4 mb-4 flex flex-wrap items-end gap-3"
+      >
         <input type="hidden" name="measure" value={measure} />
         <input type="hidden" name="days" value={days} />
         <div className="flex-1 min-w-[200px]">
