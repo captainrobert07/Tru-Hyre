@@ -83,4 +83,7 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [x] **Onboarding tour / empty states** (S) — dismissible welcome banner on dashboard.
 - [x] **Keyboard shortcuts** (S) — ⌘K palette + list nav + shortcut help (existing, now flagged).
 - [x] **Mobile-optimized views** (M) — app shell already responsive (mobile nav + grids).
-- [~] **Dark mode** (S) — DEFERRED: colors are static hex across the Tailwind theme; a real dark theme needs a token refactor + visual QA (browser tooling unavailable here). Not shipped half-done.
+- [x] **Dark mode** (S) — SHIPPED: tokenized neutrals (RGB-channel CSS vars) + `.dark` class, no-FOUC script, top-bar toggle (dark_mode flag). Brand/status hues shared; ink_inverted→green in dark.
+
+## Roles
+- [x] **hr_lite role** ✅ SHIPPED (prod, verified 11/11 E2E) — uploads resumes, changes status, comments, sees status, but ONLY on candidates they uploaded. Full hr/admin unchanged. Enforced at middleware (edge bounce off /dashboard), candidate list filter, detail 404-on-non-owner, and every mutating action via authorizeCandidate(). Seeded hrlite@truhyre.app.
