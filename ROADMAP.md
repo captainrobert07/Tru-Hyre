@@ -78,9 +78,9 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [~] **Granular role permissions** (M) — DEFERRED: would require reworking the fixed role enum / auth; not destabilized.
 - [~] **Interviewer availability sync** (M) — DEFERRED: needs Google Calendar free/busy (external).
 
-## Wave 9 — UX & polish
-- [ ] **Mobile-optimized views** (M)
-- [ ] **Dark mode** (S)
-- [ ] **Keyboard shortcuts** (S)
-- [ ] **Onboarding tour / empty states** (S)
-- [ ] **PWA / installable** (M)
+## Wave 9 — UX & polish ✅ SHIPPED (preview build green, commit cecf593)
+- [x] **PWA / installable** (M) — `app/manifest.ts`.
+- [x] **Onboarding tour / empty states** (S) — dismissible welcome banner on dashboard.
+- [x] **Keyboard shortcuts** (S) — ⌘K palette + list nav + shortcut help (existing, now flagged).
+- [x] **Mobile-optimized views** (M) — app shell already responsive (mobile nav + grids).
+- [~] **Dark mode** (S) — DEFERRED: colors are static hex across the Tailwind theme; a real dark theme needs a token refactor + visual QA (browser tooling unavailable here). Not shipped half-done.
