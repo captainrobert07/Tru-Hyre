@@ -59,7 +59,10 @@ export type FeatureKey =
   | "reference_checks"
   | "client_feedback_scores"
   | "granular_permissions"
-  | "offer_prediction";
+  | "offer_prediction"
+  | "vendor_onboarding"
+  | "custom_report_builder"
+  | "stage_checklists";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -407,6 +410,27 @@ export const FEATURES: FeatureDef[] = [
     description: "Estimate how likely a candidate is to accept an offer, with contributing factors.",
     category: "AI",
     defaultEnabled: true,
+  },
+  {
+    key: "vendor_onboarding",
+    label: "Vendor self-onboarding",
+    description: "A public form where prospective vendors apply; they land as pending for HR approval.",
+    category: "Sourcing",
+    defaultEnabled: false,
+  },
+  {
+    key: "custom_report_builder",
+    label: "Custom report builder",
+    description: "Pick a metric + date range, view a table, and save report definitions.",
+    category: "Analytics",
+    defaultEnabled: true,
+  },
+  {
+    key: "stage_checklists",
+    label: "Per-job stage checklists",
+    description: "Define checklist items per pipeline stage on a job (advisory; doesn't change the core stages).",
+    category: "Pipeline",
+    defaultEnabled: false,
   },
 ];
 

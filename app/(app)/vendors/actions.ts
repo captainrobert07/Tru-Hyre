@@ -10,6 +10,15 @@ import { logAudit } from "@/lib/audit";
 import { requireStaff } from "@/lib/rbac";
 import { withToast } from "@/lib/toast";
 
+export async function approveVendorAction(id: number, approve: boolean): Promise<{ ok: boolean }> {
+  const user = await requireStaff();
+  await db.update(vendorAccounts).set({ approvalStatus: approve ? "approved" : "rejected", updatedAt: new Date() }).where(eq(vendorAccounts.id, id));
+  await logAudit({ actorId: Number(user.id), actorEmail: user.email, action: "update", targetType: "vendor", targetId: id, summary: `${approve ? "Approved" : "Rejected"} vendor application` });
+  revalidatePath(`/vendors/${id}`);
+  revalidatePath("/vendors");
+  return { ok: true };
+}
+
 const schema = z.object({
   name: z.string().min(2).max(200),
   contactName: z.string().max(120).optional().or(z.literal("")),

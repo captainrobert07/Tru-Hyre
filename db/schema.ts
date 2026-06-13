@@ -148,6 +148,9 @@ export const vendorAccounts = pgTable("vendor_accounts", {
   // on a successful hire; paymentTerms is free text (e.g. "Net 30, 90-day guarantee").
   feePercent: numeric("fee_percent", { precision: 5, scale: 2 }),
   paymentTerms: varchar("payment_terms", { length: 200 }),
+  // Self-onboarding: vendors who applied via the public form land as "pending"
+  // for HR approval. Existing vendors default to "approved".
+  approvalStatus: jobApprovalEnum("approval_status").notNull().default("approved"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -712,6 +715,30 @@ export const clientFeedbackScores = pgTable("client_feedback_scores", {
   authorIdx: index("client_feedback_scores_author_idx").on(t.authorId),
 }));
 
+// ---------- Saved custom reports ----------
+export const savedReports = pgTable("saved_reports", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  measure: varchar("measure", { length: 64 }).notNull(),
+  days: integer("days").notNull().default(90),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ---------- Per-job stage checklists (additive layer over the fixed enum) ----------
+// Optional checklist items a job's pipeline can require at a given stage. Does
+// NOT alter the core candidateStageEnum — purely advisory checklist metadata.
+export const jobStageChecklists = pgTable("job_stage_checklists", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  stage: candidateStageEnum("stage").notNull(),
+  label: varchar("label", { length: 200 }).notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  jobIdx: index("job_stage_checklists_job_idx").on(t.jobId),
+}));
+
 // ---------- Granular per-user permissions ----------
 // Additive capability grants that layer on top of a user's base role. Permission
 // keys are a TS union in lib/permissions.ts (not a DB enum). Admin bypasses.
@@ -813,3 +840,5 @@ export type InterviewKit = typeof interviewKits.$inferSelect;
 export type CandidateReference = typeof candidateReferences.$inferSelect;
 export type ClientFeedbackScore = typeof clientFeedbackScores.$inferSelect;
 export type UserPermissions = typeof userPermissions.$inferSelect;
+export type SavedReport = typeof savedReports.$inferSelect;
+export type JobStageChecklist = typeof jobStageChecklists.$inferSelect;

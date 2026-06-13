@@ -8,11 +8,13 @@ import { PageHeader, ListRow, StageBadge, JobStatusBadge, EmptyState } from "@/c
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Avatar } from "@/components/avatar";
 import { RecentTracker } from "@/components/recently-viewed";
+import { JobApproval } from "@/components/job-approval";
+import { approveVendorAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function VendorDetail({ params }: { params: Promise<{ id: string }> }) {
-  await requireStaff();
+  const user = await requireStaff();
   const { id } = await params;
   const vendorId = Number(id);
   const v = (await db.select().from(vendorAccounts).where(eq(vendorAccounts.id, vendorId)))[0];
@@ -52,6 +54,15 @@ export default async function VendorDetail({ params }: { params: Promise<{ id: s
         }
         subtitle={[v.country, v.contactName].filter(Boolean).join(" · ") || undefined}
         actions={<Link href={`/vendors/${v.id}/edit`} className="btn-ghost">Edit</Link>}
+      />
+
+      <JobApproval
+        status={v.approvalStatus}
+        isAdmin={user.role === "admin" || user.role === "hr"}
+        onDecide={async (approve) => {
+          "use server";
+          return await approveVendorAction(vendorId, approve);
+        }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

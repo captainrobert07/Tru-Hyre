@@ -25,6 +25,7 @@ export default async function ReportsPage() {
   await requireStaff();
   if (!(await isFeatureEnabled("analytics_reports"))) redirect("/dashboard");
   const showSourceEff = await isFeatureEnabled("source_tracking");
+  const showBuilder = await isFeatureEnabled("custom_report_builder");
 
   const [
     source,
@@ -71,7 +72,12 @@ export default async function ReportsPage() {
       <PageHeader
         title="Reports"
         subtitle="Pipeline conversion, vendor quality, recruiter performance, and forecasting."
-        actions={<a href="/api/reports/export" className="btn-ghost">Export CSV</a>}
+        actions={
+          <>
+            {showBuilder && <Link href="/reports/custom" className="btn-ghost">Build report</Link>}
+            <a href="/api/reports/export" className="btn-ghost">Export CSV</a>
+          </>
+        }
       />
 
       {/* Pipeline bottlenecks */}
