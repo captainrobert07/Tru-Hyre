@@ -6,6 +6,17 @@ project prj_1GJQm86CXWcTxIUDugqaojLAM1Lh. Seeded admin admin@truhyre.app / Kris@
 Prod tru-hyre-rho.vercel.app. Rules: every feature → flag + UI gate + action guard;
 additive schema only; strict ESLint (no unused); "use server" exports only async fns.
 
+## STATUS (run 1): shipped to main @ bb7d92e, prod green, E2E 12/12 + 11/11.
+DONE: CUT (Test-connection per integration), DM (dark contrast WCAG-tuned),
+T1a (multi-round interviews + interview_kits table), T1d (bottlenecks + exec CSV
+export), T1f (bulk resume upload), T1 blind-mode anonymization.
+REMAINING (deliberately NOT built blind at end of long run — flagged for a
+focused session): rest of T1 (skill taxonomy, candidate availability,
+client/vendor depth, references), ALL of T2 (configurable stages, self-scheduling,
+report builder, candidate portal, granular RBAC — L-effort architectural, high
+regression risk), T3 connector send-flows (config + Test button READY; wiring
+pending). Live-cutover = enter real keys at /settings/integrations + click Test.
+
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
 - [ ] T1b · Candidate availability + saved-view share UI + skill taxonomy
