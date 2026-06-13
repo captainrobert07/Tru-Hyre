@@ -344,6 +344,9 @@ export const interviews = pgTable("interviews", {
   googleEventId: text("google_event_id"),
   // Staff user ids invited as interviewers.
   interviewerIds: jsonb("interviewer_ids").$type<number[]>().notNull().default([]),
+  // Multi-round tracking: a label (e.g. "Tech round 1") + 1-based sequence.
+  roundLabel: varchar("round_label", { length: 80 }),
+  roundIndex: integer("round_index").notNull().default(1),
   status: interviewStatusEnum("status").notNull().default("scheduled"),
   notes: text("notes"),
   createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
@@ -354,6 +357,20 @@ export const interviews = pgTable("interviews", {
   submissionIdx: index("interviews_submission_idx").on(t.submissionId),
   startIdx: index("interviews_start_idx").on(t.scheduledStart),
   statusIdx: index("interviews_status_idx").on(t.status),
+}));
+
+// Interview kits — a reusable set of questions + focus areas, optionally tied
+// to a job, attachable to an interview round.
+export const interviewKits = pgTable("interview_kits", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 160 }).notNull(),
+  jobId: integer("job_id").references(() => jobs.id, { onDelete: "cascade" }),
+  focusAreas: jsonb("focus_areas").$type<string[]>().notNull().default([]),
+  questions: jsonb("questions").$type<string[]>().notNull().default([]),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  jobIdx: index("interview_kits_job_idx").on(t.jobId),
 }));
 
 // Structured interview scorecard — one row per reviewer per interview/submission.
@@ -740,3 +757,4 @@ export type NewInterview = typeof interviews.$inferInsert;
 export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
 export type CandidateScore = typeof candidateScores.$inferSelect;
 export type Offer = typeof offers.$inferSelect;
+export type InterviewKit = typeof interviewKits.$inferSelect;

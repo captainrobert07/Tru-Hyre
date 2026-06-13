@@ -230,6 +230,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
     meetLink: iv.meetLink,
     status: iv.status,
     interviewerNames: (iv.interviewerIds || []).map((id) => staffById.get(id)).filter((n): n is string => Boolean(n)),
+    roundLabel: iv.roundLabel,
   }));
 
   type Activity =

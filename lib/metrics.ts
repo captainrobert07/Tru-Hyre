@@ -581,6 +581,32 @@ export type WeeklyDigest = {
   openJobs: number;
 };
 
+export type BottleneckRow = { stage: string; stuck: number; medianDaysInStage: number };
+
+/**
+ * Pipeline bottlenecks: per non-terminal stage, how many candidates are sitting
+ * there and the median days they've been there. High count + high days = a jam.
+ */
+export async function getBottlenecks(): Promise<BottleneckRow[]> {
+  const rows = await db.execute<{ stage: string; stuck: number; median_days: string | null }>(sql`
+    SELECT
+      c.stage::text AS stage,
+      COUNT(*)::int AS stuck,
+      percentile_cont(0.5) WITHIN GROUP (
+        ORDER BY EXTRACT(EPOCH FROM (now() - c.updated_at)) / 86400
+      )::numeric(10,1) AS median_days
+    FROM ${candidates} c
+    WHERE c.stage NOT IN ('joined', 'rejected')
+    GROUP BY c.stage
+    ORDER BY stuck DESC
+  `);
+  return ((rows.rows || rows) as Array<{ stage: string; stuck: number; median_days: string | null }>).map((r) => ({
+    stage: r.stage,
+    stuck: Number(r.stuck),
+    medianDaysInStage: Number(r.median_days || 0),
+  }));
+}
+
 /** Trailing-7-day snapshot for the weekly email digest. */
 export async function getWeeklyDigest(): Promise<WeeklyDigest> {
   const [nc, ns, off, jn, oj] = await Promise.all([

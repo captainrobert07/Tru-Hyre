@@ -15,6 +15,7 @@ import {
   getCoverageRatio,
   getStageDistribution,
   getSubmissionForecast,
+  getBottlenecks,
 } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function ReportsPage() {
     coverage,
     distribution,
     forecast,
+    bottlenecks,
   ] = await Promise.all([
     getSourceOfHire(90),
     getSourceEffectiveness(365),
@@ -49,6 +51,7 @@ export default async function ReportsPage() {
     getCoverageRatio(),
     getStageDistribution(),
     getSubmissionForecast(),
+    getBottlenecks(),
   ]);
 
   const sourceMax = Math.max(1, ...source.map((s) => s.count));
@@ -68,7 +71,31 @@ export default async function ReportsPage() {
       <PageHeader
         title="Reports"
         subtitle="Pipeline conversion, vendor quality, recruiter performance, and forecasting."
+        actions={<a href="/api/reports/export" className="btn-ghost">Export CSV</a>}
       />
+
+      {/* Pipeline bottlenecks */}
+      {bottlenecks.length > 0 && (
+        <section className="card p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold">Pipeline bottlenecks</h2>
+            <span className="text-xs text-ink-muted">where candidates pile up</span>
+          </div>
+          <ul className="space-y-2">
+            {bottlenecks.map((b) => (
+              <li key={b.stage} className="flex items-center justify-between text-sm py-1.5 border-b border-hairline last:border-0">
+                <span className="capitalize">{b.stage.replaceAll("_", " ")}</span>
+                <span className="flex items-center gap-2">
+                  <span className="text-ink-muted tabular-nums">{b.stuck} stuck</span>
+                  <Badge tone={b.medianDaysInStage > 14 ? "red" : b.medianDaysInStage > 7 ? "amber" : "default"}>
+                    {b.medianDaysInStage}d median
+                  </Badge>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Top KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

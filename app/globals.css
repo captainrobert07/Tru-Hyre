@@ -20,13 +20,13 @@
   --ink-inverted: 10 13 18;
 }
 .dark {
-  --canvas: 11 15 23;
-  --surface: 19 26 36;
-  --hairline: 37 48 63;
-  --ink: 230 235 242;
-  --ink-soft: 159 176 195;
-  --ink-muted: 107 124 145;
-  --ink-inverted: 5 150 105;
+  --canvas: 13 17 25;
+  --surface: 22 29 40;
+  --hairline: 42 54 70;
+  --ink: 233 238 245;      /* ~15:1 on surface — AAA */
+  --ink-soft: 176 190 207;  /* ~8.5:1 on surface — AAA */
+  --ink-muted: 138 153 172; /* ~5.2:1 on surface — passes AA for normal text */
+  --ink-inverted: 16 185 129; /* brand-500 — white text on it ~3.3:1 (AA large/UI) */
 }
 
 @layer base {

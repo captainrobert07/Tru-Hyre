@@ -20,6 +20,8 @@ export type ScheduleInterviewInput = {
   location: string | null;
   interviewerIds: number[];
   notes: string | null;
+  roundLabel?: string | null;
+  roundIndex?: number;
   actor: { id: number; email: string; fullName: string };
 };
 
@@ -165,6 +167,8 @@ export async function scheduleInterview(input: ScheduleInterviewInput): Promise<
       meetLink: cal.meetLink,
       googleEventId: cal.eventId,
       interviewerIds,
+      roundLabel: input.roundLabel || null,
+      roundIndex: input.roundIndex && input.roundIndex > 0 ? input.roundIndex : 1,
       status: "scheduled",
       notes: input.notes,
       createdById: input.actor.id,

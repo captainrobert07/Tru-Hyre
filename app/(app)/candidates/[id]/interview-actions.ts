@@ -18,6 +18,8 @@ const scheduleSchema = z.object({
   jobId: z.coerce.number().int().positive().optional().or(z.literal("")),
   interviewerIds: z.string().optional().or(z.literal("")),
   notes: z.string().max(2000).optional().or(z.literal("")),
+  roundLabel: z.string().max(80).optional().or(z.literal("")),
+  roundIndex: z.coerce.number().int().min(1).max(20).optional(),
 });
 
 /**
@@ -78,6 +80,8 @@ export async function scheduleInterviewAction(
     location: v.location || null,
     interviewerIds,
     notes: v.notes || null,
+    roundLabel: v.roundLabel || null,
+    roundIndex: v.roundIndex,
     actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
   });
 
