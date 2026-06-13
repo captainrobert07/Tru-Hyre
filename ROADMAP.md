@@ -68,15 +68,15 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [~] **Diversity / EEO reporting** (M) — flag registered but INERT: no EEO fields collected by default (GDPR-conscious). Honest, not fabricated.
 - [~] **Custom report builder** (L) — DEFERRED: existing fixed reports cover the core; a full builder is a large standalone effort.
 
-## Wave 8 — Platform & integrations
-- [ ] **2FA / SSO (Azure AD)** (L)
-- [ ] **Granular role permissions** (M)
-- [ ] **Webhook / integration layer** (M)
-- [ ] **Interviewer availability sync** (M)
-- [ ] **GDPR / data-retention tooling** (M)
-- [ ] **Public API + API keys** (L)
-- [ ] **Activity feed** (M)
-- [ ] **Saved-view sharing** (S)
+## Wave 8 — Platform & integrations ✅ SHIPPED (preview build green, commit 6261e30)
+- [x] **Webhook / integration layer** (M) — `webhooks` table + `lib/webhooks.ts`; fires candidate.stage_changed; admin UI.
+- [x] **Public API + API keys** (L) — `api_keys` + `/api/v1/candidates` bearer-auth read API; admin key mgmt.
+- [x] **Activity feed** (M) — `/activity` from audit log + nav.
+- [x] **GDPR / data-retention tooling** (M) — `/settings/platform` GDPR overview surfacing existing export/erasure.
+- [~] **Saved-view sharing** (S) — `savedViews.shared` column added; share toggle UI deferred.
+- [~] **2FA / SSO (Azure AD)** (L) — DEFERRED: needs external IdP integration.
+- [~] **Granular role permissions** (M) — DEFERRED: would require reworking the fixed role enum / auth; not destabilized.
+- [~] **Interviewer availability sync** (M) — DEFERRED: needs Google Calendar free/busy (external).
 
 ## Wave 9 — UX & polish
 - [ ] **Mobile-optimized views** (M)

@@ -20,13 +20,15 @@ async fns, additive schema only, every feature → feature flag + UI gate + acti
 - feat/wave5-pipeline ✅ green (db2c7de)
 - feat/wave6-comms ✅ green (ae1386e)
 - feat/wave7-analytics ✅ green (81db57e)
-- feat/wave8-platform ⏳ IN PROGRESS
+- feat/wave8-platform ✅ green (6261e30)
+- feat/wave9-ux ⏳ IN PROGRESS
 
 ## Status
 - [x] Wave 4 — Sourcing (careers page, referral portal, apply links, LinkedIn import, talent pool)
 - [x] Wave 5 — Pipeline (offers, requisition approval, bulk tag, interview reminders; configurable stages + self-schedule deferred honestly)
 - [x] Wave 6 — Communication (bulk email, drip sequences, SMS provider, inbound log; auto Gmail sync external)
 - [x] Wave 7 — Analytics (reports gated, weekly digest; diversity inert, custom builder deferred)
+- [x] Wave 8 — Platform (activity feed, API+keys, webhooks, GDPR page; SSO/RBAC/availability deferred)
 - [ ] Wave 6 — Communication (two-way Gmail*, SMS*, sequences, bulk email)
 - [ ] Wave 7 — Analytics (funnel, vendor scorecard, recruiter dashboard, diversity, scheduled exports, report builder)
 - [ ] Wave 8 — Platform (2FA/SSO*, granular perms, webhooks, availability sync, GDPR tooling, public API*, activity feed, saved-view sharing)
