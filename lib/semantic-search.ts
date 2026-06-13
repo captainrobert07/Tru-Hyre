@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates } from "@/db/schema";
 import { callTool } from "@/lib/ai";
+import { expandSkills } from "@/lib/skill-taxonomy";
 
 /**
  * Natural-language candidate search. Claude turns a free-text query
@@ -80,7 +81,8 @@ async function extractCriteria(query: string): Promise<{ criteria: ExtractedCrit
 export async function semanticSearch(query: string): Promise<SearchResult> {
   const { criteria, usedAi } = await extractCriteria(query);
 
-  const skillsLower = criteria.skills.map((s) => s.toLowerCase());
+  // Expand through the skill taxonomy so "JS" also matches "JavaScript", etc.
+  const skillsLower = expandSkills(criteria.skills);
   const kw = criteria.keywords.join(" ").trim();
   const likeKw = kw ? `%${kw}%` : null;
 

@@ -16,8 +16,18 @@ const schema = z.object({
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().max(40).optional().or(z.literal("")),
   country: z.string().max(80).optional().or(z.literal("")),
+  feePercent: z.string().max(12).optional().or(z.literal("")),
+  paymentTerms: z.string().max(200).optional().or(z.literal("")),
   notes: z.string().max(2000).optional().or(z.literal("")),
 });
+
+// Coerce the fee % string to a numeric value (0–100) or null.
+function parseFee(raw?: string): string | null {
+  if (!raw) return null;
+  const n = Number(raw.replace(/[%\s]/g, ""));
+  if (!Number.isFinite(n) || n < 0 || n > 100) return null;
+  return String(n);
+}
 
 export async function createVendorAction(formData: FormData): Promise<void> {
   const user = await requireStaff();
@@ -32,6 +42,8 @@ export async function createVendorAction(formData: FormData): Promise<void> {
       contactEmail: v.contactEmail || null,
       contactPhone: v.contactPhone || null,
       country: v.country || null,
+      feePercent: parseFee(v.feePercent),
+      paymentTerms: v.paymentTerms || null,
       notes: v.notes || null,
     })
     .returning();
@@ -60,6 +72,8 @@ export async function updateVendorAction(id: number, formData: FormData): Promis
       contactEmail: v.contactEmail || null,
       contactPhone: v.contactPhone || null,
       country: v.country || null,
+      feePercent: parseFee(v.feePercent),
+      paymentTerms: v.paymentTerms || null,
       notes: v.notes || null,
       updatedAt: new Date(),
     })

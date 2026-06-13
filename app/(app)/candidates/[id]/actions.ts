@@ -114,6 +114,7 @@ const INLINE_FIELDS = [
   "linkedinUrl",
   "githubUrl",
   "availableFrom",
+  "availabilityNotes",
   "willingToRelocate",
   "workAuthorization",
   "tagsCsv",
@@ -182,6 +183,7 @@ export async function updateCandidateFieldAction(id: number, formData: FormData)
       update.availableFrom = d.toISOString().slice(0, 10);
       break;
     }
+    case "availabilityNotes": update.availabilityNotes = v ? v.slice(0, 280) : null; break;
     case "tagsCsv": {
       const tags = (v ?? "")
         .split(",")

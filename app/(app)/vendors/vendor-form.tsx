@@ -6,15 +6,19 @@ type Initial = {
   contactEmail?: string | null;
   contactPhone?: string | null;
   country?: string | null;
+  feePercent?: string | null;
+  paymentTerms?: string | null;
   notes?: string | null;
 };
 
 export function VendorForm({
   action,
   initial,
+  showCommission = true,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   initial?: Initial;
+  showCommission?: boolean;
 }) {
   const v = initial || {};
   return (
@@ -40,6 +44,18 @@ export function VendorForm({
           <label htmlFor="contactPhone" className="label">Contact phone</label>
           <input id="contactPhone" name="contactPhone" defaultValue={v.contactPhone || ""} className="input" />
         </div>
+        {showCommission && (
+          <>
+            <div>
+              <label htmlFor="feePercent" className="label">Fee % <span className="text-ink-muted font-normal">(of first-year CTC)</span></label>
+              <input id="feePercent" name="feePercent" inputMode="decimal" placeholder="e.g. 8.33" defaultValue={v.feePercent || ""} className="input" />
+            </div>
+            <div>
+              <label htmlFor="paymentTerms" className="label">Payment terms</label>
+              <input id="paymentTerms" name="paymentTerms" placeholder="e.g. Net 30, 90-day guarantee" defaultValue={v.paymentTerms || ""} className="input" />
+            </div>
+          </>
+        )}
         <div className="md:col-span-2">
           <label htmlFor="notes" className="label">Notes</label>
           <textarea id="notes" name="notes" rows={3} defaultValue={v.notes || ""} className="input py-2" />

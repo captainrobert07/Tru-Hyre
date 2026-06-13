@@ -88,6 +88,8 @@ export const offerStatusEnum = pgEnum("offer_status", [
 
 export const jobApprovalEnum = pgEnum("job_approval", ["draft", "pending", "approved", "rejected"]);
 
+export const referenceStatusEnum = pgEnum("reference_status", ["requested", "received", "declined"]);
+
 export const notificationKindEnum = pgEnum("notification_kind", [
   "stage_change",
   "feedback",
@@ -141,6 +143,10 @@ export const vendorAccounts = pgTable("vendor_accounts", {
   contactEmail: varchar("contact_email", { length: 254 }),
   contactPhone: varchar("contact_phone", { length: 40 }),
   country: varchar("country", { length: 80 }),
+  // Commercial terms (feature-gated). feePercent = % of first-year CTC billed
+  // on a successful hire; paymentTerms is free text (e.g. "Net 30, 90-day guarantee").
+  feePercent: numeric("fee_percent", { precision: 5, scale: 2 }),
+  paymentTerms: varchar("payment_terms", { length: 200 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -229,6 +235,7 @@ export const candidates = pgTable("candidates", {
   linkedinUrl: varchar("linkedin_url", { length: 254 }),
   githubUrl: varchar("github_url", { length: 254 }),
   availableFrom: date("available_from"),
+  availabilityNotes: varchar("availability_notes", { length: 280 }),
   willingToRelocate: boolean("willing_to_relocate"),
   workAuthorization: varchar("work_authorization", { length: 120 }),
   tags: jsonb("tags").$type<string[]>().notNull().default([]),
@@ -410,6 +417,24 @@ export const offers = pgTable("offers", {
 }, (t) => ({
   candidateIdx: index("offers_candidate_idx").on(t.candidateId),
   statusIdx: index("offers_status_idx").on(t.status),
+}));
+
+// ---------- Reference checks ----------
+
+export const candidateReferences = pgTable("candidate_references", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  refereeName: varchar("referee_name", { length: 160 }).notNull(),
+  refereeEmail: varchar("referee_email", { length: 254 }).notNull(),
+  relationship: varchar("relationship", { length: 120 }),
+  status: referenceStatusEnum("status").notNull().default("requested"),
+  // The referee's response, captured when received (logged manually or via reply).
+  response: text("response"),
+  requestedById: integer("requested_by_id").references(() => users.id, { onDelete: "set null" }),
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  respondedAt: timestamp("responded_at"),
+}, (t) => ({
+  candidateIdx: index("candidate_references_candidate_idx").on(t.candidateId),
 }));
 
 // ---------- Notifications ----------
@@ -758,3 +783,4 @@ export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
 export type CandidateScore = typeof candidateScores.$inferSelect;
 export type Offer = typeof offers.$inferSelect;
 export type InterviewKit = typeof interviewKits.$inferSelect;
+export type CandidateReference = typeof candidateReferences.$inferSelect;

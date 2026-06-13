@@ -17,6 +17,12 @@ report builder, candidate portal, granular RBAC — L-effort architectural, high
 regression risk), T3 connector send-flows (config + Test button READY; wiring
 pending). Live-cutover = enter real keys at /settings/integrations + click Test.
 
+## Run 2 (branch feat/tier1-batch2) — safe Tier-1 remainder
+- [ ] Skill taxonomy / synonyms (normalize "JS"→"JavaScript" in match + search)
+- [ ] Candidate availability (availableFrom already exists; add availability notes + surface)
+- [ ] Vendor contracts & commission (fee %, payout-on-hire tracking)
+- [ ] Reference checks (request + collect via email; references table)
+
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
 - [ ] T1b · Candidate availability + saved-view share UI + skill taxonomy

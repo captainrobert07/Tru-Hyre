@@ -60,6 +60,8 @@ export default async function VendorDetail({ params }: { params: Promise<{ id: s
           <Field label="Email">{v.contactEmail || "—"}</Field>
           <Field label="Phone">{v.contactPhone || "—"}</Field>
           <Field label="Country">{v.country || "—"}</Field>
+          {v.feePercent && <Field label="Fee">{v.feePercent}% of first-year CTC</Field>}
+          {v.paymentTerms && <Field label="Payment terms">{v.paymentTerms}</Field>}
           {v.notes && (
             <div className="pt-3 border-t border-hairline mt-3">
               <div className="text-xs text-ink-muted uppercase tracking-wide mb-1">Notes</div>

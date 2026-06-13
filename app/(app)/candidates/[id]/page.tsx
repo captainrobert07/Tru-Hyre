@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments, candidateReferences } from "@/db/schema";
 import { requireStaffOrLite, isLite } from "@/lib/rbac";
 import { getFeatureStates } from "@/lib/features";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
@@ -19,9 +19,11 @@ import { AiSummaryButton } from "@/components/ai-summary-button";
 import { AiToolsPanel } from "@/components/ai-tools-panel";
 import { OffersPanel, type OfferItem } from "@/components/offers-panel";
 import { SequencePanel, type EnrollmentItem } from "@/components/sequence-panel";
+import { ReferencesPanel, type ReferenceItem } from "@/components/references-panel";
 import { setStageAction, generatePacketAction, submitToJobAction, deleteCandidateAction, updateCandidateFieldAction } from "./actions";
 import { createOfferAction, setOfferStatusAction } from "./offer-actions";
 import { enrollSequenceAction, cancelSequenceAction } from "./sequence-actions";
+import { requestReferenceAction, markReferenceReceivedAction } from "./reference-actions";
 import { SEQUENCES } from "@/lib/sequences";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
 import { sendAdHocEmailAction, logInboundReplyAction } from "./email-actions";
@@ -82,7 +84,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   // Fetch feedback for all submissions of this candidate, then weave a unified
   // activity timeline (stage moves + feedback events).
   const subIds = subs.map((s) => s.id);
-  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows, offerRows, inboundRows, enrollmentRows] = await Promise.all([
+  const [feedback, candComments, candInterviews, staff, outboxRows, activeTemplates, scorecardRows, offerRows, inboundRows, enrollmentRows, referenceRows] = await Promise.all([
     subIds.length === 0
       ? Promise.resolve([])
       : db
@@ -168,7 +170,21 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
       .from(sequenceEnrollments)
       .where(eq(sequenceEnrollments.candidateId, candidateId))
       .orderBy(desc(sequenceEnrollments.createdAt)),
+    db
+      .select()
+      .from(candidateReferences)
+      .where(eq(candidateReferences.candidateId, candidateId))
+      .orderBy(desc(candidateReferences.requestedAt)),
   ]);
+
+  const referenceItems: ReferenceItem[] = referenceRows.map((r) => ({
+    id: r.id,
+    refereeName: r.refereeName,
+    refereeEmail: r.refereeEmail,
+    relationship: r.relationship,
+    status: r.status,
+    response: r.response,
+  }));
 
   const seqLabel = (key: string) => SEQUENCES.find((s) => s.key === key);
   const enrollmentItems: EnrollmentItem[] = enrollmentRows.map((e) => ({
@@ -418,6 +434,17 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 field="availableFrom"
                 defaultValue={cand.availableFrom || ""}
                 placeholder="YYYY-MM-DD"
+                onSave={async (fd) => {
+                  "use server";
+                  await updateCandidateFieldAction(candidateId, fd);
+                }}
+              />
+            </Field>
+            <Field label="Availability notes">
+              <InlineEdit
+                field="availabilityNotes"
+                defaultValue={cand.availabilityNotes || ""}
+                placeholder="e.g. 2 weeks' notice, prefers afternoons"
                 onSave={async (fd) => {
                   "use server";
                   await updateCandidateFieldAction(candidateId, fd);
@@ -706,6 +733,22 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               onSetStatus={async (offerId, status) => {
                 "use server";
                 return await setOfferStatusAction(candidateId, offerId, status);
+              }}
+            />
+          </Section>
+          )}
+
+          {!lite && flags.reference_checks && (
+          <Section title="References" defaultOpen={false} count={referenceItems.length}>
+            <ReferencesPanel
+              references={referenceItems}
+              onRequest={async (fd) => {
+                "use server";
+                return await requestReferenceAction(candidateId, fd);
+              }}
+              onReceive={async (referenceId, fd) => {
+                "use server";
+                return await markReferenceReceivedAction(candidateId, referenceId, fd);
               }}
             />
           </Section>

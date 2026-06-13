@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, jobs, candidateScores } from "@/db/schema";
 import { callTool } from "@/lib/ai";
+import { expandSkills } from "@/lib/skill-taxonomy";
 
 /**
  * Candidate↔job match scoring. Two tiers to keep LLM cost bounded:
@@ -100,7 +101,9 @@ export async function computeMatchScores(jobId: number): Promise<MatchRow[]> {
   const job = (await db.select().from(jobs).where(eq(jobs.id, jobId)))[0];
   if (!job) return [];
 
-  const jobSkills = (job.skills || []).map((s) => s.toLowerCase());
+  // Expand job skills through the taxonomy so e.g. a "JavaScript" requirement
+  // also matches candidates tagged "JS".
+  const jobSkills = expandSkills(job.skills || []);
 
   // 1. Prefilter: rank by count of overlapping skills (case-insensitive),
   // limited to non-terminal candidates. Done entirely in SQL.

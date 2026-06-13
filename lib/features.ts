@@ -54,7 +54,9 @@ export type FeatureKey =
   | "ai_redflags"
   | "ai_chatbot"
   | "slack_notifications"
-  | "hris_handoff";
+  | "hris_handoff"
+  | "vendor_commission"
+  | "reference_checks";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -367,6 +369,20 @@ export const FEATURES: FeatureDef[] = [
     description: "POST a hire record to your HRIS when a candidate is marked joined (configure under Integrations).",
     category: "Platform",
     defaultEnabled: false,
+  },
+  {
+    key: "vendor_commission",
+    label: "Vendor contracts & commission",
+    description: "Track each vendor's fee % and payment terms; estimate commission owed on hires.",
+    category: "Sourcing",
+    defaultEnabled: true,
+  },
+  {
+    key: "reference_checks",
+    label: "Reference checks",
+    description: "Request and record candidate references; email the referee and log their response.",
+    category: "Pipeline",
+    defaultEnabled: true,
   },
 ];
 
