@@ -3,6 +3,8 @@
 Branch feat/ux-overhaul. Verify each wave green on Vercel (push → poll). Don't stop.
 Deploy: VERCEL_TOKEN in .env.local, project prj_1GJQm86CXWcTxIUDugqaojLAM1Lh.
 
+## STATUS: ALL 14 done, shipped to main, prod green, E2E auth 12/12 + hr_lite 11/11.
+
 ## Waves
 - [ ] UX-1 quick wins: #2 loading skeletons (inbox/activity/reports), #5 merge type-to-confirm,
       #7 consistent empty states, #8 ⌘K hint + active-filter chips
