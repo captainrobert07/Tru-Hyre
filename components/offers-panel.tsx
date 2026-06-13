@@ -89,6 +89,14 @@ export function OffersPanel({
                 {o.expiresOn && <span>expires {o.expiresOn}</span>}
               </div>
               {o.notes && <p className="text-xs text-ink-soft mt-1 whitespace-pre-line">{o.notes}</p>}
+              <a
+                href={`/api/offers/${o.id}/letter`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-brand-700 hover:underline mt-1 inline-block"
+              >
+                Download offer letter (PDF)
+              </a>
               {NEXT_STATUSES[o.status]?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {NEXT_STATUSES[o.status].map((s) => (

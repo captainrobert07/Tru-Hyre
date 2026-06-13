@@ -49,3 +49,13 @@ export async function togglePinSavedViewAction(id: number): Promise<void> {
   await db.update(savedViews).set({ pinned: !v.pinned }).where(eq(savedViews.id, id));
   revalidatePath(`/${v.scope}`);
 }
+
+/** Share/unshare a saved view with all staff (only the owner can toggle). */
+export async function toggleShareSavedViewAction(id: number): Promise<{ ok: boolean }> {
+  const me = await requireUser();
+  const v = (await db.select().from(savedViews).where(and(eq(savedViews.id, id), eq(savedViews.userId, Number(me.id)))))[0];
+  if (!v) return { ok: false };
+  await db.update(savedViews).set({ shared: !v.shared }).where(eq(savedViews.id, id));
+  revalidatePath(`/${v.scope}`);
+  return { ok: true };
+}

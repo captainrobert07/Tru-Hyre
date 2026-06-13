@@ -5,6 +5,8 @@ import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, Badge } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { scanDuplicates } from "@/lib/dup-scan";
+import { MergeButtons } from "@/components/merge-buttons";
+import { mergeCandidatesAction } from "./merge-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Duplicate candidates" };
@@ -16,7 +18,7 @@ const REASON_LABEL: Record<string, string> = {
 };
 
 export default async function DuplicatesPage() {
-  await requireStaff();
+  const user = await requireStaff();
   if (!(await isFeatureEnabled("ai_dedupe"))) redirect("/candidates");
 
   const pairs = await scanDuplicates(100);
@@ -61,9 +63,17 @@ export default async function DuplicatesPage() {
                   </Link>
                 ))}
               </div>
-              <p className="text-[11px] text-ink-muted mt-2">
-                To merge: open both, copy anything worth keeping into the record you&apos;re keeping, then delete the other (admin → Danger zone).
-              </p>
+              <MergeButtons
+                aId={p.a.id}
+                aName={p.a.fullName}
+                bId={p.b.id}
+                bName={p.b.fullName}
+                isAdmin={user.role === "admin"}
+                onMerge={async (winnerId, loserId) => {
+                  "use server";
+                  return await mergeCandidatesAction(winnerId, loserId);
+                }}
+              />
             </div>
           ))}
         </div>
