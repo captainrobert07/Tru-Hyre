@@ -7,6 +7,7 @@ import { CommandPalette, CommandTrigger } from "./command-palette";
 import { ConfirmProvider } from "./confirm";
 import { ShortcutHelp, ShortcutTrigger } from "./shortcut-help";
 import { QuickAdd } from "./quick-add";
+import { ThemeToggle } from "./theme-toggle";
 import { Avatar } from "./avatar";
 import {
   LayoutDashboard,
@@ -58,7 +59,7 @@ export function AppShell({
   user: { fullName: string; email: string; role: Role };
   unreadCount?: number;
   inboxCount?: number;
-  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean; activity_feed?: boolean; keyboard_shortcuts?: boolean };
+  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean; activity_feed?: boolean; keyboard_shortcuts?: boolean; dark_mode?: boolean };
   children: ReactNode;
 }) {
   const inboxEnabled = enabledFeatures?.inbox ?? true;
@@ -66,6 +67,7 @@ export function AppShell({
   const reportsEnabled = enabledFeatures?.analytics_reports ?? true;
   const activityEnabled = enabledFeatures?.activity_feed ?? true;
   const shortcutsEnabled = enabledFeatures?.keyboard_shortcuts ?? true;
+  const darkModeEnabled = enabledFeatures?.dark_mode ?? true;
   const items = NAV
     .filter((n) => n.roles.includes(user.role))
     .filter((n) => (n.href === "/inbox" ? inboxEnabled : true))
@@ -120,6 +122,7 @@ export function AppShell({
           {paletteEnabled && <CommandTrigger />}
           <QuickAdd />
           {shortcutsEnabled && <ShortcutTrigger />}
+          {darkModeEnabled && <ThemeToggle />}
           <Link href="/notifications" className="relative size-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-soft hover:text-ink" aria-label="Notifications">
             <Bell size={16} />
             {unread > 0 && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-attention-500" />}

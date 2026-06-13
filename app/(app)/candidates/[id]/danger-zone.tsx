@@ -43,7 +43,7 @@ export function DangerZone({
             type="button"
             disabled={pending}
             onClick={handleDelete}
-            className="text-xs w-full px-3 h-9 rounded-full border border-red-200 text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 transition-colors"
+            className="text-xs w-full px-3 h-9 rounded-full border border-red-200 text-red-700 bg-surface hover:bg-red-50 disabled:opacity-50 transition-colors"
           >
             {pending ? "Deleting…" : "GDPR delete (irreversible)"}
           </button>

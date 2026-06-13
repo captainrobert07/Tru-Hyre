@@ -48,7 +48,8 @@ export type FeatureKey =
   | "gdpr_tools"
   | "pwa"
   | "onboarding"
-  | "keyboard_shortcuts";
+  | "keyboard_shortcuts"
+  | "dark_mode";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -317,6 +318,13 @@ export const FEATURES: FeatureDef[] = [
     key: "keyboard_shortcuts",
     label: "Keyboard shortcuts",
     description: "⌘K command palette, list navigation, and the shortcut help dialog.",
+    category: "Experience",
+    defaultEnabled: true,
+  },
+  {
+    key: "dark_mode",
+    label: "Dark mode",
+    description: "Show a light/dark theme toggle in the top bar. Each user's choice is remembered on their device.",
     category: "Experience",
     defaultEnabled: true,
   },

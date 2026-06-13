@@ -26,9 +26,17 @@ export const metadata: Metadata = {
   description: APP_TAGLINE,
 };
 
+// Runs before paint to apply the saved/system theme — avoids a flash of the
+// wrong theme. Static, developer-authored string (no user input → no XSS).
+// Reads localStorage("theme")="dark"|"light"; falls back to OS preference.
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-screen font-sans">
         {children}
         <Toaster

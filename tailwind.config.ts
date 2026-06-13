@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -37,14 +38,14 @@ const config: Config = {
           900: "#7c2d12",
         },
         ink: {
-          DEFAULT: "#0b1220",
-          soft: "#475569",
-          muted: "#94a3b8",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          muted: "rgb(var(--ink-muted) / <alpha-value>)",
         },
-        hairline: "#e6ebf2",
-        surface: "#ffffff",
-        canvas: "#f4f5f7",
-        ink_inverted: "#0a0d12",
+        hairline: "rgb(var(--hairline) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        canvas: "rgb(var(--canvas) / <alpha-value>)",
+        ink_inverted: "rgb(var(--ink-inverted) / <alpha-value>)",
       },
       boxShadow: {
         card: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06)",

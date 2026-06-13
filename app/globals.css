@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tokens as RGB channel triplets so Tailwind's `<alpha-value>` opacity
+ * modifiers (e.g. bg-canvas/80) keep working. Light is the default; .dark on
+ * <html> overrides the neutrals. Brand/status hues are intentionally shared
+ * across themes — only the chrome (canvas/surface/ink/hairline) flips.
+ * ink_inverted becomes brand-green in dark so existing `text-white` on primary
+ * buttons, active nav pills, and tooltips stays legible.
+ */
+:root {
+  --canvas: 244 245 247;
+  --surface: 255 255 255;
+  --hairline: 230 235 242;
+  --ink: 11 18 32;
+  --ink-soft: 71 85 105;
+  --ink-muted: 148 163 184;
+  --ink-inverted: 10 13 18;
+}
+.dark {
+  --canvas: 11 15 23;
+  --surface: 19 26 36;
+  --hairline: 37 48 63;
+  --ink: 230 235 242;
+  --ink-soft: 159 176 195;
+  --ink-muted: 107 124 145;
+  --ink-inverted: 5 150 105;
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
