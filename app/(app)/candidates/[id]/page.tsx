@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments, candidateReferences } from "@/db/schema";
 import { requireStaffOrLite, isLite } from "@/lib/rbac";
 import { getFeatureStates } from "@/lib/features";
+import { suggestJobsForCandidate } from "@/lib/match";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RecentTracker } from "@/components/recently-viewed";
@@ -49,6 +50,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   if (lite && cand.uploadedById !== Number(user.id)) notFound();
 
   const flags = await getFeatureStates();
+  const jobSuggestions = !lite && flags.intake_automatch ? await suggestJobsForCandidate(candidateId, 5) : [];
 
   const [resume, packets, history, openJobs, subs] = await Promise.all([
     db
@@ -552,6 +554,22 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 ))}
               </ul>
             )}
+          </Section>
+          )}
+
+          {!lite && flags.intake_automatch && jobSuggestions.length > 0 && (
+          <Section title="Suggested jobs" count={jobSuggestions.length}>
+            <ul className="space-y-2">
+              {jobSuggestions.map((s) => (
+                <li key={s.jobId} className="flex items-center justify-between gap-2">
+                  <Link href={`/jobs/${s.jobId}`} className="text-sm text-brand-700 hover:underline truncate">{s.title}</Link>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {s.matchedSkills.slice(0, 4).map((sk) => <Badge key={sk} tone="green">{sk}</Badge>)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-ink-muted mt-2">Open jobs ranked by skill overlap with this candidate.</p>
           </Section>
           )}
 

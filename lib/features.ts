@@ -62,7 +62,8 @@ export type FeatureKey =
   | "offer_prediction"
   | "vendor_onboarding"
   | "custom_report_builder"
-  | "stage_checklists";
+  | "stage_checklists"
+  | "intake_automatch";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -431,6 +432,13 @@ export const FEATURES: FeatureDef[] = [
     description: "Define checklist items per pipeline stage on a job (advisory; doesn't change the core stages).",
     category: "Pipeline",
     defaultEnabled: false,
+  },
+  {
+    key: "intake_automatch",
+    label: "Suggested jobs on intake",
+    description: "On a candidate, suggest best-fit open jobs by skill overlap.",
+    category: "AI",
+    defaultEnabled: true,
   },
 ];
 

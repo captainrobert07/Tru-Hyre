@@ -60,6 +60,41 @@ const SCORE_TOOL = {
   },
 };
 
+export type JobSuggestion = { jobId: number; title: string; overlap: number; matchedSkills: string[] };
+
+/**
+ * Suggest best-fit OPEN jobs for a candidate by skill overlap (no LLM — cheap,
+ * runs on the candidate page). Returns top matches with the overlapping skills.
+ */
+export async function suggestJobsForCandidate(candidateId: number, limit = 5): Promise<JobSuggestion[]> {
+  const cand = (await db.select({ skills: candidates.skills }).from(candidates).where(eq(candidates.id, candidateId)))[0];
+  if (!cand) return [];
+  const candSkills = expandSkills(cand.skills || []);
+  if (candSkills.length === 0) return [];
+
+  const rows = await db.execute<{ id: number; title: string; skills: string[]; overlap: number }>(sql`
+    SELECT j.id, j.title, j.skills,
+      COALESCE((
+        SELECT COUNT(*) FROM jsonb_array_elements_text(j.skills) sk
+        WHERE lower(sk) = ANY(${candSkills}::text[])
+      ), 0)::int AS overlap
+    FROM ${jobs} j
+    WHERE j.status = 'open'
+    ORDER BY overlap DESC, j.created_at DESC
+    LIMIT 25
+  `);
+  const data = (rows.rows || rows) as Array<{ id: number; title: string; skills: string[]; overlap: number }>;
+  return data
+    .filter((r) => r.overlap > 0)
+    .slice(0, limit)
+    .map((r) => ({
+      jobId: r.id,
+      title: r.title,
+      overlap: r.overlap,
+      matchedSkills: (r.skills || []).filter((s) => candSkills.includes(s.toLowerCase())),
+    }));
+}
+
 /** Read cached scores for a job (no compute). Highest first. */
 export async function getCachedScores(jobId: number): Promise<MatchRow[]> {
   const rows = await db
