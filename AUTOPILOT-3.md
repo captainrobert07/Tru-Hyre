@@ -17,11 +17,17 @@ report builder, candidate portal, granular RBAC — L-effort architectural, high
 regression risk), T3 connector send-flows (config + Test button READY; wiring
 pending). Live-cutover = enter real keys at /settings/integrations + click Test.
 
-## Run 2 (branch feat/tier1-batch2) — safe Tier-1 remainder
-- [ ] Skill taxonomy / synonyms (normalize "JS"→"JavaScript" in match + search)
-- [ ] Candidate availability (availableFrom already exists; add availability notes + surface)
-- [ ] Vendor contracts & commission (fee %, payout-on-hire tracking)
-- [ ] Reference checks (request + collect via email; references table)
+## Run 2 (branch feat/tier1-batch2) ✅ SHIPPED to main @ 22f7e96, prod green, E2E 12/12+11/11+3/3
+- [x] Skill taxonomy / synonyms (lib/skill-taxonomy.ts → match + semantic search)
+- [x] Candidate availability notes (inline field)
+- [x] Vendor contracts & commission (feePercent + paymentTerms)
+- [x] Reference checks (candidate_references; request emails referee + log response)
+
+REMAINING: Tier-1 leftover (client-side feedback portal, multi-contact org charts,
+vendor self-onboarding, intake auto-match, offer-acceptance prediction);
+ALL Tier-2 (configurable stages, self-scheduling, report builder, candidate portal,
+granular RBAC — L-effort architectural, need a supervised session);
+Tier-3 connector send-flows (config+Test ready, wiring pending).
 
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
