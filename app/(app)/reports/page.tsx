@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { PageHeader, StatCard, Badge } from "@/components/primitives";
@@ -21,6 +22,7 @@ export const metadata = { title: "Reports" };
 
 export default async function ReportsPage() {
   await requireStaff();
+  if (!(await isFeatureEnabled("analytics_reports"))) redirect("/dashboard");
   const showSourceEff = await isFeatureEnabled("source_tracking");
 
   const [

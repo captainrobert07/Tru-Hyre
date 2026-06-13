@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { and, eq, like, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, like, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, submissions, interviews, tasks, notifications } from "@/db/schema";
+import { candidates, submissions, interviews, tasks, notifications, users } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { isFeatureEnabled } from "@/lib/features";
 import { processDueSequenceSteps } from "@/lib/sequences";
+import { getWeeklyDigest } from "@/lib/metrics";
+import { sendEmail } from "@/lib/email";
+import { APP_NAME } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,6 +69,39 @@ export async function GET(req: Request) {
     }
   }
 
+  // Weekly digest: Mondays only, when enabled. Emails active staff a snapshot.
+  let digestSent = 0;
+  if (await isFeatureEnabled("scheduled_digest")) {
+    try {
+      const isMonday = new Date().getUTCDay() === 1;
+      if (isMonday) {
+        const d = await getWeeklyDigest();
+        const staff = await db
+          .select({ email: users.email })
+          .from(users)
+          .where(and(inArray(users.role, ["admin", "hr"]), eq(users.isActive, true)));
+        const subject = `${APP_NAME}: weekly pipeline digest`;
+        const text =
+          `Last 7 days:\n\n` +
+          `• New candidates: ${d.newCandidates}\n` +
+          `• New submissions: ${d.newSubmissions}\n` +
+          `• Offers: ${d.offers}\n` +
+          `• Joins: ${d.joins}\n` +
+          `• Open jobs: ${d.openJobs}\n\n— ${APP_NAME}`;
+        const html = `<div style="font-family:sans-serif"><h2>Weekly pipeline digest</h2><ul>` +
+          `<li>New candidates: <strong>${d.newCandidates}</strong></li>` +
+          `<li>New submissions: <strong>${d.newSubmissions}</strong></li>` +
+          `<li>Offers: <strong>${d.offers}</strong></li>` +
+          `<li>Joins: <strong>${d.joins}</strong></li>` +
+          `<li>Open jobs: <strong>${d.openJobs}</strong></li></ul></div>`;
+        await Promise.all(staff.filter((s) => s.email).map((s) => sendEmail({ to: s.email, subject, text, html })));
+        digestSent = staff.length;
+      }
+    } catch (e) {
+      console.error("[cron] weekly digest failed", (e as Error).message);
+    }
+  }
+
   // Interview reminders: notify interviewers about interviews happening today.
   let interviewReminders = 0;
   if (remindersOn) {
@@ -98,7 +134,7 @@ export async function GET(req: Request) {
   }
 
   if (!slaOn) {
-    return NextResponse.json({ ok: true, skipped: "sla_disabled", interviewReminders, sequenceStepsSent });
+    return NextResponse.json({ ok: true, skipped: "sla_disabled", interviewReminders, sequenceStepsSent, digestSent });
   }
 
   // 1. Gather the three SLA breach sets in parallel.
@@ -225,6 +261,7 @@ export async function GET(req: Request) {
     tasksCreated: seeds.length,
     interviewReminders,
     sequenceStepsSent,
+    digestSent,
   };
 
   try {

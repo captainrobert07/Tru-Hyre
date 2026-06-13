@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       user={{ fullName: u.fullName || u.email || "", email: u.email || "", role: u.role as "admin" | "hr" }}
       unreadCount={unreadCount}
       inboxCount={inboxCount}
-      enabledFeatures={{ inbox: flags.inbox, command_palette: flags.command_palette }}
+      enabledFeatures={{ inbox: flags.inbox, command_palette: flags.command_palette, analytics_reports: flags.analytics_reports }}
     >
       {children}
     </AppShell>

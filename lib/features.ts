@@ -37,9 +37,12 @@ export type FeatureKey =
   | "bulk_email"
   | "email_sequences"
   | "sms_notifications"
-  | "gmail_sync";
+  | "gmail_sync"
+  | "analytics_reports"
+  | "scheduled_digest"
+  | "diversity_reporting";
 
-export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline";
+export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics";
 
 export type FeatureDef = {
   key: FeatureKey;
@@ -230,6 +233,27 @@ export const FEATURES: FeatureDef[] = [
     label: "Two-way email sync",
     description: "Log inbound candidate replies into the communication timeline. Full Gmail/IMAP sync requires external setup.",
     category: "Communication",
+    defaultEnabled: false,
+  },
+  {
+    key: "analytics_reports",
+    label: "Reports & analytics",
+    description: "The Reports page: funnel conversion, cycle time, vendor scorecard, recruiter productivity, forecasting.",
+    category: "Analytics",
+    defaultEnabled: true,
+  },
+  {
+    key: "scheduled_digest",
+    label: "Weekly report digest",
+    description: "Email a weekly pipeline digest to staff via the daily job (sends on Mondays).",
+    category: "Analytics",
+    defaultEnabled: false,
+  },
+  {
+    key: "diversity_reporting",
+    label: "Diversity / EEO reporting",
+    description: "Aggregate diversity reporting. Off by default and inert unless diversity fields are collected (GDPR-sensitive).",
+    category: "Analytics",
     defaultEnabled: false,
   },
 ];

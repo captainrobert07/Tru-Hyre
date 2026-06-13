@@ -56,14 +56,16 @@ export function AppShell({
   user: { fullName: string; email: string; role: Role };
   unreadCount?: number;
   inboxCount?: number;
-  enabledFeatures?: { inbox?: boolean; command_palette?: boolean };
+  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean };
   children: ReactNode;
 }) {
   const inboxEnabled = enabledFeatures?.inbox ?? true;
   const paletteEnabled = enabledFeatures?.command_palette ?? true;
+  const reportsEnabled = enabledFeatures?.analytics_reports ?? true;
   const items = NAV
     .filter((n) => n.roles.includes(user.role))
-    .filter((n) => (n.href === "/inbox" ? inboxEnabled : true));
+    .filter((n) => (n.href === "/inbox" ? inboxEnabled : true))
+    .filter((n) => (n.href === "/reports" ? reportsEnabled : true));
   const unread = unreadCount ?? 0;
   const inbox = inboxCount ?? 0;
   const dotFor = (href: string) => (href === "/notifications" ? unread : href === "/inbox" ? inbox : 0);

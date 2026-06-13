@@ -573,6 +573,32 @@ export async function getMyActionItemCount(userId: number): Promise<number> {
   return items.total;
 }
 
+export type WeeklyDigest = {
+  newCandidates: number;
+  newSubmissions: number;
+  offers: number;
+  joins: number;
+  openJobs: number;
+};
+
+/** Trailing-7-day snapshot for the weekly email digest. */
+export async function getWeeklyDigest(): Promise<WeeklyDigest> {
+  const [nc, ns, off, jn, oj] = await Promise.all([
+    db.select({ n: count() }).from(candidates).where(sql`${candidates.createdAt} >= now() - interval '7 days'`),
+    db.select({ n: count() }).from(submissions).where(sql`${submissions.createdAt} >= now() - interval '7 days'`),
+    db.select({ n: count() }).from(submissions).where(and(eq(submissions.status, "offer"), sql`${submissions.updatedAt} >= now() - interval '7 days'`)),
+    db.select({ n: count() }).from(submissions).where(and(eq(submissions.status, "joined"), sql`${submissions.updatedAt} >= now() - interval '7 days'`)),
+    db.select({ n: count() }).from(jobs).where(eq(jobs.status, "open")),
+  ]);
+  return {
+    newCandidates: nc[0]?.n ?? 0,
+    newSubmissions: ns[0]?.n ?? 0,
+    offers: off[0]?.n ?? 0,
+    joins: jn[0]?.n ?? 0,
+    openJobs: oj[0]?.n ?? 0,
+  };
+}
+
 // suppress unused-import warning for helpers that may be pruned
 void and;
 void eq;

@@ -7,7 +7,7 @@ import { FeatureToggle } from "./feature-toggle";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Features" };
 
-const CATEGORY_ORDER: FeatureCategory[] = ["AI", "Scheduling", "Pipeline", "Communication", "Sourcing", "Productivity"];
+const CATEGORY_ORDER: FeatureCategory[] = ["AI", "Scheduling", "Pipeline", "Communication", "Sourcing", "Analytics", "Productivity"];
 
 export default async function FeaturesPage() {
   await requireAdmin();
