@@ -2,37 +2,56 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { uploadResumeAction, pasteResumeAction } from "./actions";
+import { uploadResumeAction, pasteResumeAction, bulkUploadResumesAction } from "./actions";
 
 type UploadResult = Awaited<ReturnType<typeof uploadResumeAction>>;
+type BulkResult = Awaited<ReturnType<typeof bulkUploadResumesAction>>;
 
 export function UploadForm({ showSource = true, showLinks = true }: { showSource?: boolean; showLinks?: boolean }) {
-  const [mode, setMode] = useState<"pdf" | "paste">("pdf");
+  const [mode, setMode] = useState<"pdf" | "paste" | "bulk">("pdf");
   const [pdfState, pdfAction, pdfPending] = useActionState<UploadResult | null, FormData>(uploadResumeAction, null);
   const [pasteState, pasteAction, pastePending] = useActionState<UploadResult | null, FormData>(pasteResumeAction, null);
+  const [bulkState, bulkAction, bulkPending] = useActionState<BulkResult | null, FormData>(bulkUploadResumesAction, null);
   const state = mode === "pdf" ? pdfState : pasteState;
-  const pending = mode === "pdf" ? pdfPending : pastePending;
+  const pending = mode === "pdf" ? pdfPending : mode === "paste" ? pastePending : bulkPending;
+
+  const tabCls = (m: string) => `px-3 h-8 text-xs rounded-md transition-colors ${mode === m ? "bg-surface shadow-card text-ink" : "text-ink-soft"}`;
 
   return (
     <div className="space-y-4">
       <div className="inline-flex rounded-lg border border-hairline p-0.5 bg-canvas">
-        <button
-          type="button"
-          onClick={() => setMode("pdf")}
-          className={`px-3 h-8 text-xs rounded-md transition-colors ${mode === "pdf" ? "bg-surface shadow-card text-ink" : "text-ink-soft"}`}
-        >
-          Upload PDF
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("paste")}
-          className={`px-3 h-8 text-xs rounded-md transition-colors ${mode === "paste" ? "bg-surface shadow-card text-ink" : "text-ink-soft"}`}
-        >
-          Paste text
-        </button>
+        <button type="button" onClick={() => setMode("pdf")} className={tabCls("pdf")}>Upload PDF</button>
+        <button type="button" onClick={() => setMode("paste")} className={tabCls("paste")}>Paste text</button>
+        <button type="button" onClick={() => setMode("bulk")} className={tabCls("bulk")}>Bulk PDFs</button>
       </div>
 
-      {mode === "pdf" ? (
+      {mode === "bulk" ? (
+        <form action={bulkAction} className="space-y-4">
+          <div>
+            <label htmlFor="files" className="label">Multiple PDF resumes</label>
+            <input id="files" name="files" type="file" accept="application/pdf,.pdf" multiple required
+              className="input file:mr-3 file:btn-ghost file:text-xs file:px-2 file:py-1 file:h-7 cursor-pointer" />
+            <p className="text-xs text-ink-muted mt-1.5">Up to 50 PDFs. Each is parsed, deduped-checked, and staged for review. Large batches take a moment.</p>
+          </div>
+          {showSource && <SourceFields />}
+          {bulkState && bulkState.ok === false && (
+            <div className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{bulkState.error}</div>
+          )}
+          {bulkState && bulkState.ok && (
+            <div className="text-sm text-brand-800 bg-brand-50 border border-brand-100 rounded-lg px-3 py-2">
+              Created {bulkState.created}{bulkState.failed > 0 ? `, ${bulkState.failed} failed` : ""}.{" "}
+              <Link href="/candidates" className="underline font-medium">View candidates →</Link>
+              {bulkState.errors.length > 0 && (
+                <ul className="list-disc pl-5 mt-1 text-xs text-red-700">{bulkState.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
+              )}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button type="submit" disabled={bulkPending} className="btn-primary">{bulkPending ? "Uploading…" : "Upload all"}</button>
+            <Link href="/candidates" className="btn-ghost">Cancel</Link>
+          </div>
+        </form>
+      ) : mode === "pdf" ? (
         <form action={pdfAction} className="space-y-4">
           <div>
             <label htmlFor="file" className="label">PDF resume</label>

@@ -144,6 +144,78 @@ async function persistCandidate({
   redirect(`/candidates/${created.id}`);
 }
 
+type BulkUploadResult =
+  | { ok: false; error: string }
+  | { ok: true; created: number; failed: number; errors: string[] };
+
+/**
+ * Bulk resume upload: process up to 50 PDFs in one go. Each file runs the same
+ * parse → Drive → persist path as a single upload; failures are collected so
+ * one bad file doesn't abort the batch. Returns a summary (no redirect).
+ */
+export async function bulkUploadResumesAction(_prev: BulkUploadResult | null, formData: FormData): Promise<BulkUploadResult> {
+  const user = await requireStaffOrLite();
+  const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) return { ok: false, error: "Choose one or more PDF files." };
+  if (files.length > 50) return { ok: false, error: "Max 50 files per batch." };
+
+  const source = coerceSource(formData.get("source"));
+  let created = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (const file of files) {
+    try {
+      if (file.size > 10 * 1024 * 1024) { failed++; errors.push(`${file.name}: too large`); continue; }
+      if (!/pdf/i.test(file.type) && !file.name.toLowerCase().endsWith(".pdf")) { failed++; errors.push(`${file.name}: not a PDF`); continue; }
+      const buf = Buffer.from(await file.arrayBuffer());
+      const hash = contentHash(buf);
+      let parsed: ParsedResume = EMPTY;
+      let parseStatus: "ok" | "failed" = "ok";
+      let parseError: string | null = null;
+      try {
+        const text = await pdfToText(buf);
+        const base = extractFields(text);
+        const ai = await parseResumeWithAi(text);
+        parsed = mergeParse(base, ai);
+      } catch (e) {
+        parseStatus = "failed";
+        parseError = (e as Error).message;
+      }
+      const drive = await uploadResume(buf, file.name, file.type || "application/pdf");
+      const refId = makeRefId();
+      const [createdRow] = await db.insert(candidates).values({
+        refId,
+        fullName: parsed.fullName || file.name.replace(/\.pdf$/i, ""),
+        email: parsed.email, phone: parsed.phone, location: parsed.location,
+        currentTitle: parsed.currentTitle, currentCompany: parsed.currentCompany,
+        experienceYears: parsed.experienceYears, noticePeriodDays: parsed.noticePeriodDays,
+        currentCtc: parsed.currentCtc, expectedCtc: parsed.expectedCtc,
+        summary: parsed.summary, skills: parsed.skills,
+        linkedinUrl: parsed.linkedinUrl, githubUrl: parsed.githubUrl,
+        stage: "hr_review", parseStatus, parseError, source,
+        uploadedById: Number(user.id),
+      }).returning({ id: candidates.id });
+      await db.insert(resumeFiles).values({
+        candidateId: createdRow.id, driveFileId: drive.driveFileId, driveWebViewLink: drive.webViewLink,
+        originalName: file.name, contentType: file.type || "application/pdf", sizeBytes: file.size, contentHash: hash,
+      });
+      await db.insert(stageHistory).values({ candidateId: createdRow.id, fromStage: null, toStage: "hr_review", changedById: Number(user.id), note: "Bulk upload" });
+      created++;
+    } catch (e) {
+      failed++;
+      errors.push(`${file.name}: ${(e as Error).message.slice(0, 80)}`);
+    }
+  }
+
+  await logAudit({
+    actorId: Number(user.id), actorEmail: user.email, action: "create", targetType: "candidate",
+    summary: `Bulk uploaded ${created} resumes (${failed} failed)`, meta: { created, failed },
+  });
+  revalidatePath("/candidates");
+  return { ok: true, created, failed, errors: errors.slice(0, 20) };
+}
+
 export async function uploadResumeAction(_prev: UploadResult | null, formData: FormData): Promise<UploadResult> {
   const user = await requireStaffOrLite();
   const file = formData.get("file");
