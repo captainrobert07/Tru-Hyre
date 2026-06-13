@@ -7,6 +7,16 @@ dedupe + functionality test + UI/UX polish. Verify each wave green on Vercel
 Deploy verify: VERCEL_TOKEN in .env.local, project prj_1GJQm86CXWcTxIUDugqaojLAM1Lh.
 Seeded admin admin@truhyre.app / Kris@35193. Prod tru-hyre-rho.vercel.app.
 
+## STATUS: shipped to production (main @ 765579d), all builds green, E2E auth 12/12 + hr_lite 11/11
+Done: W-A integrations foundation (13 integrations, admin key entry → reflects everywhere via
+DB→env resolver in ai/email/sms/drive/calendar/parse-ai), W-B offer-letter PDF + candidate
+merge + saved-view share, W-D AI outreach/red-flags + Slack/HRIS connectors, W-Z audit
+(40-agent adversarial → 13 findings) + fixes (merge data-loss, cron auth spoof, hr_lite file
+access, API audit log, dedupe helpers). Deferred (documented, not faked): remaining long-tail
+features (configurable stages, multi-round, candidate portal, granular RBAC, job-board posting,
+DocuSign/Outlook/transcription/bg-check/SSO send-flows) — their CONFIG is ready in
+/settings/integrations; wiring is the next batch.
+
 ## Execution order (dependency-first)
 - [ ] **W-A · Integration settings foundation** (FIRST — user-requested, others depend on it)
   - integrations table (key, label, category, enabled, config jsonb, secret-masked)
