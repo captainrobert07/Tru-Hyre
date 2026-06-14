@@ -73,3 +73,66 @@ verify it — only push-and-pray on prod. This is precisely the "too big/risky
 to finish safely in one iteration → write it down" case from the brief.
 
 **Files:** `db/fix-types.ts:76-95`, `package.json:17` (`vercel-build`).
+
+---
+
+## Iteration 13 — audit (clean) + candidate-merge non-atomicity (PROPOSED)
+
+### Audit result: still tidy
+Scanned fresh Senior-Dev classes not covered in iter 3/8:
+- **Stale-UI / revalidatePath:** mutating server actions revalidate the right
+  paths. The `rev=0` files (`careers/[id]/apply-actions.ts`,
+  `careers/vendor-signup/actions.ts`) redirect to a thank-you page, so no
+  revalidate is needed — correct, not a gap.
+- **Floating promises:** the `db.update(...)` calls that looked unawaited are
+  all elements inside a `Promise.all([...])` (merge-actions.ts:37-49) — awaited
+  collectively, not floating.
+- **`.map(async)` fire-and-forget:** all three sites
+  (`bulk-email-actions.ts:43`, `webhooks.ts:21`, `settings/integrations/page.tsx:18`)
+  are wrapped in `await Promise.all(...)`. No silent drops.
+- **`forEach(async)` no-op trap:** none in the codebase.
+
+### Real bug found (NOT shipped — fix needs the right driver primitive + a destructive-path verify): `mergeCandidatesAction` is non-atomic
+
+**What:** `app/(app)/candidates/duplicates/merge-actions.ts` performs a
+destructive, irreversible admin merge as a SEQUENCE of independent statements:
+reparent 11 child tables (Promise.all, :37-49) → delete loser scores (:53) →
+reparent comments (:55) → backfill winner (:81) → **delete the loser candidate
+(:84)**. There is no surrounding transaction.
+
+**Why it's dangerous:** if the function dies mid-sequence (cold-start kill,
+network blip to Neon, function timeout), it leaves a partial state — e.g.
+children reparented to the winner but the loser row still present, or comments
+moved but the winner backfill never applied. For an irreversible merge with no
+undo, partial application is a silent data-integrity corruption.
+
+**Why it's NOT a blind fix:** the obvious "wrap in `db.transaction()`" does NOT
+work here. The DB client is **neon-http** (`db/index.ts`:
+`drizzle(neon(url), ...)` from `drizzle-orm/neon-http`), which has **no
+interactive transaction support** — there is no session to hold a `BEGIN/COMMIT`
+across calls. Applying `db.transaction()` would fail at runtime or silently
+not isolate. Nothing in the codebase uses transactions today, confirming this.
+
+**Proposed fix (supervised — needs a destructive-path test, not blind):**
+1. Convert the whole merge to a single atomic unit via **`db.batch([...])`**
+   (supported by neon-http: sends all statements in one transactional batch).
+   Build the reparents + scores-delete + comments-update + winner-backfill +
+   loser-delete as one ordered `db.batch` array so it's all-or-nothing.
+   Caveat: ordering matters (backfill reads loser before delete), and
+   `db.batch` semantics for read-then-write need verifying — the backfill
+   currently reads `loser` BEFORE the batch (lines 29-32), so that read can stay
+   outside; only the writes need batching.
+2. Alternatively, drop to a raw SQL transaction via the `neon` tagged-template
+   in a single multi-statement string (`BEGIN; ...; COMMIT;`).
+3. Either way: add an E2E/seeded test that merges two candidates and asserts the
+   loser is gone AND every child record points at the winner — a merge bug is
+   invisible until someone notices orphaned/lost data weeks later.
+
+**Why proposed:** destructive irreversible admin path + a driver-specific
+atomicity primitive + no local DB to verify partial-failure behavior. Exactly
+the "write it down rather than half-build on prod" case. Lower likelihood than
+the fix-types TRUNCATE (merge is admin-initiated + rare), but higher blast
+radius per occurrence (silent corruption of a real candidate's record graph).
+
+**Files:** `app/(app)/candidates/duplicates/merge-actions.ts:29-99`,
+`db/index.ts` (neon-http driver).
