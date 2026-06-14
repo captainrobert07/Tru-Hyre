@@ -66,7 +66,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     fields: [
       { key: "serviceAccountJson", label: "Service account JSON (or base64)", secret: true, envFallback: "GOOGLE_SERVICE_ACCOUNT_JSON" },
       { key: "driveFolderId", label: "Drive resumes folder ID", envFallback: "GDRIVE_RESUMES_FOLDER_ID" },
-      { key: "calendarImpersonate", label: "Calendar mailbox to impersonate", envFallback: "GCAL_IMPERSONATE_USER", placeholder: "recruitment@allianz.com" },
+      { key: "calendarImpersonate", label: "Calendar mailbox to impersonate", envFallback: "GCAL_IMPERSONATE_USER", placeholder: "recruitment@example.com" },
     ],
   },
   {
@@ -76,9 +76,9 @@ export const INTEGRATIONS: IntegrationDef[] = [
     description: "Sends candidate emails via a shared mailbox (App Password).",
     status: "stable",
     fields: [
-      { key: "user", label: "Mailbox", envFallback: "GMAIL_USER", placeholder: "recruitment@allianz.com" },
+      { key: "user", label: "Mailbox", envFallback: "GMAIL_USER", placeholder: "recruitment@example.com" },
       { key: "appPassword", label: "App password", secret: true, envFallback: "GMAIL_APP_PASSWORD" },
-      { key: "from", label: "From header", envFallback: "EMAIL_FROM", placeholder: "Tru Hyre <recruitment@allianz.com>" },
+      { key: "from", label: "From header", envFallback: "EMAIL_FROM", placeholder: "Tru Hyre <recruitment@example.com>" },
     ],
   },
   {

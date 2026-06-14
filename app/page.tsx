@@ -8,9 +8,9 @@ import { redirect } from "next/navigation";
 import { APP_NAME } from "@/lib/utils";
 
 export const metadata = {
-  title: `${APP_NAME} — Allianz hiring platform`,
+  title: `${APP_NAME} — internal hiring platform`,
   description:
-    "Tru Hyre is Allianz's internal hiring platform: resume parsing, candidate pipelines, AI matching, interviews, offers, role-scoped portals, reporting and governance — one system from resume to offer.",
+    "Tru Hyre is an internal hiring platform: candidate pipelines, AI matching, interviews, offers, role-scoped portals, reporting and governance — every hire in one system.",
 };
 
 export default async function LandingPage() {
@@ -68,16 +68,15 @@ function Hero() {
     <section className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-16 pb-12 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
       <div className="lg:col-span-7 relative">
         <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 h-8 text-xs font-medium text-brand-700 mb-6">
-          <span className="size-1.5 rounded-full bg-brand-500" /> Internal Allianz HR platform
+          <span className="size-1.5 rounded-full bg-brand-500" /> Internal hiring platform
         </div>
         <h1 className="display text-hero">
-          From <em>resume</em><br />
-          to <span className="text-brand-600">offer</span>,<br />in one system.
+          Every <em>hire</em>.<br />
+          <span className="text-brand-600">One</span> system.
         </h1>
         <p className="text-lg text-ink-soft mt-6 max-w-lg">
-          {APP_NAME} runs the whole hiring loop for Allianz recruiters — parse and dedupe candidates,
-          match and screen with AI, run interviews, send offers, and report on it all. Clients,
-          vendors and candidates each get their own scoped view.
+          The command center for hiring — candidates, AI matching, interviews, offers and analytics
+          in one place, with every role seeing exactly what it should.
         </p>
         <div className="flex flex-wrap gap-3 mt-8">
           <Link href="/login" className="btn-primary">Sign in <ArrowRight size={14} /></Link>
@@ -85,7 +84,7 @@ function Hero() {
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-10 text-xs text-ink-muted">
           <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} className="text-brand-600" /> Role-based access</span>
-          <span className="inline-flex items-center gap-1.5"><FileText size={14} className="text-brand-600" /> Resume PII stays internal</span>
+          <span className="inline-flex items-center gap-1.5"><Sparkles size={14} className="text-brand-600" /> AI-assisted</span>
           <span className="inline-flex items-center gap-1.5"><BarChart3 size={14} className="text-brand-600" /> Full audit trail</span>
         </div>
       </div>
@@ -411,7 +410,7 @@ function Footer() {
   const year = process.env.NEXT_PUBLIC_BUILD_YEAR || "2026";
   return (
     <footer className="max-w-[1280px] mx-auto px-6 lg:px-10 py-10 flex flex-col md:flex-row justify-between gap-3 text-sm text-ink-muted">
-      <div>© {year} {APP_NAME}. An internal Allianz HR platform.</div>
+      <div>© {year} {APP_NAME}. An internal hiring platform.</div>
       <div className="flex gap-4">
         <Link href="/login" className="hover:text-ink">Sign in</Link>
         <a href="#capabilities" className="hover:text-ink">Capabilities</a>
