@@ -165,8 +165,10 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   clientAccountId: integer("client_account_id").references(() => clientAccounts.id, { onDelete: "set null" }),
   vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
-  // For role="candidate" portal logins — links to the candidate record they may view.
-  candidateProfileId: integer("candidate_profile_id").references(() => candidates.id, { onDelete: "set null" }),
+  // For role="candidate" portal logins — links to the candidate record they may
+  // view. Plain column (no .references thunk) to avoid a users↔candidates
+  // circular type reference that breaks Drizzle's inferred row types.
+  candidateProfileId: integer("candidate_profile_id"),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
