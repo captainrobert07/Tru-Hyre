@@ -121,3 +121,53 @@ iteration.
 
 **Still NOT touched:** the `db/fix-types.ts` TRUNCATE fix (AUTOPILOT-DEV.md) and
 SSO (above) remain supervised-only proposals.
+
+---
+
+## Iteration 15 — the single prioritized action board (reconcile everything)
+
+By rotation 3 the autopilot has surfaced findings across four docs (DEV,
+STRATEGY, PM) plus the deferred ROADMAP tail. The PM job now isn't another
+analysis — it's to **reconcile them into one ranked "do this next" list** so the
+user has a single decision surface at breakfast instead of four. Ordered by
+(blast-radius × likelihood) for fixes and (adoption-unlock × effort) for
+features. Effort is dual-scaled (human team / supervised CC session).
+
+### P0 — do before real Allianz data goes in (correctness & safety gates)
+| # | Item | Why P0 | Effort | Source |
+|---|---|---|---|---|
+| 1 | **Defuse `fix-types.ts` TRUNCATE** | Irreversible silent prod data-loss landmine on the deploy path; arms on any schema regression | human ~1h / CC ~20m + verify | AUTOPILOT-DEV.md iter 3 |
+| 2 | **Atomic candidate merge** | Irreversible admin merge is non-atomic → partial corruption on mid-run death; needs neon-http `db.batch` (not `db.transaction`) | human ~2-3h / CC ~30m + destructive-path test | AUTOPILOT-DEV.md iter 13 |
+| 3 | **Read the digest crash logs** | `instrumentation.ts` (shipped iter 1) now captures the real stack of digest:3495001251 — wait for it to fire, then one-line fix the actual throw | passive → ~15m when it fires | iter 1 + investigation |
+
+P0 rationale: 1 and 2 are both "irreversible data loss with no undo." They're
+low-likelihood today but the cost per occurrence is unrecoverable, and real
+production data raises the stakes. Fix the landmines before loading the truck.
+
+### P1 — adoption gates (nothing scales without these; pilot-purgatory exits)
+| # | Item | Why P1 | Effort | Source |
+|---|---|---|---|---|
+| 4 | **Azure AD SSO** | #1 adoption blocker; a regulated insurer won't run recruiting on email/password. Low-code (Auth.js drop-in) — bottleneck is the Azure tenant/IT approval | human ~1-2d (mostly org) / CC ~30-60m | PM iter 5, STRATEGY iter 4/14 |
+| 5 | **Real HRIS/Workday handoff** | The `joined`→HRIS POST fires (verified iter 5), but a real Workday sync is scaffold; re-keying hires kills adoption | human ~2-4d / CC depends on Workday API access | STRATEGY iter 4, ROADMAP wave 8 |
+| 6 | **M365 mail + Teams notifications default-on** | Allianz lives in Microsoft; Gmail SMTP is an odd fit + governance flag. Meet them where they are | human ~1-2d / CC ~1-2h once Graph app exists | STRATEGY iter 9/14 |
+
+### P2 — posture & polish (de-risk + sharpen the moat)
+| # | Item | Why P2 | Source |
+|---|---|---|---|
+| 7 | **State EU data-residency + audit posture** (doc, then enforce) | Compliance sign-off gate; cheap to write, unlocks legal | STRATEGY iter 4/14 |
+| 8 | **One-page build-vs-buy memo** (AI econ + residency + zero per-seat) | Arms whoever approves this internally; the moat is economics, not features | STRATEGY iter 14 |
+| 9 | **Hide SaaS gold-plating from `/settings/features`** | public_api/Zapier/job-board/vendor-self-onboard — internal teams won't use them; declutters admin | STRATEGY iter 4 |
+| 10 | **Instrument displacement** (spreadsheet-death date / time-in-tool) | Measure real adoption, not vanity counts | STRATEGY iter 9 |
+
+### Explicitly DEFER / DON'T do
+- **No feature #56.** The portfolio is already wider than an internal team needs
+  (STRATEGY iter 4). Resist breadth; deepen the moat.
+- **Two-way Gmail IMAP sync, Calendar free/busy, configurable stages** — ROADMAP
+  `[~]` items that need external setup for marginal internal value. Leave deferred.
+
+### The one-sentence answer to "what do I do first?"
+**Fix the two data-loss landmines (P0 #1-2), then chase SSO (P1 #4) — that
+sequence makes the tool safe to put real Allianz data into, then approvable to
+roll out. Everything else waits.**
+
+**No code changed this iteration (PM reconciliation/analysis lens).**
