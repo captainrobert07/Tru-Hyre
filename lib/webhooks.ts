@@ -27,6 +27,9 @@ export async function fireWebhook(event: string, payload: Record<string, unknown
               ...(h.secret ? { "X-Tru-Hyre-Secret": h.secret } : {}),
             },
             body,
+            // Subscriber URLs are arbitrary; without a timeout one hung endpoint
+            // stalls the whole Promise.all on the synchronous stage-change path.
+            signal: AbortSignal.timeout(8000),
           });
           await db.update(webhooks).set({ lastFiredAt: new Date(), lastStatus: String(res.status) }).where(eq(webhooks.id, h.id));
         } catch (e) {

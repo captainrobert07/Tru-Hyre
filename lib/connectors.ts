@@ -5,7 +5,15 @@ import { isFeatureEnabled } from "@/lib/features";
  * Outbound connectors that post to external services configured under
  * /settings/integrations. All best-effort and non-throwing — a connector
  * failure never blocks the core action.
+ *
+ * Every outbound fetch carries an explicit timeout. notifySlack / pushHrisHire
+ * / pushZapier are awaited synchronously inside the stage-change action, and a
+ * plain fetch has NO default timeout — a hung webhook endpoint would otherwise
+ * stall the recruiter's stage change until the platform function timeout (and
+ * a try/catch does not catch slowness). AbortSignal.timeout makes a hang fail
+ * fast into the existing catch instead.
  */
+const CONNECTOR_TIMEOUT_MS = 8000;
 
 /** Post a short message to a Slack/Teams incoming webhook. */
 export async function notifySlack(text: string): Promise<void> {
@@ -18,6 +26,7 @@ export async function notifySlack(text: string): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(CONNECTOR_TIMEOUT_MS),
     });
   } catch (e) {
     console.error("[slack] post failed", (e as Error).message);
@@ -39,6 +48,7 @@ export async function pushHrisHire(payload: Record<string, unknown>): Promise<vo
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ event: "candidate.hired", ...payload, at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(CONNECTOR_TIMEOUT_MS),
     });
   } catch (e) {
     console.error("[hris] push failed", (e as Error).message);
@@ -61,6 +71,7 @@ export async function pushZapier(event: string, payload: Record<string, unknown>
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ event, ...payload, at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(CONNECTOR_TIMEOUT_MS),
     });
   } catch (e) {
     console.error("[zapier] push failed", (e as Error).message);
@@ -91,6 +102,7 @@ export async function postJobToBoard(payload: Record<string, unknown>): Promise<
         ...(r.values.authHeader ? { Authorization: r.values.authHeader } : {}),
       },
       body: JSON.stringify({ event: "job.post", ...payload, at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(CONNECTOR_TIMEOUT_MS),
     });
     if (res.status >= 500) return { ok: false, message: `Endpoint error (HTTP ${res.status}).` };
     return { ok: true, message: `Posted (HTTP ${res.status}).` };
