@@ -30,23 +30,50 @@ async function main() {
   if (existingProfile.length === 0) {
     await db.insert(companyProfile).values({
       name: "Tru Hyre",
-      tagline: "An Allianz HR Platform — Project by Kris",
+      tagline: "An internal hiring platform",
       contactEmail: "admin@truhyre.app",
     });
   }
+  // Compliance scrub: neutralize the old company-name tagline on any existing row.
+  await db
+    .update(companyProfile)
+    .set({ tagline: "An internal hiring platform" })
+    .where(eq(companyProfile.tagline, "An Allianz HR Platform — Project by Kris"));
 
   console.log("seeding client accounts…");
-  let allianz = (await db.select().from(clientAccounts).where(eq(clientAccounts.name, "Allianz Technology")))[0];
-  if (!allianz) {
-    [allianz] = await db
+  const DEMO_CLIENT = "Northwind Technology";
+  // Compliance scrub: an earlier seed used a real company name + its real
+  // phone/website. Rename + neutralize any such row in place (idempotent), so
+  // the live DB is cleaned on deploy without orphaning linked records.
+  await db
+    .update(clientAccounts)
+    .set({
+      name: DEMO_CLIENT,
+      website: "https://example.com",
+      primaryContactName: "Demo Hiring Manager",
+      primaryContactPhone: "+1 555 0100",
+    })
+    .where(eq(clientAccounts.name, "Allianz Technology"));
+  await db
+    .update(clientContacts)
+    .set({ name: "Demo Hiring Manager", phone: "+1 555 0100" })
+    .where(eq(clientContacts.name, "Allianz Hiring Manager"));
+  await db
+    .update(users)
+    .set({ fullName: "Demo Hiring Mgr" })
+    .where(eq(users.fullName, "Allianz Hiring Mgr"));
+
+  let demoClient = (await db.select().from(clientAccounts).where(eq(clientAccounts.name, DEMO_CLIENT)))[0];
+  if (!demoClient) {
+    [demoClient] = await db
       .insert(clientAccounts)
       .values({
-        name: "Allianz Technology",
+        name: DEMO_CLIENT,
         industry: "Insurance / Financial Services",
-        website: "https://www.allianz.com",
-        primaryContactName: "Allianz Hiring Manager",
+        website: "https://example.com",
+        primaryContactName: "Demo Hiring Manager",
         primaryContactEmail: "client@truhyre.app",
-        primaryContactPhone: "+49 89 3800 0",
+        primaryContactPhone: "+1 555 0100",
       })
       .returning();
   }
@@ -54,13 +81,13 @@ async function main() {
   const existingPrimary = await db
     .select()
     .from(clientContacts)
-    .where(eq(clientContacts.clientAccountId, allianz.id));
+    .where(eq(clientContacts.clientAccountId, demoClient.id));
   if (existingPrimary.length === 0) {
     await db.insert(clientContacts).values({
-      clientAccountId: allianz.id,
-      name: "Allianz Hiring Manager",
+      clientAccountId: demoClient.id,
+      name: "Demo Hiring Manager",
       email: "client@truhyre.app",
-      phone: "+49 89 3800 0",
+      phone: "+1 555 0100",
       title: "Talent Acquisition Lead",
       isPrimary: true,
     });
@@ -87,7 +114,7 @@ async function main() {
     { email: "admin@truhyre.app", fullName: "Tru Hyre Admin", role: "admin" as const, clientAccountId: null, vendorAccountId: null },
     { email: "hr@truhyre.app", fullName: "Recruiter Demo", role: "hr" as const, clientAccountId: null, vendorAccountId: null },
     { email: "hrlite@truhyre.app", fullName: "HR Lite Demo", role: "hr_lite" as const, clientAccountId: null, vendorAccountId: null },
-    { email: "client@truhyre.app", fullName: "Allianz Hiring Mgr", role: "client" as const, clientAccountId: allianz.id, vendorAccountId: null },
+    { email: "client@truhyre.app", fullName: "Demo Hiring Mgr", role: "client" as const, clientAccountId: demoClient.id, vendorAccountId: null },
     { email: "vendor@truhyre.app", fullName: "Vendor Partner", role: "vendor" as const, clientAccountId: null, vendorAccountId: talentBridge.id },
   ];
 
@@ -127,13 +154,13 @@ async function main() {
   const hrUser = (await db.select().from(users).where(eq(users.email, "hr@truhyre.app")))[0];
 
   console.log("seeding jobs…");
-  const existingJobs = await db.select().from(jobs).where(eq(jobs.clientAccountId, allianz.id));
+  const existingJobs = await db.select().from(jobs).where(eq(jobs.clientAccountId, demoClient.id));
   if (existingJobs.length === 0) {
     const [job1] = await db
       .insert(jobs)
       .values({
         title: "Senior Backend Engineer (Java/Spring)",
-        clientAccountId: allianz.id,
+        clientAccountId: demoClient.id,
         ownerId: hrUser?.id || adminUser?.id,
         status: "open",
         priority: "high",
@@ -153,7 +180,7 @@ async function main() {
       .insert(jobs)
       .values({
         title: "Frontend Engineer (React/TypeScript)",
-        clientAccountId: allianz.id,
+        clientAccountId: demoClient.id,
         ownerId: hrUser?.id || adminUser?.id,
         status: "open",
         priority: "normal",

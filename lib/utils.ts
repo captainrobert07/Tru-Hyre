@@ -6,4 +6,4 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Tru Hyre";
-export const APP_TAGLINE = process.env.NEXT_PUBLIC_APP_TAGLINE || "An Allianz HR Platform — Project by Kris";
+export const APP_TAGLINE = process.env.NEXT_PUBLIC_APP_TAGLINE || "An internal hiring platform";

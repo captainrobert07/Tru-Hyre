@@ -20,7 +20,7 @@ export default async function BulkInvitePage() {
             rows={8}
             required
             className="input py-2 font-mono text-xs"
-            placeholder="alice@allianz.com&#10;bob@allianz.com&#10;carol@allianz.com"
+            placeholder="alice@example.com&#10;bob@example.com&#10;carol@example.com"
           />
           <p className="text-xs text-ink-muted mt-1.5">
             Up to ~200 emails per batch. Duplicates and malformed addresses are silently dropped.

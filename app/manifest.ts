@@ -12,7 +12,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   return {
     name: "Tru Hyre",
     short_name: "Tru Hyre",
-    description: "An Allianz HR Platform",
+    description: "An internal hiring platform",
     start_url: "/dashboard",
     display: "standalone",
     background_color: "#f4f5f7",

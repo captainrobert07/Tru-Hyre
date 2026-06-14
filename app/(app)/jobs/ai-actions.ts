@@ -22,7 +22,7 @@ export async function generateJobDescriptionAction(input: {
 
   const text = await callText({
     system:
-      "You are a recruiter writing concise, inclusive job descriptions for an internal Allianz HR team. " +
+      "You are a recruiter writing concise, inclusive job descriptions for an internal HR team. " +
       "Write 3 short sections: a one-paragraph role summary, 'What you'll do' (4-6 bullets), and " +
       "'What we're looking for' (4-6 bullets). No salary, no company boilerplate, no emoji. Plain text, " +
       "use '- ' for bullets.",
