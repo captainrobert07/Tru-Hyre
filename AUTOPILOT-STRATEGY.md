@@ -221,3 +221,70 @@ The roadmap should lean INTO the moat and stop trying to match vendor breadth.
   feature can't quietly turn the moat into a liability.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 19 — the rollout wedge (which team first, how to define pilot success)
+
+Prior angles: what to build (4), will they switch (9), build-vs-buy (14). The
+next decision a real internal launch faces — and the one most likely to be
+fumbled — is **the wedge: which single team pilots this first, and what makes
+the pilot a yes/no.** Internal tools rarely die from bad code; they die from a
+vague pilot that never produces a clear "keep it" verdict, so it drifts back to
+the spreadsheet. Good news: the product already has the pieces to run a sharp
+pilot — the gap is choosing the wedge and the metric, not building anything.
+
+### Pick the narrowest team where the AI moat is most felt
+Don't pilot org-wide. Pick **one recruiting pod with high req volume and messy
+sourcing** — that's where the differentiators (AI match scoring, semantic
+search, dedupe, red-flags) save the most hours per week. A low-volume team won't
+feel the AI and will judge the tool on chrome. The wedge is "the team drowning
+in candidates," because that's where "it ranked my shortlist in 10 seconds"
+lands as magic, not novelty.
+
+### Use the phased role model AS the rollout sequence (it already maps)
+The role model (admin/hr/hr_lite/client/vendor) is a natural staged rollout —
+de-risk by widening the blast radius one ring at a time:
+1. **Week 1-2 — internal only:** `hr` + `hr_lite` recruiters. CSV-import the
+   pod's existing pipeline on day one (iter 9: import takes any-order headers,
+   only fullName required) so they open to *their* data. No external users yet.
+2. **Week 3-4 — add hiring managers:** the `client` portal, PII-redacted
+   (verified iter 12 contract). Now a hiring manager reviews submissions in-tool
+   instead of over email — the first cross-functional proof.
+3. **Only after that — vendors:** the `vendor` portal. External-facing, highest
+   isolation stakes (iter 12), so it goes last when confidence is highest.
+
+Each ring is independently revertible (turn off the portal flag) — a safe
+escalation ladder, not a big-bang launch.
+
+### Define pilot success BEFORE starting — and the metrics already exist
+The pilot must have a pre-committed yes/no bar, or it ends in "it was fine, I
+guess." The product already computes the right numbers (`lib/metrics.ts`), so
+the bar can be evidence-based, not vibes:
+- **Primary (displacement, from iter 9):** the pod stops maintaining their old
+  spreadsheet by end of week 2. Binary. If they keep both, the tool failed.
+- **Cycle time:** `getCycleTimePerStage` — does time-to-submit / time-to-offer
+  drop vs their pre-pilot baseline? Capture the baseline BEFORE turning it on.
+- **AI utilization:** are match-scoring / semantic-search actually used per
+  recruiter per week? If the moat feature goes untouched, you bought chrome.
+  (Needs the displacement/usage instrumentation proposed iter 9 — this is the
+  concrete reason to build that tiny signal: without it the pilot can't be graded.)
+- **Coverage:** `getCoverageRatio` / `getRecruiterScoreboard` — does every open
+  req have movement, or are candidates rotting? A tool that hides rot fails.
+
+### The anti-pattern to refuse
+**Do not pilot by feature-touring the whole 55-feature surface.** A pilot that
+shows everything teaches nothing. Turn OFF the gold-plating (iter 4) for the
+pilot org so the pod sees only the core loop + AI, judges *that*, and isn't
+distracted into evaluating Zapier/job-board toggles they'll never use.
+
+### Recommendation (decisions for breakfast, not auto-built)
+- **Name the pilot pod and the success bar in one sentence each** before any
+  rollout: "Pod X stops using their spreadsheet and cuts time-to-submit 20% in
+  4 weeks." If you can't write that sentence, you're not ready to pilot.
+- **Capture the pre-pilot baseline** (cycle time, current tracker) the week
+  before — you can't prove improvement without it.
+- **Sequence by the role rings,** internal → hiring managers → vendors, each
+  flag-revertible. This is the safe version of the iter-15 P1 adoption work.
+
+**No code changed this iteration (analysis-only lens).**
