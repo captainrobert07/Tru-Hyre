@@ -15,6 +15,8 @@ export type InterviewItem = {
   status: "scheduled" | "completed" | "no_show" | "cancelled";
   interviewerNames: string[];
   roundLabel?: string | null;
+  roundIndex?: number | null;
+  notes?: string | null;
 };
 
 export type InterviewerOption = { id: number; name: string };
@@ -124,7 +126,10 @@ export function InterviewScheduler({
             <li key={i.id} className="rounded-lg border border-hairline p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{i.title}{i.roundLabel ? <span className="text-ink-muted font-normal"> · {i.roundLabel}</span> : null}</div>
+                  <div className="text-sm font-medium truncate">
+                    {i.roundIndex && i.roundIndex > 1 ? <span className="text-ink-muted font-normal">R{i.roundIndex} · </span> : null}
+                    {i.title}{i.roundLabel ? <span className="text-ink-muted font-normal"> · {i.roundLabel}</span> : null}
+                  </div>
                   <div className="text-xs text-ink-soft mt-0.5">{fmt(i.scheduledStart)}</div>
                 </div>
                 <Badge tone="amber">{MODE_LABEL[i.mode]}</Badge>
@@ -133,6 +138,9 @@ export function InterviewScheduler({
                 <div className="text-[11px] text-ink-muted mt-1.5 truncate">
                   With {i.interviewerNames.join(", ")}
                 </div>
+              )}
+              {i.notes && (
+                <div className="text-[11px] text-ink-soft mt-1.5 whitespace-pre-line line-clamp-3">{i.notes}</div>
               )}
               <div className="flex items-center gap-3 mt-2">
                 {i.mode === "video" && i.meetLink && (
@@ -164,7 +172,10 @@ export function InterviewScheduler({
       ) : (
         <form action={submit} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
           <input name="title" required placeholder="e.g. Technical round 1" className="input text-sm" defaultValue="Interview" />
-          <input name="roundLabel" placeholder="Round label (optional, e.g. Tech round 1)" className="input text-sm" />
+          <div className="grid grid-cols-[1fr_5rem] gap-2">
+            <input name="roundLabel" placeholder="Round label (optional, e.g. Tech round 1)" className="input text-sm" />
+            <input name="roundIndex" type="number" min={1} max={20} placeholder="Round #" title="Round number" className="input text-sm" />
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <select name="mode" className="input text-sm" defaultValue="video">
               <option value="video">Video</option>

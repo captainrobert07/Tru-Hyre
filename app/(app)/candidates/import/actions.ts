@@ -6,6 +6,7 @@ import { candidates, stageHistory } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { makeRefId } from "@/lib/refid";
 import { requireStaff } from "@/lib/rbac";
+import { fireCandidateCreated } from "@/lib/webhooks";
 
 export type ImportResult =
   | { ok: true; imported: number; skipped: number; errors: { row: number; reason: string }[] }
@@ -100,6 +101,7 @@ export async function importCandidatesCsvAction(formData: FormData): Promise<Imp
         changedById: Number(me.id),
         note: "CSV import",
       });
+      await fireCandidateCreated(created.id);
       imported++;
     } catch (e) {
       skipped++;

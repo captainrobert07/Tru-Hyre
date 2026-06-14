@@ -324,7 +324,6 @@ export const submissions = pgTable("submissions", {
   packetId: integer("packet_id").references(() => clientPackets.id, { onDelete: "set null" }),
   submittedById: integer("submitted_by_id").references(() => users.id, { onDelete: "set null" }),
   status: submissionStatusEnum("status").notNull().default("submitted"),
-  expectedJoinDate: date("expected_join_date"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

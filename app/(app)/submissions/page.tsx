@@ -35,6 +35,7 @@ export default async function SubmissionsPage({
       jobTitle: jobs.title,
       clientName: clientAccounts.name,
       status: submissions.status,
+      notes: submissions.notes,
       createdAt: submissions.createdAt,
     })
     .from(submissions)
@@ -82,6 +83,7 @@ export default async function SubmissionsPage({
                   <Link href={`/jobs/${s.jobId}`} className="hover:underline hover:text-brand-700">{s.jobTitle}</Link>
                 </div>
                 <div className="truncate text-ink-muted">{s.clientName}</div>
+                {s.notes && <div className="truncate text-ink-muted italic" title={s.notes}>“{s.notes}”</div>}
               </div>
               <div className="col-span-7 md:col-span-2 text-xs text-ink-muted">{new Date(s.createdAt).toLocaleDateString()}</div>
               <div className="col-span-5 md:col-span-1 flex justify-end">

@@ -1,7 +1,14 @@
 import type { MetadataRoute } from "next";
+import { isFeatureEnabled } from "@/lib/features";
 
 // Web app manifest so Tru Hyre is installable (PWA). Served at /manifest.webmanifest.
-export default function manifest(): MetadataRoute.Manifest {
+// Honors the `pwa` feature flag: when disabled, returns a minimal manifest with
+// no installability metadata (no start_url/display), so browsers won't offer to
+// install the app.
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  if (!(await isFeatureEnabled("pwa"))) {
+    return { name: "Tru Hyre", short_name: "Tru Hyre" };
+  }
   return {
     name: "Tru Hyre",
     short_name: "Tru Hyre",

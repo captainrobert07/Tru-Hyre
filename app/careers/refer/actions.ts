@@ -7,6 +7,7 @@ import { jobs, candidates, stageHistory, notifications, users } from "@/db/schem
 import { makeRefId } from "@/lib/refid";
 import { isFeatureEnabled } from "@/lib/features";
 import { logAudit } from "@/lib/audit";
+import { fireCandidateCreated } from "@/lib/webhooks";
 
 const referSchema = z.object({
   jobId: z.coerce.number().int().positive().optional().or(z.literal("")),
@@ -80,6 +81,8 @@ export async function submitReferralAction(_prev: ReferResult | null, formData: 
     summary: `Referral: ${v.fullName} by ${v.referrerName}`,
     meta: { refId, jobId, source: "referral" },
   });
+
+  await fireCandidateCreated(created.id);
 
   return { ok: true };
 }

@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { jobs, jobVendors } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { requireStaff, requireAdmin } from "@/lib/rbac";
-import { isFeatureEnabled } from "@/lib/features";
+import { isFeatureEnabled, assertFeatureEnabled } from "@/lib/features";
 import { withToast } from "@/lib/toast";
 
 const jobSchema = z.object({
@@ -96,6 +96,7 @@ export async function createJobAction(formData: FormData): Promise<void> {
 
 export async function approveJobAction(id: number, approve: boolean): Promise<{ ok: boolean }> {
   const user = await requireAdmin();
+  await assertFeatureEnabled("requisition_approval");
   await db
     .update(jobs)
     .set({ approvalStatus: approve ? "approved" : "rejected", updatedAt: new Date() })

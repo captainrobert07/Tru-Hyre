@@ -26,12 +26,13 @@ export default async function CandidatesPage({
   const stage = sp.stage;
   const tag = sp.tag;
   const blind = sp.blind === "1";
-  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled, bulkEmailEnabled, viewSharingEnabled] = await Promise.all([
+  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled, bulkEmailEnabled, viewSharingEnabled, bulkActionsEnabled] = await Promise.all([
     isFeatureEnabled("ai_search"),
     isFeatureEnabled("ai_dedupe"),
     isFeatureEnabled("talent_pool"),
     isFeatureEnabled("bulk_email"),
     isFeatureEnabled("saved_view_sharing"),
+    isFeatureEnabled("bulk_actions"),
   ]);
 
   const conditions: SQL[] = [];
@@ -248,7 +249,7 @@ export default async function CandidatesPage({
         />
       ) : (
         <>
-          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={lite ? [] : vendorList} templates={lite ? [] : emailTemplateList} bulkEmailEnabled={!lite && bulkEmailEnabled} lite={lite} blind={blind} />
+          <CandidatesTable rows={rows} isAdmin={user.role === "admin"} vendors={lite ? [] : vendorList} templates={lite ? [] : emailTemplateList} bulkEmailEnabled={!lite && bulkEmailEnabled} bulkActionsEnabled={!lite && bulkActionsEnabled} lite={lite} blind={blind} />
           <Pager basePath="/candidates" page={page} pageSize={pageSize} total={total} q={q} status={stage} />
         </>
       )}
