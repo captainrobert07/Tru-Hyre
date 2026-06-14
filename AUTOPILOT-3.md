@@ -35,9 +35,13 @@ client-feedback-scores, granular RBAC (userPermissions + lib/permissions), offer
 prediction, custom report builder, vendor self-onboarding, intake auto-match (suggested jobs).
 org-charts = already covered by existing multi-contact client UI. stage_checklists = flag+table
 shipped, UI deferred.
-NOT BUILT (auth/public-surface risk — need supervised session): candidate-portal (adds a
-'candidate' auth role + public login + per-candidate data-isolation; blueprint itself flagged
-HIGH risk), self-scheduling (public tokenized write surface). Blueprints saved in workflow output.
+NOW SHIPPED (main @ a6dac7f, prod green, E2E 12/12+11/11): self-scheduling (public tokenized
+slot-picker; token is sole credential, never accepts candidateId from client) and candidate
+portal ('candidate' role + /portal/candidate; profileId resolved from DB user row, every query
+keyed to it; 4-lens adversarial sec-review passed with 0 critical — cross-candidate access not
+possible; applied its 2 high fixes). Build gotcha fixed: users.candidateProfileId must be a
+PLAIN column (no .references thunk) or it creates a users<->candidates circular type ref that
+collapses Drizzle's inferred row types. EVERYTHING IN THE BACKLOG IS NOW BUILT.
 
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
