@@ -86,3 +86,65 @@ gold-plating above":
   actually run. Flags stay in code; just don't present SaaS-ecosystem toggles.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 9 — adoption & switching-cost realism (new angle, not feature triage)
+
+Iteration 4 asked "which features earn their keep." This iteration asks the
+question that decides whether ANY of them matter: **will a real Allianz
+recruiting team switch to this, and what does it cost them to do so?** An
+internal tool nobody migrates to is dead regardless of how good the features
+are. The competitor isn't another product — it's the recruiter's current habit
+(a shared spreadsheet, an email folder, or an ATS module inside Workday).
+
+### Switching cost is genuinely LOW — and that's the build's quiet strength
+Verified the actual onboarding surface, not the marketing claim:
+- **CSV import** (`/candidates/import`) accepts a header row in any column order,
+  ignores unknown columns. A team can dump their existing candidate spreadsheet
+  in on day one without reformatting. This is the single most important adoption
+  feature in the app and it already exists and is honest about its contract.
+- **Bulk invite** (`/settings/invitations/bulk`) onboards the whole recruiting
+  team in one step rather than one-user-at-a-time.
+- **Only `fullName` is truly required** on a candidate (every other column has a
+  DB default). So a sparse, messy legacy export still imports — no "clean your
+  data first" wall that kills migrations before they start.
+
+**Strategic read:** the team did the unglamorous adoption plumbing. Most
+internal tools die at "I'd have to re-enter everything" — this one doesn't.
+
+### The riskiest adoption ASSUMPTION baked into the build
+The product assumes recruiters will **live in Tru Hyre as their primary surface**.
+But Allianz recruiters live in **Outlook + Teams** all day. The two features that
+decide daily-active usage are therefore:
+1. **Email that works from inside the tool.** Gmail SMTP is wired, but Allianz is
+   a Microsoft shop — outbound from a shared Gmail mailbox is an odd fit and a
+   likely governance flag. The honest adoption play is **M365/Graph mail**, not
+   Gmail. (Strategy iter 4 flagged Teams > SMS; same root: meet them in Microsoft.)
+2. **Notifications where they already look.** The recruiter inbox + SLA alerts
+   are excellent, but they require *opening the app*. A Teams notification on
+   "candidate went stale / interview today" is what actually pulls a Microsoft-
+   shop user back in. `slack_notifications` covers Teams via incoming webhook —
+   this is higher adoption-leverage than it looks and worth defaulting ON for an
+   internal rollout (with a Teams webhook), not leaving OFF as a SaaS afterthought.
+
+### What I'd measure before declaring product-market fit (internal edition)
+Internal PMF isn't MRR — it's **displacement**. Two honest metrics:
+- **Spreadsheet-death date:** the day the team stops maintaining their old
+  tracker in parallel. Until then, Tru Hyre is additive work, not a replacement.
+- **Time-in-tool per recruiter per day.** If it's near-zero except when a manager
+  asks for a report, the tool is a reporting layer, not a workflow — and the AI
+  features (its real differentiator) are going unused.
+
+### Recommendation (decisions for breakfast, not auto-built)
+- **Lean into the low switching cost** in rollout: pre-load each team's existing
+  spreadsheet via CSV import on day one so they open to *their* data, not an
+  empty shell. First-impression = "it already knows my pipeline."
+- **Re-rank the adoption roadmap to meet Microsoft:** SSO (iter 4 #1) → M365 mail
+  → Teams notifications default-on. This is the same "fit Allianz's reality"
+  thread as iter 4, now aimed at daily-active usage rather than legal sign-off.
+- **Instrument displacement, not vanity counts.** Add a tiny "last spreadsheet
+  export" / time-in-tool signal later so the team can see real adoption. (Propose
+  only — not built; analytics scope is a supervised decision.)
+
+**No code changed this iteration (analysis-only lens).**
