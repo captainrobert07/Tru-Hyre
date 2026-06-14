@@ -16,6 +16,8 @@ import {
   getStageDistribution,
   getSubmissionForecast,
   getBottlenecks,
+  getDiversityBreakdown,
+  type DiversityBreakdown,
 } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,8 @@ export default async function ReportsPage() {
   if (!(await isFeatureEnabled("analytics_reports"))) redirect("/dashboard");
   const showSourceEff = await isFeatureEnabled("source_tracking");
   const showBuilder = await isFeatureEnabled("custom_report_builder");
+  const showDiversity = await isFeatureEnabled("diversity_reporting");
+  const diversity: DiversityBreakdown | null = showDiversity ? await getDiversityBreakdown() : null;
 
   const [
     source,
@@ -443,6 +447,51 @@ export default async function ReportsPage() {
           </div>
         )}
       </section>
+
+      {/* Diversity (EEO) — voluntary, aggregate-only, small cells suppressed */}
+      {showDiversity && diversity && (
+        <section className="card p-5 mb-6">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-base font-semibold">Diversity (voluntary self-ID)</h2>
+            <span className="text-xs text-ink-muted">{diversity.respondents} respondent{diversity.respondents === 1 ? "" : "s"}</span>
+          </div>
+          <p className="text-[11px] text-ink-muted mb-4">
+            Aggregate only, from candidates who explicitly opted in on the careers form. Small buckets
+            are suppressed to protect individuals.
+          </p>
+          {diversity.fields.length === 0 ? (
+            <Empty msg="No voluntary self-identification collected yet." />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {diversity.fields.map((f) => {
+                const max = Math.max(1, ...f.buckets.map((b) => b.count));
+                return (
+                  <div key={f.key}>
+                    <h3 className="text-sm font-medium mb-2">{f.label}</h3>
+                    {f.buckets.length === 0 ? (
+                      <p className="text-xs text-ink-muted">All responses suppressed (too few).</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {f.buckets.map((b) => (
+                          <li key={b.value}>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="truncate">{b.value}</span>
+                              <span className="text-ink-muted tabular-nums">{b.count}</span>
+                            </div>
+                            <div className="h-2 bg-canvas rounded-full overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-brand-400 to-brand-700" style={{ width: `${(b.count / max) * 100}%` }} />
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <p className="text-[11px] text-ink-muted text-center pt-4">
         Reports refresh on every page load. <Link href="/api/settings/audit-export" className="text-brand-700 hover:underline">Export audit log</Link>.

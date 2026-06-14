@@ -258,6 +258,12 @@ export const candidates = pgTable("candidates", {
   source: candidateSourceEnum("source").notNull().default("direct"),
   // Free-text detail, e.g. the referrer's name or the specific job board.
   sourceDetail: varchar("source_detail", { length: 160 }),
+  // Voluntary diversity self-identification (EEO). Only ever populated when the
+  // candidate explicitly opts in on the public application form, and only
+  // aggregated when the diversity_reporting feature is enabled. Free-form keys
+  // (gender, ethnicity, disability, veteran) → the option they selected.
+  diversityConsent: boolean("diversity_consent").notNull().default(false),
+  diversitySelfId: jsonb("diversity_self_id").$type<Record<string, string>>().notNull().default({}),
   notes: text("notes"),
   refId: varchar("ref_id", { length: 24 }).notNull().unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

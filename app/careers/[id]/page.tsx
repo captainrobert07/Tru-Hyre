@@ -18,6 +18,8 @@ export default async function CareersJobPage({ params }: { params: Promise<{ id:
   const job = (await db.select().from(jobs).where(eq(jobs.id, jobId)))[0];
   if (!job || job.status !== "open") notFound();
 
+  const collectDiversity = await isFeatureEnabled("diversity_reporting");
+
   return (
     <main className="min-h-screen bg-canvas">
       <header className="border-b border-hairline bg-surface">
@@ -50,7 +52,7 @@ export default async function CareersJobPage({ params }: { params: Promise<{ id:
 
         <div className="lg:col-span-2">
           <h2 className="text-sm font-semibold mb-3">Apply</h2>
-          <ApplyForm jobId={job.id} />
+          <ApplyForm jobId={job.id} collectDiversity={collectDiversity} />
         </div>
       </div>
     </main>

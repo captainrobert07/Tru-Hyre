@@ -11,6 +11,7 @@ import { contentHash } from "@/lib/dedupe";
 import { makeRefId } from "@/lib/refid";
 import { isFeatureEnabled } from "@/lib/features";
 import { logAudit } from "@/lib/audit";
+import { sanitizeDiversity } from "@/lib/diversity";
 
 const applySchema = z.object({
   jobId: z.coerce.number().int().positive(),
@@ -20,6 +21,7 @@ const applySchema = z.object({
   location: z.string().max(120).optional().or(z.literal("")),
   linkedinUrl: z.string().max(254).optional().or(z.literal("")),
   consent: z.string().optional(), // checkbox "on"
+  diversityConsent: z.string().optional(), // checkbox "on"
   // honeypot — bots fill hidden fields; humans don't.
   website: z.string().max(0).optional().or(z.literal("")),
 });
@@ -39,6 +41,21 @@ export async function applyToJobAction(_prev: ApplyResult | null, formData: Form
 
   const job = (await db.select().from(jobs).where(eq(jobs.id, v.jobId)))[0];
   if (!job || job.status !== "open") return { ok: false, error: "This role is no longer open." };
+
+  // Voluntary diversity self-ID: only stored when the feature is on AND the
+  // applicant explicitly ticked the diversity consent box. "Prefer not to say"
+  // and unknown values are dropped by sanitizeDiversity.
+  const collectDiversity = await isFeatureEnabled("diversity_reporting");
+  const diversityConsent = collectDiversity && v.diversityConsent === "on";
+  const diversitySelfId = diversityConsent
+    ? sanitizeDiversity(
+        Object.fromEntries(
+          [...formData.entries()]
+            .filter(([k]) => k.startsWith("diversity_"))
+            .map(([k, val]) => [k.slice("diversity_".length), val]),
+        ),
+      )
+    : {};
 
   // Resume file (optional but encouraged). Validate type/size.
   const file = formData.get("file");
@@ -84,6 +101,8 @@ export async function applyToJobAction(_prev: ApplyResult | null, formData: Form
       parseStatus: drive ? "ok" : "pending",
       source: "careers",
       sourceDetail: `Applied: ${job.title}`,
+      diversityConsent,
+      diversitySelfId,
     })
     .returning({ id: candidates.id });
 
