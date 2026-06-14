@@ -43,6 +43,22 @@ possible; applied its 2 high fixes). Build gotcha fixed: users.candidateProfileI
 PLAIN column (no .references thunk) or it creates a users<->candidates circular type ref that
 collapses Drizzle's inferred row types. EVERYTHING IN THE BACKLOG IS NOW BUILT.
 
+## Run 4 (branch feat/finish-pending) ✅ SHIPPED to main @ 9517045, prod green, E2E 12/12 + 11/11
+The last four buildable UI gaps on already-scaffolded features:
+- Saved-view **sharing** UI: owner share/unshare toggle on the view chip; colleague-shared views
+  surface for all staff (gated `saved_view_sharing`; action guarded + owner-only).
+- **Stage-checklist editor**: per-job advisory checklist CRUD on the job detail page
+  (`checklist-actions.ts`, `stage_checklists` flag). Does NOT touch the core stage enum.
+- **Interview kits**: NEW `interview_kits` flag + `/interview-kits` library (full CRUD) + gated nav
+  link + read-only reference panel in the candidate Interviews section (reusable + job-scoped kits).
+- **Diversity opt-in**: additive `candidates.diversityConsent` + `diversitySelfId` (jsonb); voluntary
+  self-ID section on the careers form (only shown + stored when `diversity_reporting` is on AND the
+  applicant ticks the diversity-consent box); `lib/diversity.ts` (fields + sanitize + small-cell
+  threshold); aggregate report section with <5 buckets suppressed.
+NOW: only provider-secret/sandbox-dependent connector send-flows (job-board post, DocuSign send,
+Outlook, auto Gmail/IMAP sync, availability sync, bg-check, transcription, full SSO, client billing)
+and the user-side live-cutover (enter real API keys at /settings/integrations → Test) remain.
+
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
 - [ ] T1b · Candidate availability + saved-view share UI + skill taxonomy

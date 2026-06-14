@@ -50,9 +50,9 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [x] **Job requisition approval flow** (M) — `jobs.approvalStatus`; non-admin jobs → pending; admin approve/reject banner. Flag default OFF.
 - [x] **Extended bulk actions** (S) — bulk add-tag added to existing bulk stage/vendor/delete; feeds talent pool.
 - [x] **Interview reminders** (S) — SLA cron notifies interviewers of same-day interviews.
-- [~] **Configurable pipeline stages per job** (L) — DEFERRED: reworking the core stage enum would break kanban/emails/metrics; not done to protect stability.
-- [~] **Interview panels / multi-round** (M) — PARTIAL: interviews already support multiple interviewers; distinct multi-round tracking deferred.
-- [~] **Candidate self-scheduling links** (L) — flag registered, UI DEFERRED (needs public tokenized slot-picker + availability model). Not faked.
+- [~] **Configurable pipeline stages per job** (L) — core stage enum is fixed (reworking it breaks kanban/emails/metrics). SHIPPED as a non-destructive alternative: per-job **stage checklists** (advisory items per stage, editor on the job page, `stage_checklists` flag).
+- [x] **Interview panels / multi-round** (M) — multiple interviewers + distinct multi-round tracking (roundLabel/roundIndex) + reusable **interview kits** (`/interview-kits`, `interview_kits` flag, reference panel on candidate).
+- [x] **Candidate self-scheduling links** (L) — public tokenized slot-picker at `/schedule/[token]`; token is sole credential.
 
 ## Wave 6 — Communication ✅ SHIPPED (preview build green, commit ae1386e)
 - [x] **Bulk email to segments** (S) — Email dropdown in candidates bulk toolbar; templated send to selection.
@@ -65,17 +65,17 @@ Effort: **S** small · **M** medium · **L** large. ⭐ = ranked highest-leverag
 - [x] **Vendor performance scorecard / SLA** (M) — `getVendorSlaCompliance` + dashboard leaderboard (existing, flagged).
 - [x] **Recruiter productivity dashboard** (M) — `getRecruiterScoreboard` + reports table (existing, flagged).
 - [x] **Scheduled report exports** (S) — weekly Monday pipeline digest emailed via cron (`scheduled_digest`).
-- [~] **Diversity / EEO reporting** (M) — flag registered but INERT: no EEO fields collected by default (GDPR-conscious). Honest, not fabricated.
-- [~] **Custom report builder** (L) — DEFERRED: existing fixed reports cover the core; a full builder is a large standalone effort.
+- [x] **Diversity / EEO reporting** (M) — voluntary opt-in self-ID section on the careers form (consent-gated), `candidates.diversitySelfId`/`diversityConsent` columns, aggregate report with small-cell suppression (`diversity_reporting` flag, off by default, GDPR-conscious).
+- [x] **Custom report builder** (L) — `/reports/custom`: pick a metric + date range, view a table, save report definitions.
 
 ## Wave 8 — Platform & integrations ✅ SHIPPED (preview build green, commit 6261e30)
 - [x] **Webhook / integration layer** (M) — `webhooks` table + `lib/webhooks.ts`; fires candidate.stage_changed; admin UI.
 - [x] **Public API + API keys** (L) — `api_keys` + `/api/v1/candidates` bearer-auth read API; admin key mgmt.
 - [x] **Activity feed** (M) — `/activity` from audit log + nav.
 - [x] **GDPR / data-retention tooling** (M) — `/settings/platform` GDPR overview surfacing existing export/erasure.
-- [~] **Saved-view sharing** (S) — `savedViews.shared` column added; share toggle UI deferred.
-- [~] **2FA / SSO (Azure AD)** (L) — DEFERRED: needs external IdP integration.
-- [~] **Granular role permissions** (M) — DEFERRED: would require reworking the fixed role enum / auth; not destabilized.
+- [x] **Saved-view sharing** (S) — owner can share/unshare a saved candidate view org-wide from the view chip; shared views surface for all staff (`saved_view_sharing` flag).
+- [~] **2FA / SSO (Azure AD)** (L) — DEFERRED: needs external IdP integration (provider config/secrets).
+- [x] **Granular role permissions** (M) — additive per-user capability grants (`user_permissions` + `lib/permissions.ts`, admin UI at `/settings/users/[id]/permissions`).
 - [~] **Interviewer availability sync** (M) — DEFERRED: needs Google Calendar free/busy (external).
 
 ## Wave 9 — UX & polish ✅ SHIPPED (preview build green, commit cecf593)
