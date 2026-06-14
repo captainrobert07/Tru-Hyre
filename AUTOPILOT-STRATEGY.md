@@ -148,3 +148,76 @@ Internal PMF isn't MRR — it's **displacement**. Two honest metrics:
   only — not built; analytics scope is a supervised decision.)
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 14 — build-vs-buy defensibility & internal risk (the existential angle)
+
+Iter 4 = which features; iter 9 = will they switch. This iteration asks the
+question that can kill an internal tool independent of both: **why build this
+instead of buying Greenhouse / SmartRecruiters / Workday Recruiting?** Every
+internal tool faces a procurement/IT exec who will ask exactly that. If there's
+no honest answer, the tool gets shelved no matter how good it is.
+
+### The honest build-vs-buy case (where Tru Hyre actually wins / loses)
+
+**Where buying a commercial ATS wins (be honest about these):**
+- Compliance & certifications out of the box (SOC 2, ISO 27001, GDPR DPAs,
+  data-residency contracts). A vendor sells Allianz legal a signed paper trail;
+  an internal tool has to *earn* each of those, and that's expensive ongoing work.
+- Vendor-managed uptime, security patching, pen-tests, and a support SLA. With
+  Tru Hyre, Allianz owns all of that — it's now a product the company maintains.
+- Integrations breadth (job boards, assessment vendors, background-check
+  partners) that a vendor maintains so you don't.
+
+**Where Tru Hyre genuinely wins (the real reasons to build, not cope):**
+1. **The AI layer is the moat, and it's cost-controlled.** `lib/ai.ts` funnels
+   every AI feature through one client, defaults to **claude-haiku-4-5** (the
+   cheap/fast tier), and **no-ops gracefully without a key** — so AI spend is
+   opt-in and bounded, not a runaway per-seat license. A commercial ATS charges
+   per-seat for comparable AI as an upsell; here the marginal cost is metered
+   tokens on Allianz's own key. For a large internal team this is a real
+   structural cost advantage, not a vanity feature.
+2. **Data stays in-house.** Candidate PII (a GDPR-sensitive asset for an EU
+   insurer) lives in Allianz's own Neon/Postgres + Drive, not a third-party
+   multi-tenant SaaS. For a regulated insurer this can be the deciding factor —
+   it's a *compliance* advantage, not just a technical one.
+3. **Exact-fit workflow + zero per-seat cost.** No license ceiling on how many
+   recruiters/hiring-managers use it; the role model (admin/hr/hr_lite/client/
+   vendor portals) is shaped to Allianz's actual agency-driven hiring, not a
+   generic ATS's assumptions.
+
+**Strategic read:** the defensible case is **AI economics + data residency +
+zero per-seat**, NOT feature breadth (a vendor will always have more features).
+The roadmap should lean INTO the moat and stop trying to match vendor breadth.
+
+### The internal risks that actually threaten this (rank-ordered)
+1. **Key-person / bus-factor risk.** This is a from-scratch internal build. If
+   the builder leaves, who maintains the auth trust boundary, the neon-http
+   quirks (see AUTOPILOT-DEV.md merge/transaction notes), the Drive service
+   account? A commercial ATS doesn't have this risk. **Mitigation:** the docs
+   discipline already in this repo (honest README, INTEGRATIONS maturity badges,
+   these autopilot docs) is the single best hedge — keep it current. This is a
+   real reason the doc-honesty iterations (5, 10) have strategic value, not just
+   tidiness.
+2. **Compliance debt compounding.** Every month without SSO + a stated
+   data-residency/audit posture is a month the tool can't be Allianz-blessed for
+   real PII at scale. This is the iter-4/iter-5 thread, restated as *risk*: it's
+   not just a missing feature, it's the gate that keeps the whole build in
+   "pilot" purgatory.
+3. **AI cost surprise.** Today it's haiku + opt-in, well-controlled. The risk is
+   scope creep into expensive per-candidate AI on every list render. Keep AI
+   behind explicit user actions (it already is) and never auto-run it on page
+   load — that's the line between "cheap moat" and "runaway bill."
+
+### Recommendation (decisions for breakfast, not auto-built)
+- **Write the one-page build-vs-buy memo** for whoever approves this internally,
+  leading with AI economics + data residency + zero per-seat — not a feature
+  list (you lose the feature contest to any vendor).
+- **Treat doc-honesty as bus-factor insurance,** not housekeeping. It's the
+  cheapest mitigation for the #1 internal risk.
+- **Draw a hard line on AI cost:** AI stays user-initiated, haiku-default,
+  key-gated. Make "no AI on page load" an explicit project rule so a future
+  feature can't quietly turn the moat into a liability.
+
+**No code changed this iteration (analysis-only lens).**
