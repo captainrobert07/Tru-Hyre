@@ -36,6 +36,9 @@ export async function sendSms(to: string, body: string): Promise<SmsResult> {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({ To: to, From: from, Body: body.slice(0, 1000) }),
+      // No default fetch timeout: a hung SMS provider would otherwise stall the
+      // stage-change action that awaits this. Fail fast into the catch below.
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
       return { delivered: false, reason: `provider_${res.status}` };
