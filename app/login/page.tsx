@@ -23,7 +23,7 @@ export default async function LoginPage({
       <div className="relative w-full max-w-md">
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center gap-2 mb-5">
-            <span className="size-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white font-display italic text-xl">T</span>
+            <span className="size-10 rounded-xl2 bg-brand-500 flex items-center justify-center text-white font-display italic text-xl">T</span>
             <span className="text-lg font-semibold tracking-tight">{APP_NAME}</span>
           </Link>
           <h1 className="display text-3xl md:text-4xl">Welcome <em>back</em>.</h1>
