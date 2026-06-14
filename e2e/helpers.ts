@@ -5,6 +5,7 @@ export const SEED_PASSWORD = "Kris@35193";
 export const SEEDS = {
   admin: "admin@truhyre.app",
   hr: "hr@truhyre.app",
+  hrLite: "hrlite@truhyre.app",
   client: "client@truhyre.app",
   vendor: "vendor@truhyre.app",
 } as const;
