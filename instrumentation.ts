@@ -38,7 +38,10 @@ export const onRequestError: Instrumentation.onRequestError = async (
       routeType: context?.routeType,
       routerKind: context?.routerKind,
       renderSource: context?.renderSource,
-      renderType: context?.renderType,
+      // renderType exists at runtime but isn't in 15.5's RequestErrorContext
+      // type (added in a later release). Read it loosely so it logs if present
+      // without coupling to a version-specific type field.
+      renderType: (context as { renderType?: string } | undefined)?.renderType ?? null,
     }),
   );
   // Full stack on its own lines — this is the part the digest was hiding.
