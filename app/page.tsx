@@ -46,7 +46,7 @@ function Header() {
   return (
     <header className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-6 flex items-center justify-between">
       <Link href="/" className="flex items-center gap-2">
-        <span className="size-9 rounded-2xl bg-brand-500 flex items-center justify-center text-white font-display italic text-lg">T</span>
+        <span className="size-9 rounded-xl2 bg-brand-500 flex items-center justify-center text-white font-display italic text-lg">T</span>
         <span className="text-base font-semibold tracking-tight">{APP_NAME}</span>
       </Link>
 

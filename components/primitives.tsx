@@ -147,7 +147,7 @@ export function EmptyState({
   return (
     <div className="card flex flex-col items-center justify-center text-center p-12 gap-3">
       <span
-        className="size-16 rounded-2xl inline-flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50 text-brand-700 shadow-card"
+        className="size-16 rounded-xl2 inline-flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50 text-brand-700 shadow-card"
         aria-hidden
       >
         {icon || <DefaultEmptyIcon />}

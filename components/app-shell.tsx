@@ -91,7 +91,7 @@ export function AppShell({
       {/* Top bar — desktop pill nav */}
       <header className="hidden md:flex sticky top-0 z-40 bg-canvas/80 backdrop-blur-md px-6 lg:px-10 py-4 items-center gap-4">
         <Link href="/dashboard" className="flex items-center gap-2 mr-2 shrink-0">
-          <span className="size-9 rounded-2xl bg-brand-500 flex items-center justify-center text-white font-display italic text-lg">T</span>
+          <span className="size-9 rounded-xl2 bg-brand-500 flex items-center justify-center text-white font-display italic text-lg">T</span>
           <span className="text-base font-semibold tracking-tight">{APP_NAME}</span>
         </Link>
 
