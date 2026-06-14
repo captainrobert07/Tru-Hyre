@@ -20,6 +20,7 @@ import {
   Bell,
   BarChart3,
   Activity,
+  ClipboardList,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const NAV: { href: string; label: string; icon: ReactNode; roles: Role[] }[] = [
   { href: "/inbox", label: "Inbox", icon: <Inbox size={16} />, roles: ["admin", "hr"] },
   { href: "/candidates", label: "Candidates", icon: <Users size={16} />, roles: ["admin", "hr", "hr_lite"] },
   { href: "/jobs", label: "Jobs", icon: <Briefcase size={16} />, roles: ["admin", "hr"] },
+  { href: "/interview-kits", label: "Interview kits", icon: <ClipboardList size={16} />, roles: ["admin", "hr"] },
   { href: "/clients", label: "Clients", icon: <Building2 size={16} />, roles: ["admin", "hr"] },
   { href: "/vendors", label: "Vendors", icon: <Truck size={16} />, roles: ["admin", "hr"] },
   { href: "/submissions", label: "Submissions", icon: <Send size={16} />, roles: ["admin", "hr"] },
@@ -59,7 +61,7 @@ export function AppShell({
   user: { fullName: string; email: string; role: Role };
   unreadCount?: number;
   inboxCount?: number;
-  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean; activity_feed?: boolean; keyboard_shortcuts?: boolean; dark_mode?: boolean };
+  enabledFeatures?: { inbox?: boolean; command_palette?: boolean; analytics_reports?: boolean; activity_feed?: boolean; keyboard_shortcuts?: boolean; dark_mode?: boolean; interview_kits?: boolean };
   children: ReactNode;
 }) {
   const inboxEnabled = enabledFeatures?.inbox ?? true;
@@ -68,11 +70,13 @@ export function AppShell({
   const activityEnabled = enabledFeatures?.activity_feed ?? true;
   const shortcutsEnabled = enabledFeatures?.keyboard_shortcuts ?? true;
   const darkModeEnabled = enabledFeatures?.dark_mode ?? true;
+  const kitsEnabled = enabledFeatures?.interview_kits ?? false;
   const items = NAV
     .filter((n) => n.roles.includes(user.role))
     .filter((n) => (n.href === "/inbox" ? inboxEnabled : true))
     .filter((n) => (n.href === "/reports" ? reportsEnabled : true))
-    .filter((n) => (n.href === "/activity" ? activityEnabled : true));
+    .filter((n) => (n.href === "/activity" ? activityEnabled : true))
+    .filter((n) => (n.href === "/interview-kits" ? kitsEnabled : true));
   const unread = unreadCount ?? 0;
   const inbox = inboxCount ?? 0;
   const dotFor = (href: string) => (href === "/notifications" ? unread : href === "/inbox" ? inbox : 0);

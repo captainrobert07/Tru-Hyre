@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { applyToJobAction, type ApplyResult } from "./apply-actions";
+import { DIVERSITY_FIELDS } from "@/lib/diversity";
 
-export function ApplyForm({ jobId }: { jobId: number }) {
+export function ApplyForm({ jobId, collectDiversity = false }: { jobId: number; collectDiversity?: boolean }) {
   const [state, action, pending] = useActionState<ApplyResult | null, FormData>(applyToJobAction, null);
 
   if (state?.ok) {
@@ -53,6 +54,41 @@ export function ApplyForm({ jobId }: { jobId: number }) {
         <input id="file" name="file" type="file" accept="application/pdf,.pdf" className="input file:mr-3 file:btn-ghost file:text-xs file:px-2 file:py-1 file:h-7 cursor-pointer" />
         <p className="text-xs text-ink-muted mt-1.5">Optional but recommended. Max 10 MB.</p>
       </div>
+
+      {collectDiversity && (
+        <details className="rounded-lg border border-hairline bg-canvas/50 px-4 py-3">
+          <summary className="text-sm font-medium cursor-pointer select-none">
+            Voluntary self-identification <span className="text-ink-muted font-normal">(optional)</span>
+          </summary>
+          <div className="mt-3 space-y-3">
+            <p className="text-xs text-ink-muted leading-relaxed">
+              We invite you to share the following to help us measure and improve the fairness of our
+              hiring. It is entirely voluntary, never seen by hiring managers reviewing your application,
+              and has no bearing on your candidacy. Leave any blank, or pick &ldquo;Prefer not to say.&rdquo;
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {DIVERSITY_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label htmlFor={`div-${f.key}`} className="label">{f.label}</label>
+                  <select id={`div-${f.key}`} name={`diversity_${f.key}`} defaultValue="" className="input">
+                    <option value="">—</option>
+                    {f.options.map((o) => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <label className="flex items-start gap-2 text-xs">
+              <input type="checkbox" name="diversityConsent" className="mt-0.5" />
+              <span className="text-ink-soft">
+                I consent to my voluntary self-identification being stored and used only in aggregate,
+                anonymized diversity reporting.
+              </span>
+            </label>
+          </div>
+        </details>
+      )}
 
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" name="consent" className="mt-1" />

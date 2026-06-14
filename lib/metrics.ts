@@ -11,6 +11,7 @@ import {
   notifications,
   interviews,
 } from "@/db/schema";
+import { DIVERSITY_FIELDS, MIN_REPORTABLE_COUNT } from "@/lib/diversity";
 
 // ---------- types ----------
 export type SourceRow = { source: string; count: number };
@@ -623,6 +624,52 @@ export async function getWeeklyDigest(): Promise<WeeklyDigest> {
     joins: jn[0]?.n ?? 0,
     openJobs: oj[0]?.n ?? 0,
   };
+}
+
+// ---------- Diversity (EEO) aggregate ----------
+
+export type DiversityBucket = { value: string; count: number };
+export type DiversityFieldBreakdown = { key: string; label: string; buckets: DiversityBucket[] };
+export type DiversityBreakdown = { respondents: number; fields: DiversityFieldBreakdown[] };
+
+/**
+ * Aggregate voluntary diversity self-ID across consenting candidates. Buckets
+ * below MIN_REPORTABLE_COUNT are folded into "Other (suppressed)" so no
+ * individual can be re-identified from a small cell. Returns null-safe empties
+ * when nothing has been collected.
+ */
+export async function getDiversityBreakdown(): Promise<DiversityBreakdown> {
+  const rows = await db
+    .select({ selfId: candidates.diversitySelfId })
+    .from(candidates)
+    .where(eq(candidates.diversityConsent, true));
+
+  const respondents = rows.length;
+  const counts = new Map<string, Map<string, number>>();
+  for (const r of rows) {
+    const obj = (r.selfId || {}) as Record<string, string>;
+    for (const [key, value] of Object.entries(obj)) {
+      if (!value) continue;
+      if (!counts.has(key)) counts.set(key, new Map());
+      const m = counts.get(key)!;
+      m.set(value, (m.get(value) || 0) + 1);
+    }
+  }
+
+  const fields: DiversityFieldBreakdown[] = DIVERSITY_FIELDS.filter((f) => counts.has(f.key)).map((f) => {
+    const m = counts.get(f.key)!;
+    let suppressed = 0;
+    const buckets: DiversityBucket[] = [];
+    for (const [value, count] of m.entries()) {
+      if (count < MIN_REPORTABLE_COUNT) suppressed += count;
+      else buckets.push({ value, count });
+    }
+    buckets.sort((a, b) => b.count - a.count);
+    if (suppressed > 0) buckets.push({ value: "Other (suppressed)", count: suppressed });
+    return { key: f.key, label: f.label, buckets };
+  });
+
+  return { respondents, fields };
 }
 
 // suppress unused-import warning for helpers that may be pruned

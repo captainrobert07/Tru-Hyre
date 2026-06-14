@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { savedViews } from "@/db/schema";
 import { requireUser } from "@/lib/rbac";
+import { assertFeatureEnabled } from "@/lib/features";
 
 const SCOPES = ["candidates", "jobs", "clients", "vendors", "submissions"] as const;
 
@@ -53,6 +54,7 @@ export async function togglePinSavedViewAction(id: number): Promise<void> {
 /** Share/unshare a saved view with all staff (only the owner can toggle). */
 export async function toggleShareSavedViewAction(id: number): Promise<{ ok: boolean }> {
   const me = await requireUser();
+  await assertFeatureEnabled("saved_view_sharing");
   const v = (await db.select().from(savedViews).where(and(eq(savedViews.id, id), eq(savedViews.userId, Number(me.id)))))[0];
   if (!v) return { ok: false };
   await db.update(savedViews).set({ shared: !v.shared }).where(eq(savedViews.id, id));

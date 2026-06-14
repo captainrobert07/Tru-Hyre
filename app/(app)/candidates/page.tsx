@@ -1,15 +1,15 @@
 import { desc, ilike, or, sql, count, and, eq, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { candidates, vendorAccounts, savedViews, emailTemplates } from "@/db/schema";
+import { candidates, vendorAccounts, savedViews, emailTemplates, users } from "@/db/schema";
 import { requireStaffOrLite, isLite } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { parseListParams } from "@/lib/list-params";
 import { PageHeader, EmptyState } from "@/components/primitives";
 import { ListToolbar, Pager } from "@/components/list-toolbar";
 import { CandidatesTable } from "./candidates-table";
-import { SavedViews } from "@/components/saved-views";
-import { createSavedViewAction, deleteSavedViewAction } from "./saved-view-actions";
+import { SavedViews, type SavedView } from "@/components/saved-views";
+import { createSavedViewAction, deleteSavedViewAction, toggleShareSavedViewAction } from "./saved-view-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Candidates" };
@@ -26,11 +26,12 @@ export default async function CandidatesPage({
   const stage = sp.stage;
   const tag = sp.tag;
   const blind = sp.blind === "1";
-  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled, bulkEmailEnabled] = await Promise.all([
+  const [aiSearchEnabled, dedupeEnabled, talentPoolEnabled, bulkEmailEnabled, viewSharingEnabled] = await Promise.all([
     isFeatureEnabled("ai_search"),
     isFeatureEnabled("ai_dedupe"),
     isFeatureEnabled("talent_pool"),
     isFeatureEnabled("bulk_email"),
+    isFeatureEnabled("saved_view_sharing"),
   ]);
 
   const conditions: SQL[] = [];
@@ -91,9 +92,30 @@ export default async function CandidatesPage({
     db.select({ n: count() }).from(candidates).where(whereExpr),
     db.select({ id: vendorAccounts.id, name: vendorAccounts.name }).from(vendorAccounts).orderBy(vendorAccounts.name),
     db
-      .select({ id: savedViews.id, name: savedViews.name, query: savedViews.query, pinned: savedViews.pinned })
+      .select({
+        id: savedViews.id,
+        name: savedViews.name,
+        query: savedViews.query,
+        pinned: savedViews.pinned,
+        shared: savedViews.shared,
+        ownerId: savedViews.userId,
+        ownerName: users.fullName,
+      })
       .from(savedViews)
-      .where(and(eq(savedViews.userId, Number(user.id)), eq(savedViews.scope, "candidates"), eq(savedViews.pinned, true)))
+      .leftJoin(users, eq(savedViews.userId, users.id))
+      .where(
+        and(
+          eq(savedViews.scope, "candidates"),
+          // My own pinned views, plus — when sharing is on — any view another
+          // staff member has shared org-wide.
+          viewSharingEnabled
+            ? or(
+                and(eq(savedViews.userId, Number(user.id)), eq(savedViews.pinned, true)),
+                eq(savedViews.shared, true),
+              )
+            : and(eq(savedViews.userId, Number(user.id)), eq(savedViews.pinned, true)),
+        ),
+      )
       .orderBy(savedViews.sortOrder, savedViews.createdAt),
     db
       .select({ stage: candidates.stage, n: count() })
@@ -104,6 +126,21 @@ export default async function CandidatesPage({
   const emailTemplateList = bulkEmailEnabled
     ? await db.select({ slug: emailTemplates.slug, name: emailTemplates.name }).from(emailTemplates).where(eq(emailTemplates.isActive, true)).orderBy(emailTemplates.name)
     : [];
+
+  // Shape saved views for the picker: mark ownership so only the owner sees
+  // delete/share controls, and label views shared by a colleague. A staff
+  // member shouldn't act on hr_lite-scoped data, so hide saved views entirely
+  // for lite users (they don't get the saved-view UI anyway).
+  const meId = Number(user.id);
+  const savedViewItems: SavedView[] = mySavedViews.map((v) => ({
+    id: v.id,
+    name: v.name,
+    query: v.query,
+    pinned: v.pinned,
+    shared: v.shared,
+    own: v.ownerId === meId,
+    ownerName: v.ownerName,
+  }));
 
   const total = totalRows[0]?.n ?? 0;
   const stageCounts = new Map<string, number>();
@@ -155,7 +192,7 @@ export default async function CandidatesPage({
       <SavedViews
         scope="candidates"
         basePath="/candidates"
-        views={mySavedViews}
+        views={savedViewItems}
         onCreate={async (input) => {
           "use server";
           return await createSavedViewAction(input);
@@ -164,6 +201,14 @@ export default async function CandidatesPage({
           "use server";
           await deleteSavedViewAction(id);
         }}
+        onToggleShare={
+          viewSharingEnabled
+            ? async (id) => {
+                "use server";
+                return await toggleShareSavedViewAction(id);
+              }
+            : undefined
+        }
       />
 
       <div className="flex flex-wrap gap-1 mb-3">

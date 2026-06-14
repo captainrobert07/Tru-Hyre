@@ -2,7 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { jobs, clientAccounts, jobVendors, vendorAccounts, submissions, candidates } from "@/db/schema";
+import { jobs, clientAccounts, jobVendors, vendorAccounts, submissions, candidates, jobStageChecklists } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { isFeatureEnabled } from "@/lib/features";
 import { getCachedScores } from "@/lib/match";
@@ -11,7 +11,9 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RecentTracker } from "@/components/recently-viewed";
 import { MatchPanel } from "@/components/match-panel";
 import { JobApproval } from "@/components/job-approval";
+import { StageChecklistEditor, type ChecklistItem } from "@/components/stage-checklist-editor";
 import { refreshMatchScoresAction } from "./match-actions";
+import { addChecklistItemAction, deleteChecklistItemAction } from "./checklist-actions";
 import { approveJobAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -67,12 +69,23 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
       .orderBy(desc(submissions.createdAt)),
   ]);
 
-  const [matchEnabled, approvalEnabled] = await Promise.all([
+  const [matchEnabled, approvalEnabled, checklistsEnabled] = await Promise.all([
     isFeatureEnabled("ai_match"),
     isFeatureEnabled("requisition_approval"),
+    isFeatureEnabled("stage_checklists"),
   ]);
   const cachedScores = matchEnabled ? await getCachedScores(jobId) : [];
   const lastComputed = cachedScores[0]?.computedAt ?? null;
+
+  const checklistItems: ChecklistItem[] = checklistsEnabled
+    ? (
+        await db
+          .select({ id: jobStageChecklists.id, stage: jobStageChecklists.stage, label: jobStageChecklists.label })
+          .from(jobStageChecklists)
+          .where(eq(jobStageChecklists.jobId, jobId))
+          .orderBy(jobStageChecklists.stage, jobStageChecklists.sortOrder)
+      )
+    : [];
 
   return (
     <>
@@ -157,6 +170,23 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </section>
+
+          {checklistsEnabled && (
+            <section className="card p-4">
+              <h3 className="text-sm font-semibold mb-3">Stage checklists</h3>
+              <StageChecklistEditor
+                items={checklistItems}
+                onAdd={async (fd) => {
+                  "use server";
+                  return await addChecklistItemAction(jobId, fd);
+                }}
+                onDelete={async (itemId) => {
+                  "use server";
+                  return await deleteChecklistItemAction(jobId, itemId);
+                }}
+              />
+            </section>
+          )}
 
           {matchEnabled && (
             <MatchPanel

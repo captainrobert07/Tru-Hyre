@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { eq, desc, inArray, and } from "drizzle-orm";
+import { eq, desc, inArray, and, or, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments, candidateReferences } from "@/db/schema";
+import { candidates, resumeFiles, clientPackets, stageHistory, jobs, submissions, feedbackEvents, comments, interviews, users, emailOutbox, emailTemplates, interviewFeedback, offers, inboundMessages, sequenceEnrollments, candidateReferences, interviewKits } from "@/db/schema";
 import { requireStaffOrLite, isLite } from "@/lib/rbac";
 import { getFeatureStates } from "@/lib/features";
 import { suggestJobsForCandidate } from "@/lib/match";
@@ -14,6 +14,7 @@ import { PendingShimmer } from "@/components/pending-shimmer";
 import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
 import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
+import { InterviewKitReference } from "@/components/interview-kit-reference";
 import { SchedulingLink } from "@/components/scheduling-link";
 import { PortalInviteButton } from "@/components/portal-invite-button";
 import { EmailComposer, type OutboxItem, type InboundItem } from "@/components/email-composer";
@@ -191,6 +192,22 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
     status: r.status,
     response: r.response,
   }));
+
+  // Interview kits relevant to this candidate: reusable kits (no job) plus any
+  // kit tied to a job this candidate has been submitted to.
+  const candidateJobIds = [...new Set(subs.map((s) => s.jobId).filter((id): id is number => id != null))];
+  const relevantKits = !lite && flags.interview_kits
+    ? await db
+        .select({ id: interviewKits.id, name: interviewKits.name, focusAreas: interviewKits.focusAreas, questions: interviewKits.questions, jobId: interviewKits.jobId })
+        .from(interviewKits)
+        .where(
+          candidateJobIds.length > 0
+            ? or(isNull(interviewKits.jobId), inArray(interviewKits.jobId, candidateJobIds))
+            : isNull(interviewKits.jobId),
+        )
+        .orderBy(desc(interviewKits.createdAt))
+        .limit(20)
+    : [];
 
   const seqLabel = (key: string) => SEQUENCES.find((s) => s.key === key);
   const enrollmentItems: EnrollmentItem[] = enrollmentRows.map((e) => ({
@@ -701,6 +718,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 />
               </div>
             )}
+            {flags.interview_kits && <InterviewKitReference kits={relevantKits} />}
           </Section>
           )}
 

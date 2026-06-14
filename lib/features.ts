@@ -63,6 +63,7 @@ export type FeatureKey =
   | "vendor_onboarding"
   | "custom_report_builder"
   | "stage_checklists"
+  | "interview_kits"
   | "intake_automatch"
   | "candidate_portal";
 
@@ -276,7 +277,7 @@ export const FEATURES: FeatureDef[] = [
   {
     key: "diversity_reporting",
     label: "Diversity / EEO reporting",
-    description: "Aggregate diversity reporting. Off by default and inert unless diversity fields are collected (GDPR-sensitive).",
+    description: "When on, shows a voluntary self-ID section on the careers form (opt-in + consent) and an aggregate, small-cell-suppressed diversity report. Off by default (GDPR-sensitive).",
     category: "Analytics",
     defaultEnabled: false,
   },
@@ -432,6 +433,13 @@ export const FEATURES: FeatureDef[] = [
     label: "Per-job stage checklists",
     description: "Define checklist items per pipeline stage on a job (advisory; doesn't change the core stages).",
     category: "Pipeline",
+    defaultEnabled: false,
+  },
+  {
+    key: "interview_kits",
+    label: "Interview kits",
+    description: "Reusable interview kits — a named set of focus areas and questions interviewers can pull up when running a round.",
+    category: "Scheduling",
     defaultEnabled: false,
   },
   {
