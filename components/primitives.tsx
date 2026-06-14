@@ -20,7 +20,7 @@ export function PageHeader({
   return (
     <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-8">
       <div>
-        <h1 className="display text-display">{title}</h1>
+        <h1 className="display text-3xl md:text-4xl">{title}</h1>
         {subtitle && <p className="text-base text-ink-soft mt-2">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -57,7 +57,7 @@ export function StatCard({
         </div>
         {pillText && <span className={cn(pillClass, "shrink-0")}>{pillText}</span>}
       </div>
-      <div className="stat-big">{value}</div>
+      <div className="font-sans font-medium text-2xl md:text-3xl leading-tight tracking-tight tabular-nums">{value}</div>
       <div className="mt-2 flex items-center gap-2 text-xs">
         {delta !== undefined && <DeltaPill {...delta} />}
         {hint && <span className="text-ink-soft">{hint}</span>}
