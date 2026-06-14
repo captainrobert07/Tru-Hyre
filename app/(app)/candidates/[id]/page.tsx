@@ -14,6 +14,7 @@ import { PendingShimmer } from "@/components/pending-shimmer";
 import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
 import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
+import { SchedulingLink } from "@/components/scheduling-link";
 import { EmailComposer, type OutboxItem, type InboundItem } from "@/components/email-composer";
 import { Scorecard, type ScorecardItem } from "@/components/scorecard";
 import { AiSummaryButton } from "@/components/ai-summary-button";
@@ -27,6 +28,7 @@ import { enrollSequenceAction, cancelSequenceAction } from "./sequence-actions";
 import { requestReferenceAction, markReferenceReceivedAction } from "./reference-actions";
 import { SEQUENCES } from "@/lib/sequences";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
+import { createSchedulingLinkAction } from "./scheduling-actions";
 import { sendAdHocEmailAction, logInboundReplyAction } from "./email-actions";
 import { submitScorecardAction } from "./scorecard-actions";
 import { generateCandidateSummaryAction, generateOutreachAction, generateRedFlagsAction } from "./ai-actions";
@@ -687,6 +689,16 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 return await cancelInterviewAction(candidateId, interviewId);
               }}
             />
+            {flags.self_scheduling && (
+              <div className="mt-3 pt-3 border-t border-hairline">
+                <SchedulingLink
+                  onCreate={async (fd) => {
+                    "use server";
+                    return await createSchedulingLinkAction(candidateId, fd);
+                  }}
+                />
+              </div>
+            )}
           </Section>
           )}
 

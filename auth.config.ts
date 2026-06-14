@@ -16,6 +16,7 @@ export const authConfig = {
         path.startsWith("/invite/") ||
         path.startsWith("/careers") ||
         path.startsWith("/refer/") ||
+        path.startsWith("/schedule/") ||
         path.startsWith("/api/auth") ||
         path.startsWith("/api/health") ||
         path.startsWith("/api/cron") ||

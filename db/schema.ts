@@ -715,6 +715,31 @@ export const clientFeedbackScores = pgTable("client_feedback_scores", {
   authorIdx: index("client_feedback_scores_author_idx").on(t.authorId),
 }));
 
+// ---------- Self-scheduling links ----------
+// A recruiter creates a tokenized link offering proposed interview slots; the
+// candidate picks one on a public page, which creates a scheduled interview.
+export const schedulingLinks = pgTable("scheduling_links", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  jobId: integer("job_id").references(() => jobs.id, { onDelete: "set null" }),
+  title: varchar("title", { length: 200 }).notNull(),
+  mode: interviewModeEnum("mode").notNull().default("video"),
+  durationMins: integer("duration_mins").notNull().default(45),
+  timeZone: varchar("time_zone", { length: 64 }).notNull().default("UTC"),
+  // Proposed slots as ISO strings the candidate chooses from.
+  slots: jsonb("slots").$type<string[]>().notNull().default([]),
+  interviewerIds: jsonb("interviewer_ids").$type<number[]>().notNull().default([]),
+  // Once booked: which slot + the created interview. Null until booked.
+  bookedSlot: varchar("booked_slot", { length: 40 }),
+  bookedInterviewId: integer("booked_interview_id").references(() => interviews.id, { onDelete: "set null" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdById: integer("created_by_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  candidateIdx: index("scheduling_links_candidate_idx").on(t.candidateId),
+}));
+
 // ---------- Saved custom reports ----------
 export const savedReports = pgTable("saved_reports", {
   id: serial("id").primaryKey(),
@@ -842,3 +867,4 @@ export type ClientFeedbackScore = typeof clientFeedbackScores.$inferSelect;
 export type UserPermissions = typeof userPermissions.$inferSelect;
 export type SavedReport = typeof savedReports.$inferSelect;
 export type JobStageChecklist = typeof jobStageChecklists.$inferSelect;
+export type SchedulingLink = typeof schedulingLinks.$inferSelect;
