@@ -90,3 +90,34 @@ supervised increment, not an autopilot one.
   no local verify = supervised only.
 
 **No code changed this iteration (PM analysis + proposal lens).**
+
+---
+
+## Iteration 10 — README honesty sync (SHIPPED — a doc-only fix the lens permits)
+
+Iteration 5 audited the *feature* docs (ROADMAP/INTEGRATIONS) and found them
+honest. This iteration audited the **README** — the most-read doc, the first
+thing a new dev or reviewer sees — and it had drifted materially from shipped
+reality. Verified each claim against code before fixing:
+
+| README claimed | Reality (verified) | Fix |
+|---|---|---|
+| "Vercel Blob — resume PDFs" (×3) | `lib/drive.ts` uses `googleapis` Drive; the whole `fix-types.ts` blob→drive migration happened | → Google Drive (service account) |
+| Set `BLOB_READ_WRITE_TOKEN` in setup + deploy | No Blob anywhere; storage is `GOOGLE_SERVICE_ACCOUNT_JSON` + `GDRIVE_RESUMES_FOLDER_ID` | → correct env vars |
+| "Resend — transactional email" | `lib/email.ts` is nodemailer + Gmail SMTP | → Gmail SMTP (nodemailer) |
+| "An Allianz HR Platform — Project by Kris" (title + footer) | Compliance scrub (commit f1af46c) removed all company-name refs; the seed actively neutralizes this exact string | → "An internal hiring platform" |
+| `.env.example` `APP_TAGLINE` carried the same scrubbed string | same compliance issue, second file | → scrubbed |
+| First build runs `pnpm db:push && pnpm db:seed` | actual `vercel-build`: fix-types → drizzle-kit push → seed → next build | → real chain |
+
+**Why this matters (PM framing):** a dishonest README is worse than no README.
+It told a new dev to provision a Blob store and a Resend account that don't
+exist, and it reintroduced the exact company-name string the codebase spent a
+commit scrubbing for compliance — in the one file most likely to be read first.
+This is the same "honest done" discipline as iter 5, applied to onboarding docs.
+
+**Shippable (not a proposal):** docs-only, zero code/runtime risk, verified
+against the actual `lib/` + `package.json` + `.env.example`. Shipped this
+iteration.
+
+**Still NOT touched:** the `db/fix-types.ts` TRUNCATE fix (AUTOPILOT-DEV.md) and
+SSO (above) remain supervised-only proposals.
