@@ -886,8 +886,8 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               }}
               className="space-y-2"
             >
-              <input name="title" placeholder="e.g. Follow up next Tuesday" required className="input text-sm" />
-              <input name="dueAt" type="date" className="input text-sm" />
+              <input name="title" placeholder="e.g. Follow up next Tuesday" required className="input text-sm" aria-label="Reminder title" />
+              <input name="dueAt" type="date" className="input text-sm" aria-label="Due date" />
               <button type="submit" className="btn-ghost text-xs w-full">Add reminder</button>
             </form>
           </Section>
@@ -896,13 +896,13 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           {!lite && (
           <Section title="Submit to job" defaultOpen={false}>
             <form action={submitToJobAction.bind(null, candidateId)} className="space-y-2">
-              <select name="jobId" className="input text-sm" required>
+              <select name="jobId" className="input text-sm" required aria-label="Job to submit to">
                 <option value="">Select an open job…</option>
                 {openJobs.map((j) => (
                   <option key={j.id} value={j.id}>{j.title}</option>
                 ))}
               </select>
-              <textarea name="notes" placeholder="Notes (optional)" rows={2} className="input text-sm py-2" />
+              <textarea name="notes" placeholder="Notes (optional)" rows={2} className="input text-sm py-2" aria-label="Submission notes" />
               <SubmitButton
                 className="text-xs w-full"
                 disabled={!latestPacket}
