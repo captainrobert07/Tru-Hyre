@@ -55,6 +55,21 @@ The last four buildable UI gaps on already-scaffolded features:
   self-ID section on the careers form (only shown + stored when `diversity_reporting` is on AND the
   applicant ticks the diversity-consent box); `lib/diversity.ts` (fields + sanitize + small-cell
   threshold); aggregate report section with <5 buckets suppressed.
+## Run 5 (branch fix/verified-gaps) ✅ SHIPPED to main @ 6f24abb, prod green, E2E 12/12 + 11/11
+A 13-agent completeness audit (5 dimension finders + 8 feature-slice finders → adversarial verify,
+40 candidates → 27 confirmed) surfaced real gaps my earlier "nothing pending" missed. Fixed all:
+- BROKEN: webhooks candidate.created (now fired on all 6 creation paths via lib/webhooks.
+  fireCandidateCreated) + offer.accepted (in setOfferStatusAction) — were advertised but never fired.
+- BROKEN: impersonation — th_impersonate cookie was written but never read. auth.ts now reads it
+  (admin-only, re-verified each request, 1h expiry), projects target identity in session(); global
+  ImpersonationBanner with one-click exit. Normal login path provably unchanged (auth E2E 12/12).
+- DEAD: removed ai_chatbot flag (zero implementation).
+- FLAG HARDENING: gated bulk_actions buttons / GDPR DangerZone / PWA manifest on their flags;
+  added assertFeatureEnabled to approveJobAction + gdpr_tools delete/export (403 on export route);
+  vendor_commission fields ignored when off; linkedin_import manual-URL override no-ops when off.
+- DEAD DATA: surfaced interviews.roundIndex + notes (scheduler) and submissions.notes (/submissions);
+  dropped never-written submissions.expectedJoinDate column.
+
 NOW: only provider-secret/sandbox-dependent connector send-flows (job-board post, DocuSign send,
 Outlook, auto Gmail/IMAP sync, availability sync, bg-check, transcription, full SSO, client billing)
 and the user-side live-cutover (enter real API keys at /settings/integrations → Test) remain.
