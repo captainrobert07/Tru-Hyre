@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { ArrowRight, FileText, Sparkles, ShieldCheck, BarChart3, Zap, Users } from "lucide-react";
+import {
+  ArrowRight, FileText, Sparkles, ShieldCheck, BarChart3, Workflow,
+  FileSignature, Briefcase, UserCog, Truck, UserRound,
+} from "lucide-react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { APP_NAME } from "@/lib/utils";
 
 export const metadata = {
-  title: `${APP_NAME} — modern hiring platform`,
-  description: "Resume parsing, candidate pipelines, sanitized client packets, and reporting — built for modern HR teams.",
+  title: `${APP_NAME} — Allianz hiring platform`,
+  description:
+    "Tru Hyre is Allianz's internal hiring platform: resume parsing, candidate pipelines, AI matching, interviews, offers, role-scoped portals, reporting and governance — one system from resume to offer.",
 };
 
 export default async function LandingPage() {
@@ -15,6 +19,7 @@ export default async function LandingPage() {
     const role = (session.user as { role?: string }).role;
     if (role === "client") redirect("/portal/client");
     if (role === "vendor") redirect("/portal/vendor");
+    if (role === "candidate") redirect("/portal/candidate");
     redirect("/dashboard");
   }
 
@@ -23,7 +28,8 @@ export default async function LandingPage() {
       <Header />
       <Hero />
       <DashboardPreview />
-      <ValueGrid />
+      <Capabilities />
+      <Roles />
       <FlowSection />
       <CTA />
       <Footer />
@@ -33,9 +39,9 @@ export default async function LandingPage() {
 
 function Header() {
   const links = [
-    { href: "#features", label: "Features" },
+    { href: "#capabilities", label: "Capabilities" },
+    { href: "#roles", label: "Roles" },
     { href: "#flow", label: "Workflow" },
-    { href: "#about", label: "About" },
   ];
   return (
     <header className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-6 flex items-center justify-between">
@@ -51,8 +57,7 @@ function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
-        <Link href="/login" className="hidden md:inline-flex btn-ghost">Sign in</Link>
-        <Link href="/login" className="btn-primary">Get started <ArrowRight size={14} /></Link>
+        <Link href="/login" className="btn-primary">Sign in <ArrowRight size={14} /></Link>
       </div>
     </header>
   );
@@ -63,26 +68,25 @@ function Hero() {
     <section className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-16 pb-12 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
       <div className="lg:col-span-7 relative">
         <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 h-8 text-xs font-medium text-brand-700 mb-6">
-          <span className="size-1.5 rounded-full bg-brand-500" /> Allianz HR Platform · v1
+          <span className="size-1.5 rounded-full bg-brand-500" /> Internal Allianz HR platform
         </div>
         <h1 className="display text-hero">
-          Hire <em>better</em><br />
-          with <span className="text-brand-600">AI-grade</span> resume<br />intelligence.
+          From <em>resume</em><br />
+          to <span className="text-brand-600">offer</span>,<br />in one system.
         </h1>
         <p className="text-lg text-ink-soft mt-6 max-w-lg">
-          {APP_NAME} parses every resume, dedupes candidates, sanitizes client packets, and tracks every stage — so your recruiters spend their time hiring, not filing.
+          {APP_NAME} runs the whole hiring loop for Allianz recruiters — parse and dedupe candidates,
+          match and screen with AI, run interviews, send offers, and report on it all. Clients,
+          vendors and candidates each get their own scoped view.
         </p>
         <div className="flex flex-wrap gap-3 mt-8">
-          <Link href="/login" className="btn-primary">Get started <ArrowRight size={14} /></Link>
-          <a href="#features" className="btn-ghost">See features</a>
+          <Link href="/login" className="btn-primary">Sign in <ArrowRight size={14} /></Link>
+          <a href="#capabilities" className="btn-ghost">Explore capabilities</a>
         </div>
-        <div className="flex items-center gap-3 mt-10 text-xs text-ink-muted">
-          <div className="flex -space-x-2">
-            {["#10b981", "#f97316", "#3b82f6", "#a855f7"].map((c, i) => (
-              <span key={i} className="size-7 rounded-full border-2 border-canvas" style={{ background: c }} />
-            ))}
-          </div>
-          <span>Trusted by HR teams shipping <strong className="text-ink">3,500+</strong> hires this year.</span>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-10 text-xs text-ink-muted">
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} className="text-brand-600" /> Role-based access</span>
+          <span className="inline-flex items-center gap-1.5"><FileText size={14} className="text-brand-600" /> Resume PII stays internal</span>
+          <span className="inline-flex items-center gap-1.5"><BarChart3 size={14} className="text-brand-600" /> Full audit trail</span>
         </div>
       </div>
 
@@ -99,25 +103,29 @@ function FloatingResumePeek() {
       <div className="absolute -top-6 -left-6 size-32 rounded-full blob-emerald opacity-90" />
       <div className="absolute -bottom-10 -right-6 size-24 rounded-full blob-emerald opacity-60 blur-sm" />
 
-      {/* Sticky note */}
-      <div className="absolute -top-4 left-2 -rotate-3 bg-amber-100 border border-amber-200 rounded-lg p-4 w-48 shadow-card text-xs text-ink-soft">
-        <p>Parsed 47 resumes and shortlisted 12 in under 4 minutes.</p>
-        <div className="mt-2 text-[10px] text-amber-700">— Allianz Talent Lead</div>
+      {/* Match-score card */}
+      <div className="absolute -top-4 left-2 -rotate-3 bg-surface border border-hairline rounded-lg p-4 w-52 shadow-card text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-ink-muted">AI match</span>
+          <span className="pill-good">87</span>
+        </div>
+        <p className="mt-2 text-ink-soft">Strong on backend + cloud; notice period fits the role.</p>
       </div>
 
       {/* Main card */}
       <div className="relative card p-6 ml-12 mt-12">
         <div className="flex items-center justify-between mb-4">
-          <span className="pill-good">GOOD</span>
-          <span className="text-xs text-ink-muted">Passing rate</span>
+          <span className="text-xs text-ink-muted">Parse status</span>
+          <span className="pill-good">OK</span>
         </div>
         <div className="stat-huge">
-          61<span className="text-brand-600">%</span>
+          1,248
         </div>
-        <div className="mt-5 space-y-2.5">
-          <ProgressRow label="Complete" value={61} tone="brand" />
-          <ProgressRow label="Failed" value={17} tone="attention" />
-          <ProgressRow label="Partial" value={22} tone="muted" />
+        <div className="text-xs text-ink-muted -mt-1 mb-4">candidates in the pipeline</div>
+        <div className="space-y-2.5">
+          <ProgressRow label="Shortlisted" value={42} tone="brand" />
+          <ProgressRow label="Interviewing" value={28} tone="muted" />
+          <ProgressRow label="Offer stage" value={12} tone="attention" />
         </div>
       </div>
 
@@ -137,7 +145,7 @@ function ProgressRow({ label, value, tone }: { label: string; value: number; ton
     <div className="text-xs">
       <div className="flex justify-between mb-1">
         <span className="text-ink-soft">{label}</span>
-        <span className="font-medium tabular-nums">{value}%</span>
+        <span className="font-medium tabular-nums">{value}</span>
       </div>
       <div className="h-2 bg-canvas rounded-full overflow-hidden">
         <div className={`h-full ${fill}`} style={{ width: `${value}%` }} />
@@ -148,11 +156,11 @@ function ProgressRow({ label, value, tone }: { label: string; value: number; ton
 
 function DashboardPreview() {
   return (
-    <section id="features" className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
+    <section className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
       <div className="text-center max-w-2xl mx-auto mb-10">
-        <h2 className="display text-display">Everything in <em>one</em> screen</h2>
+        <h2 className="display text-display">The whole pipeline on <em>one</em> screen</h2>
         <p className="text-base text-ink-soft mt-3">
-          Pipeline, packets, vendor quality, and audit trails — without 12 tabs and a Zapier subscription.
+          Volume, stages, vendor quality and what needs you today — without juggling a dozen tabs.
         </p>
       </div>
 
@@ -167,7 +175,7 @@ function DashboardPreview() {
             </div>
             <div className="card p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-semibold">Pipeline</div>
+                <div className="text-sm font-semibold">Submissions</div>
                 <span className="text-xs text-ink-muted">Last 7 days</span>
               </div>
               <div className="flex items-end gap-2 h-24">
@@ -180,7 +188,7 @@ function DashboardPreview() {
 
           <div className="lg:col-span-5 space-y-3">
             <div className="card p-4">
-              <div className="text-xs text-ink-muted uppercase tracking-wide">Recent</div>
+              <div className="text-xs text-ink-muted uppercase tracking-wide">Recent activity</div>
               {[
                 { name: "Priya Raman", role: "Sr. Backend Engineer", stage: "shortlist", tone: "brand" },
                 { name: "Markus Weber", role: "Backend Lead", stage: "interview", tone: "amber" },
@@ -206,11 +214,12 @@ function DashboardPreview() {
             <div className="card p-4 bg-brand-500 text-white">
               <div className="text-xs uppercase tracking-wide opacity-80">Vendor quality</div>
               <div className="stat-big mt-2">+24%</div>
-              <div className="text-xs opacity-80 mt-1">Vendors leading on shortlist rate this quarter.</div>
+              <div className="text-xs opacity-80 mt-1">Top vendors leading on shortlist rate this quarter.</div>
             </div>
           </div>
         </div>
       </div>
+      <p className="text-[11px] text-ink-muted text-center mt-3">Illustrative preview — sign in to see live data.</p>
     </section>
   );
 }
@@ -228,48 +237,54 @@ function PreviewStat({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
-function ValueGrid() {
+function Capabilities() {
   const items = [
     {
       icon: <FileText size={20} />,
-      title: "Resume parsing",
-      body: "Drop a PDF or paste text. Tru Hyre extracts name, contact, location, title, experience, notice, CTC, summary, and skills.",
+      title: "Sourcing & intake",
+      body: "Resume parsing from PDF or text, multi-layer duplicate detection, bulk upload, a public careers page, employee referrals and a talent pool.",
       tone: "brand" as const,
-    },
-    {
-      icon: <ShieldCheck size={20} />,
-      title: "Sanitized packets",
-      body: "Generate a client-safe PDF in one click — no email, no phone, no vendor leak. Audit-trail every download.",
-      tone: "neutral" as const,
-    },
-    {
-      icon: <Users size={20} />,
-      title: "Role-locked portals",
-      body: "Clients only see their submissions. Vendors only see their own candidates. Recruiters drive the pipeline.",
-      tone: "neutral" as const,
-    },
-    {
-      icon: <Zap size={20} />,
-      title: "Duplicate detection",
-      body: "Email match, phone last-10-digits, content hash, and fuzzy name — every check runs on every upload.",
-      tone: "neutral" as const,
-    },
-    {
-      icon: <BarChart3 size={20} />,
-      title: "Reports that ship",
-      body: "Conversion ratios, vendor quality, daily volume, and pipeline-by-stage — without spinning up a BI seat.",
-      tone: "neutral" as const,
     },
     {
       icon: <Sparkles size={20} />,
-      title: "AI-assisted",
-      body: "Optional Claude or GPT integration fills the fields regex misses. Hybrid: free until you turn AI on.",
+      title: "AI assistance",
+      body: "Claude-powered candidate–job match scoring, summaries, semantic search, screening questions, outreach drafts and offer-acceptance prediction. Off until you add a key.",
+      tone: "neutral" as const,
+    },
+    {
+      icon: <Workflow size={20} />,
+      title: "Pipeline & interviews",
+      body: "Stage tracking, requisition approval, multi-round interviews with kits and scorecards, reference checks, and candidate self-scheduling links.",
+      tone: "neutral" as const,
+    },
+    {
+      icon: <FileSignature size={20} />,
+      title: "Offers & packets",
+      body: "Sanitized client packets with no PII leak, offer management, and a one-click offer-letter PDF — every download on the audit trail.",
       tone: "brand" as const,
+    },
+    {
+      icon: <BarChart3 size={20} />,
+      title: "Reports & analytics",
+      body: "Funnel conversion, cycle time, vendor SLA, recruiter scoreboard, bottlenecks, forecasting and a custom report builder — no separate BI seat.",
+      tone: "neutral" as const,
+    },
+    {
+      icon: <ShieldCheck size={20} />,
+      title: "Governance",
+      body: "Role-based access, granular permissions, append-only audit log, GDPR export & erasure, feature flags, webhooks and integrations you control.",
+      tone: "neutral" as const,
     },
   ];
 
   return (
-    <section className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
+    <section id="capabilities" className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <h2 className="display text-display">Built for the <em>whole</em> hiring loop</h2>
+        <p className="text-base text-ink-soft mt-3">
+          Every capability below is in the product today, each one toggleable by an admin.
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((it) => (
           <div
@@ -292,18 +307,64 @@ function ValueGrid() {
   );
 }
 
+function Roles() {
+  const roles = [
+    {
+      icon: <UserCog size={18} />,
+      title: "Recruiters & HR",
+      body: "Drive the full pipeline — upload, match, interview, submit and offer. Admins manage users, features and integrations.",
+    },
+    {
+      icon: <Briefcase size={18} />,
+      title: "Clients",
+      body: "A scoped portal showing only their submissions, with packets to review and feedback scores to leave.",
+    },
+    {
+      icon: <Truck size={18} />,
+      title: "Vendors",
+      body: "Agencies upload and track only their own candidates, with self-onboarding and commission terms.",
+    },
+    {
+      icon: <UserRound size={18} />,
+      title: "Candidates",
+      body: "An invited self-service portal to see their own stage, interviews and offer — and nothing else.",
+    },
+  ];
+  return (
+    <section id="roles" className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <h2 className="display text-display">One platform, <em>four</em> vantage points</h2>
+        <p className="text-base text-ink-soft mt-3">
+          Everyone signs into the same system, but each role sees only what it should.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {roles.map((r) => (
+          <div key={r.title} className="card p-6">
+            <div className="size-10 rounded-xl2 bg-brand-50 text-brand-700 flex items-center justify-center mb-4">
+              {r.icon}
+            </div>
+            <h3 className="text-base font-semibold mb-1.5">{r.title}</h3>
+            <p className="text-sm text-ink-soft">{r.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function FlowSection() {
   const steps = [
-    { num: "01", title: "Upload or paste", body: "PDF or raw text. Hybrid regex + optional Claude parse." },
-    { num: "02", title: "Auto-stage", body: "Lands at HR Review with parsed profile and dedupe report." },
-    { num: "03", title: "Generate packet", body: "Sanitized PDF — name, KPIs, summary, skills. No PII." },
-    { num: "04", title: "Submit & track", body: "Pick a job, send to client. Feedback writes to the timeline." },
+    { num: "01", title: "Upload or apply", body: "Recruiters upload a PDF, or candidates self-apply via the careers page. Fields parse automatically." },
+    { num: "02", title: "Match & screen", body: "Dedupe runs, AI scores fit against open jobs, and the candidate lands at HR review." },
+    { num: "03", title: "Interview & assess", body: "Schedule rounds with kits and scorecards; clients review sanitized packets and leave feedback." },
+    { num: "04", title: "Offer & onboard", body: "Send the offer, generate the letter PDF, and hand off to HRIS when they join." },
   ];
   return (
     <section id="flow" className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
       <div className="text-center max-w-2xl mx-auto mb-10">
         <h2 className="display text-display">From resume to <em>offer</em>, in four steps</h2>
-        <p className="text-base text-ink-soft mt-3">No spreadsheets. No 14-tool stack. Just the pipeline.</p>
+        <p className="text-base text-ink-soft mt-3">No spreadsheets, no scattered tools — just the pipeline.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {steps.map((s) => (
@@ -324,20 +385,21 @@ function FlowSection() {
 
 function CTA() {
   return (
-    <section id="about" className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
+    <section className="max-w-[1280px] mx-auto px-6 lg:px-10 py-16">
       <div className="card p-10 md:p-16 text-center bg-ink_inverted text-white border-ink_inverted relative overflow-hidden">
         <div className="absolute -top-20 -right-20 size-64 rounded-full blob-emerald opacity-40 blur-2xl" />
         <div className="absolute -bottom-24 -left-24 size-72 rounded-full blob-emerald opacity-30 blur-2xl" />
-        <h2 className="display text-display relative">Ready to <em>boost</em> your hiring?</h2>
+        <h2 className="display text-display relative">Sign in to your <em>workspace</em></h2>
         <p className="text-base text-white/70 mt-4 max-w-md mx-auto relative">
-          Sign in with the seeded admin account and explore the entire pipeline in 60 seconds.
+          Recruiters and admins sign in here. Clients, vendors and candidates join by invitation —
+          check your email for an invite link.
         </p>
         <div className="flex flex-wrap gap-3 justify-center mt-8 relative">
           <Link href="/login" className="btn bg-brand-500 text-white hover:bg-brand-600 active:scale-[.98] px-5 h-11 rounded-full text-sm font-medium">
-            Get started <ArrowRight size={14} />
+            Sign in <ArrowRight size={14} />
           </Link>
-          <a href="#features" className="btn bg-white/10 text-white hover:bg-white/15 px-5 h-11 rounded-full text-sm font-medium">
-            See features
+          <a href="#capabilities" className="btn bg-white/10 text-white hover:bg-white/15 px-5 h-11 rounded-full text-sm font-medium">
+            Explore capabilities
           </a>
         </div>
       </div>
@@ -346,13 +408,14 @@ function CTA() {
 }
 
 function Footer() {
+  const year = process.env.NEXT_PUBLIC_BUILD_YEAR || "2026";
   return (
     <footer className="max-w-[1280px] mx-auto px-6 lg:px-10 py-10 flex flex-col md:flex-row justify-between gap-3 text-sm text-ink-muted">
-      <div>© {new Date().getFullYear()} {APP_NAME}. An Allianz HR Platform — Project by Kris.</div>
+      <div>© {year} {APP_NAME}. An internal Allianz HR platform.</div>
       <div className="flex gap-4">
         <Link href="/login" className="hover:text-ink">Sign in</Link>
-        <a href="#features" className="hover:text-ink">Features</a>
-        <a href="#flow" className="hover:text-ink">Workflow</a>
+        <a href="#capabilities" className="hover:text-ink">Capabilities</a>
+        <a href="#roles" className="hover:text-ink">Roles</a>
       </div>
     </footer>
   );
