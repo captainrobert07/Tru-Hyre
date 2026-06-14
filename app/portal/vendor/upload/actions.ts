@@ -13,6 +13,7 @@ import { logAudit } from "@/lib/audit";
 import { makeRefId } from "@/lib/refid";
 import { requireVendor } from "@/lib/rbac";
 import { withToast } from "@/lib/toast";
+import { fireCandidateCreated } from "@/lib/webhooks";
 
 const EMPTY: ParsedResume = {
   text: "",
@@ -125,6 +126,8 @@ export async function vendorUploadResumeAction(formData: FormData): Promise<void
     summary: `Vendor uploaded ${fullName}`,
     meta: { refId, parseStatus, dupes: dupes.length, source: "vendor_portal" },
   });
+
+  await fireCandidateCreated(created.id);
 
   revalidatePath("/portal/vendor");
   redirect(withToast("/portal/vendor", `Submitted ${fullName}${dupes.length > 0 ? ` (${dupes.length} possible dupes)` : ""}`));

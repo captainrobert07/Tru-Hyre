@@ -270,6 +270,8 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
     status: iv.status,
     interviewerNames: (iv.interviewerIds || []).map((id) => staffById.get(id)).filter((n): n is string => Boolean(n)),
     roundLabel: iv.roundLabel,
+    roundIndex: iv.roundIndex,
+    notes: iv.notes,
   }));
 
   type Activity =
@@ -912,7 +914,7 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
           </Section>
           )}
 
-          {!lite && (
+          {!lite && flags.gdpr_tools && (
           <DangerZone
             candidateId={candidateId}
             candidateName={cand.fullName}

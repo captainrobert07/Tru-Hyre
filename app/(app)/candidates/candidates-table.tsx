@@ -50,6 +50,7 @@ export function CandidatesTable({
   vendors,
   templates = [],
   bulkEmailEnabled = false,
+  bulkActionsEnabled = true,
   lite = false,
   blind = false,
 }: {
@@ -58,6 +59,7 @@ export function CandidatesTable({
   vendors: { id: number; name: string }[];
   templates?: { slug: string; name: string }[];
   bulkEmailEnabled?: boolean;
+  bulkActionsEnabled?: boolean;
   lite?: boolean;
   blind?: boolean;
 }) {
@@ -161,6 +163,7 @@ export function CandidatesTable({
               </Link>
             )}
 
+            {bulkActionsEnabled && (
             <details className="relative">
               <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Move to stage ▾</summary>
               <div className="absolute right-0 top-full mt-2 w-48 card p-1 z-50">
@@ -171,7 +174,9 @@ export function CandidatesTable({
                 ))}
               </div>
             </details>
+            )}
 
+            {bulkActionsEnabled && (
             <details className="relative">
               <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Assign vendor ▾</summary>
               <div className="absolute right-0 top-full mt-2 w-56 card p-1 z-50 max-h-72 overflow-y-auto">
@@ -183,8 +188,11 @@ export function CandidatesTable({
                 ))}
               </div>
             </details>
+            )}
 
+            {bulkActionsEnabled && (
             <button type="button" disabled={pending} onClick={onAddTag} className="text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center">Tag</button>
+            )}
 
             {bulkEmailEnabled && templates.length > 0 && (
               <details className="relative">

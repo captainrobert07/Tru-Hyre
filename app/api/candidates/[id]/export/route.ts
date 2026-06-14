@@ -10,7 +10,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
 
-  const data = await exportCandidateData(candidateId);
+  let data: Record<string, unknown> | null;
+  try {
+    data = await exportCandidateData(candidateId);
+  } catch {
+    // exportCandidateData throws when the GDPR tools feature is disabled.
+    return NextResponse.json({ error: "feature_disabled" }, { status: 403 });
+  }
   if (!data) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

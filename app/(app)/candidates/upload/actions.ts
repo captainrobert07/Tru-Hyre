@@ -11,6 +11,8 @@ import { contentHash, findDuplicates } from "@/lib/dedupe";
 import { logAudit } from "@/lib/audit";
 import { makeRefId } from "@/lib/refid";
 import { requireStaffOrLite } from "@/lib/rbac";
+import { fireCandidateCreated } from "@/lib/webhooks";
+import { isFeatureEnabled } from "@/lib/features";
 
 type UploadResult =
   | { ok: false; error: string }
@@ -132,6 +134,8 @@ async function persistCandidate({
     meta: { refId, parseStatus, dupes: dupes.length, source, channel: drive ? "pdf" : "paste" },
   });
 
+  await fireCandidateCreated(created.id);
+
   revalidatePath("/candidates");
 
   if (dupes.length > 0) {
@@ -201,6 +205,7 @@ export async function bulkUploadResumesAction(_prev: BulkUploadResult | null, fo
         originalName: file.name, contentType: file.type || "application/pdf", sizeBytes: file.size, contentHash: hash,
       });
       await db.insert(stageHistory).values({ candidateId: createdRow.id, fromStage: null, toStage: "hr_review", changedById: Number(user.id), note: "Bulk upload" });
+      await fireCandidateCreated(createdRow.id);
       created++;
     } catch (e) {
       failed++;
@@ -242,7 +247,7 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
 
   const drive = await uploadResume(buf, file.name, file.type || "application/pdf");
 
-  applyLinkOverrides(parsed, formData);
+  await applyLinkOverrides(parsed, formData);
 
   return persistCandidate({
     parsed,
@@ -259,8 +264,11 @@ export async function uploadResumeAction(_prev: UploadResult | null, formData: F
 }
 
 // A manually-entered LinkedIn/GitHub URL on the upload form overrides whatever
-// the parser found (or fills it when the parser found nothing).
-function applyLinkOverrides(parsed: ParsedResume, formData: FormData): void {
+// the parser found (or fills it when the parser found nothing). This manual
+// entry IS the linkedin_import feature, so it's a no-op when the flag is off —
+// parser-derived links are untouched either way.
+async function applyLinkOverrides(parsed: ParsedResume, formData: FormData): Promise<void> {
+  if (!(await isFeatureEnabled("linkedin_import"))) return;
   const li = ((formData.get("linkedinUrl") as string) || "").trim();
   const gh = ((formData.get("githubUrl") as string) || "").trim();
   if (li) parsed.linkedinUrl = li.slice(0, 254);
@@ -282,7 +290,7 @@ export async function pasteResumeAction(_prev: UploadResult | null, formData: Fo
     return { ok: false, error: `Parse failed: ${(e as Error).message}` };
   }
 
-  applyLinkOverrides(parsed, formData);
+  await applyLinkOverrides(parsed, formData);
 
   return persistCandidate({
     parsed,

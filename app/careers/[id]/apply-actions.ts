@@ -12,6 +12,7 @@ import { makeRefId } from "@/lib/refid";
 import { isFeatureEnabled } from "@/lib/features";
 import { logAudit } from "@/lib/audit";
 import { sanitizeDiversity } from "@/lib/diversity";
+import { fireCandidateCreated } from "@/lib/webhooks";
 
 const applySchema = z.object({
   jobId: z.coerce.number().int().positive(),
@@ -156,6 +157,8 @@ export async function applyToJobAction(_prev: ApplyResult | null, formData: Form
     summary: `Careers self-apply: ${v.fullName} → ${job.title}`,
     meta: { refId, jobId: v.jobId, source: "careers" },
   });
+
+  await fireCandidateCreated(created.id);
 
   return { ok: true };
 }

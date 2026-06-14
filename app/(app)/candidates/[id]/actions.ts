@@ -11,7 +11,7 @@ import { uploadPacket, deleteDriveFile } from "@/lib/drive";
 import { renderPacketPdf } from "@/lib/packet";
 import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireAdmin, requireStaff, authorizeCandidate } from "@/lib/rbac";
-import { isFeatureEnabled } from "@/lib/features";
+import { isFeatureEnabled, assertFeatureEnabled } from "@/lib/features";
 import { fireWebhook } from "@/lib/webhooks";
 import { notifySlack, pushHrisHire } from "@/lib/connectors";
 import { withToast } from "@/lib/toast";
@@ -439,6 +439,7 @@ export async function submitToJobAction(id: number, formData: FormData): Promise
  */
 export async function deleteCandidateAction(id: number): Promise<void> {
   const user = await requireAdmin();
+  await assertFeatureEnabled("gdpr_tools");
   const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
   if (!c) redirect("/candidates");
 
@@ -498,6 +499,7 @@ export async function deleteCandidateAction(id: number): Promise<void> {
  */
 export async function exportCandidateData(id: number): Promise<Record<string, unknown> | null> {
   const user = await requireAdmin();
+  await assertFeatureEnabled("gdpr_tools");
   const c = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
   if (!c) return null;
 

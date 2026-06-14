@@ -6,6 +6,7 @@ import { Inter, Instrument_Serif } from "next/font/google";
 import { Toaster } from "sonner";
 import { APP_NAME, APP_TAGLINE } from "@/lib/utils";
 import { ToastListener } from "@/components/toast-listener";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,6 +39,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-screen font-sans">
+        <Suspense fallback={null}>
+          <ImpersonationBanner />
+        </Suspense>
         {children}
         <Toaster
           position="bottom-right"

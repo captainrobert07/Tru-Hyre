@@ -52,7 +52,6 @@ export type FeatureKey =
   | "dark_mode"
   | "ai_outreach"
   | "ai_redflags"
-  | "ai_chatbot"
   | "slack_notifications"
   | "hris_handoff"
   | "vendor_commission"
@@ -357,13 +356,6 @@ export const FEATURES: FeatureDef[] = [
     description: "Surface potential concerns (gaps, job-hopping, inconsistencies) from a candidate's profile.",
     category: "AI",
     defaultEnabled: true,
-  },
-  {
-    key: "ai_chatbot",
-    label: "Careers FAQ chatbot",
-    description: "An AI assistant on the public careers page that answers applicant questions.",
-    category: "AI",
-    defaultEnabled: false,
   },
   {
     key: "slack_notifications",

@@ -81,10 +81,20 @@ export const authConfig = {
     },
     session({ session, token }) {
       if (session.user) {
-        (session.user as { id?: string }).id = token.id as string;
-        (session.user as { role?: string }).role = token.role as string;
-        (session.user as { fullName?: string }).fullName = token.fullName as string;
-        (session.user as { permissions?: string[] }).permissions = (token.permissions as string[] | undefined) ?? [];
+        const impersonating = !!token.actId;
+        const u = session.user as {
+          id?: string; role?: string; fullName?: string; email?: string;
+          permissions?: string[]; impersonating?: boolean; impersonatorEmail?: string;
+        };
+        // When impersonating, project the TARGET identity onto the session so
+        // every page/action/route sees the acting user; otherwise the real user.
+        u.id = (impersonating ? token.actId : token.id) as string;
+        u.role = (impersonating ? token.actRole : token.role) as string;
+        u.fullName = (impersonating ? token.actName : token.fullName) as string;
+        if (impersonating) u.email = token.actEmail as string;
+        u.permissions = ((impersonating ? token.actPermissions : token.permissions) as string[] | undefined) ?? [];
+        u.impersonating = impersonating;
+        u.impersonatorEmail = impersonating ? (token.impersonatorEmail as string) : undefined;
       }
       return session;
     },

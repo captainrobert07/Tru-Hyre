@@ -7,6 +7,10 @@ export type SessionUser = {
   fullName: string;
   role: "admin" | "hr" | "hr_lite" | "client" | "vendor" | "candidate";
   permissions?: string[];
+  /** True when an admin is currently impersonating this (target) user. */
+  impersonating?: boolean;
+  /** The real admin's email while impersonating (for the banner / audit). */
+  impersonatorEmail?: string;
 };
 
 /** True if the user holds a granular permission. Admin always passes. */

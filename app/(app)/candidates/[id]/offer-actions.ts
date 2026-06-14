@@ -9,6 +9,7 @@ import { requireStaff } from "@/lib/rbac";
 import { assertFeatureEnabled } from "@/lib/features";
 import { logAudit } from "@/lib/audit";
 import { callTool } from "@/lib/ai";
+import { fireWebhook } from "@/lib/webhooks";
 
 const createSchema = z.object({
   title: z.string().max(200).optional().or(z.literal("")),
@@ -72,10 +73,11 @@ export async function setOfferStatusAction(
   await assertFeatureEnabled("offers");
   if (!(STATUSES as readonly string[]).includes(status)) return { ok: false, error: "Invalid status." };
 
-  await db
+  const [updated] = await db
     .update(offers)
     .set({ status: status as typeof STATUSES[number], updatedAt: new Date() })
-    .where(eq(offers.id, offerId));
+    .where(eq(offers.id, offerId))
+    .returning({ id: offers.id, title: offers.title, ctc: offers.ctc, currency: offers.currency, jobId: offers.jobId });
 
   await logAudit({
     actorId: Number(user.id),
@@ -85,6 +87,21 @@ export async function setOfferStatusAction(
     targetId: offerId,
     summary: `Offer marked ${status}`,
   });
+
+  // Notify subscribers when an offer is accepted (advertised webhook event).
+  if (status === "accepted" && updated) {
+    const cand = (await db.select({ refId: candidates.refId, fullName: candidates.fullName }).from(candidates).where(eq(candidates.id, candidateId)))[0];
+    await fireWebhook("offer.accepted", {
+      offerId: updated.id,
+      candidateId,
+      refId: cand?.refId,
+      fullName: cand?.fullName,
+      title: updated.title,
+      ctc: updated.ctc,
+      currency: updated.currency,
+      jobId: updated.jobId,
+    });
+  }
 
   revalidatePath(`/candidates/${candidateId}`);
   return { ok: true };

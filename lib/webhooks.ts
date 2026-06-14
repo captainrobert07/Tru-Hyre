@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { webhooks } from "@/db/schema";
+import { webhooks, candidates } from "@/db/schema";
 import { isFeatureEnabled } from "@/lib/features";
 
 /**
@@ -36,5 +36,40 @@ export async function fireWebhook(event: string, payload: Record<string, unknown
     );
   } catch (e) {
     console.error("[webhook] fire threw", (e as Error).message);
+  }
+}
+
+/**
+ * Fire the `candidate.created` event for a freshly-inserted candidate. Loads
+ * the canonical fields by id so every creation path (HR upload, bulk, paste,
+ * referral, careers self-apply, CSV import, vendor portal) fires an identical,
+ * complete payload. Best-effort — never throws into the caller.
+ */
+export async function fireCandidateCreated(candidateId: number): Promise<void> {
+  try {
+    const c = (
+      await db
+        .select({
+          id: candidates.id,
+          refId: candidates.refId,
+          fullName: candidates.fullName,
+          email: candidates.email,
+          stage: candidates.stage,
+          source: candidates.source,
+        })
+        .from(candidates)
+        .where(eq(candidates.id, candidateId))
+    )[0];
+    if (!c) return;
+    await fireWebhook("candidate.created", {
+      candidateId: c.id,
+      refId: c.refId,
+      fullName: c.fullName,
+      email: c.email,
+      stage: c.stage,
+      source: c.source,
+    });
+  } catch (e) {
+    console.error("[webhook] candidate.created threw", (e as Error).message);
   }
 }
