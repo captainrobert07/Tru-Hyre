@@ -10,6 +10,7 @@ import { assertFeatureEnabled } from "@/lib/features";
 import { logAudit } from "@/lib/audit";
 import { callTool } from "@/lib/ai";
 import { fireWebhook } from "@/lib/webhooks";
+import { pushZapier } from "@/lib/connectors";
 
 const createSchema = z.object({
   title: z.string().max(200).optional().or(z.literal("")),
@@ -91,7 +92,7 @@ export async function setOfferStatusAction(
   // Notify subscribers when an offer is accepted (advertised webhook event).
   if (status === "accepted" && updated) {
     const cand = (await db.select({ refId: candidates.refId, fullName: candidates.fullName }).from(candidates).where(eq(candidates.id, candidateId)))[0];
-    await fireWebhook("offer.accepted", {
+    const offerPayload = {
       offerId: updated.id,
       candidateId,
       refId: cand?.refId,
@@ -100,7 +101,9 @@ export async function setOfferStatusAction(
       ctc: updated.ctc,
       currency: updated.currency,
       jobId: updated.jobId,
-    });
+    };
+    await fireWebhook("offer.accepted", offerPayload);
+    await pushZapier("offer.accepted", offerPayload);
   }
 
   revalidatePath(`/candidates/${candidateId}`);

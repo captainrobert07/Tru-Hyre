@@ -13,7 +13,7 @@ import { fireStageTransitionEmail } from "@/lib/email-on-stage-change";
 import { requireAdmin, requireStaff, authorizeCandidate } from "@/lib/rbac";
 import { isFeatureEnabled, assertFeatureEnabled } from "@/lib/features";
 import { fireWebhook } from "@/lib/webhooks";
-import { notifySlack, pushHrisHire } from "@/lib/connectors";
+import { notifySlack, pushHrisHire, pushZapier } from "@/lib/connectors";
 import { withToast } from "@/lib/toast";
 
 const editSchema = z.object({
@@ -292,12 +292,15 @@ export async function setStageAction(
     actor: { id: Number(user.id), email: user.email, fullName: user.fullName },
   });
 
-  await fireWebhook("candidate.stage_changed", {
+  const stagePayload = {
     candidateId: current.id,
     refId: current.refId,
+    fullName: current.fullName,
     fromStage: current.stage,
     toStage,
-  });
+  };
+  await fireWebhook("candidate.stage_changed", stagePayload);
+  await pushZapier("candidate.stage_changed", stagePayload);
 
   // Outbound connectors (best-effort, no-op unless configured + enabled).
   await notifySlack(`${current.fullName} (${current.refId}) moved ${current.stage} → ${toStage}`);

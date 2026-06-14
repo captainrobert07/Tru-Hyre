@@ -12,8 +12,10 @@ import { RecentTracker } from "@/components/recently-viewed";
 import { MatchPanel } from "@/components/match-panel";
 import { JobApproval } from "@/components/job-approval";
 import { StageChecklistEditor, type ChecklistItem } from "@/components/stage-checklist-editor";
+import { PostToBoardButton } from "@/components/post-to-board-button";
 import { refreshMatchScoresAction } from "./match-actions";
 import { addChecklistItemAction, deleteChecklistItemAction } from "./checklist-actions";
+import { postJobToBoardAction } from "./posting-actions";
 import { approveJobAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -69,10 +71,11 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
       .orderBy(desc(submissions.createdAt)),
   ]);
 
-  const [matchEnabled, approvalEnabled, checklistsEnabled] = await Promise.all([
+  const [matchEnabled, approvalEnabled, checklistsEnabled, boardPostingEnabled] = await Promise.all([
     isFeatureEnabled("ai_match"),
     isFeatureEnabled("requisition_approval"),
     isFeatureEnabled("stage_checklists"),
+    isFeatureEnabled("job_board_posting"),
   ]);
   const cachedScores = matchEnabled ? await getCachedScores(jobId) : [];
   const lastComputed = cachedScores[0]?.computedAt ?? null;
@@ -108,6 +111,14 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
         }
         actions={
           <>
+            {boardPostingEnabled && j.status === "open" && (
+              <PostToBoardButton
+                onPost={async () => {
+                  "use server";
+                  return await postJobToBoardAction(jobId);
+                }}
+              />
+            )}
             <Link href={`/jobs/${j.id}/kanban`} className="btn-ghost">Pipeline</Link>
             <Link href={`/jobs/${j.id}/edit`} className="btn-ghost">Edit</Link>
           </>

@@ -24,6 +24,8 @@ export default async function IntegrationsPage() {
         label: def.label,
         category: def.category,
         description: def.description,
+        status: def.status,
+        setupNote: def.setupNote,
         enabled: r.enabled && r.hasRow,
         ready,
         fields: def.fields.map((f) => ({

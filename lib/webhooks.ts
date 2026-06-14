@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { webhooks, candidates } from "@/db/schema";
 import { isFeatureEnabled } from "@/lib/features";
+import { pushZapier } from "@/lib/connectors";
 
 /**
  * Fire a domain event to any active webhook subscribed to it. Best-effort and
@@ -61,14 +62,16 @@ export async function fireCandidateCreated(candidateId: number): Promise<void> {
         .where(eq(candidates.id, candidateId))
     )[0];
     if (!c) return;
-    await fireWebhook("candidate.created", {
+    const payload = {
       candidateId: c.id,
       refId: c.refId,
       fullName: c.fullName,
       email: c.email,
       stage: c.stage,
       source: c.source,
-    });
+    };
+    await fireWebhook("candidate.created", payload);
+    await pushZapier("candidate.created", payload);
   } catch (e) {
     console.error("[webhook] candidate.created threw", (e as Error).message);
   }

@@ -54,6 +54,8 @@ export type FeatureKey =
   | "ai_redflags"
   | "slack_notifications"
   | "hris_handoff"
+  | "zapier_automation"
+  | "job_board_posting"
   | "vendor_commission"
   | "reference_checks"
   | "client_feedback_scores"
@@ -369,6 +371,20 @@ export const FEATURES: FeatureDef[] = [
     label: "HRIS handoff on hire",
     description: "POST a hire record to your HRIS when a candidate is marked joined (configure under Integrations).",
     category: "Platform",
+    defaultEnabled: false,
+  },
+  {
+    key: "zapier_automation",
+    label: "Zapier / outbound automation",
+    description: "Fire hiring events (candidate created, stage changed, offer accepted) to a Zapier catch-hook, to drive any downstream automation.",
+    category: "Platform",
+    defaultEnabled: false,
+  },
+  {
+    key: "job_board_posting",
+    label: "Job-board posting",
+    description: "Push an open job to a configured endpoint (a Zapier/Make webhook or in-house bridge that relays to LinkedIn/Indeed/Naukri).",
+    category: "Sourcing",
     defaultEnabled: false,
   },
   {

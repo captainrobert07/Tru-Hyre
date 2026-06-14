@@ -100,6 +100,7 @@ export async function testIntegration(key: string): Promise<TestResult> {
     case "slack": return testWebhookUrl("slack", "webhookUrl", "Slack webhook");
     case "hris": return testWebhookUrl("hris", "webhookUrl", "HRIS");
     case "zapier": return testWebhookUrl("zapier", "catchHookUrl", "Zapier hook");
+    case "jobboards": return testWebhookUrl("jobboards", "endpointUrl", "Job-board endpoint");
     default: return testGenericHttp(key);
   }
 }

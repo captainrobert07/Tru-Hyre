@@ -11,6 +11,8 @@ export type IntegrationView = {
   label: string;
   category: string;
   description: string;
+  status: "stable" | "beta" | "scaffold";
+  setupNote?: string;
   enabled: boolean;
   ready: boolean;
   fields: FieldView[];
@@ -48,13 +50,20 @@ export function IntegrationCard({ integration }: { integration: IntegrationView 
     <section className="card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium">{integration.label}</span>
             <Badge tone={integration.ready ? "green" : enabled ? "amber" : "default"}>
               {integration.ready ? "Ready" : enabled ? "Enabled · needs keys" : "Off"}
             </Badge>
+            {integration.status === "scaffold" && <Badge tone="default">Scaffold</Badge>}
+            {integration.status === "beta" && <Badge tone="blue">Beta</Badge>}
           </div>
           <p className="text-xs text-ink-soft mt-1 max-w-xl">{integration.description}</p>
+          {integration.status === "scaffold" && integration.setupNote && (
+            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1.5 mt-2 max-w-xl">
+              ⚙️ {integration.setupNote}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button type="button" onClick={test} disabled={testing} className="btn-ghost text-xs">

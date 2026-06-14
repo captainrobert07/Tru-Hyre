@@ -44,3 +44,57 @@ export async function pushHrisHire(payload: Record<string, unknown>): Promise<vo
     console.error("[hris] push failed", (e as Error).message);
   }
 }
+
+/**
+ * Fire a hiring event to the configured Zapier catch-hook. Complements native
+ * webhooks: native webhooks deliver to subscriber-defined URLs, this delivers
+ * the same domain events to a single Zapier zap so non-technical admins can
+ * build downstream automations without managing webhook rows. Best-effort.
+ */
+export async function pushZapier(event: string, payload: Record<string, unknown>): Promise<void> {
+  try {
+    if (!(await isFeatureEnabled("zapier_automation"))) return;
+    const r = await getIntegration("zapier");
+    const url = r.values.catchHookUrl;
+    if (!r.enabled || !url) return;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, ...payload, at: new Date().toISOString() }),
+    });
+  } catch (e) {
+    console.error("[zapier] push failed", (e as Error).message);
+  }
+}
+
+/**
+ * Post an open job to the configured job-board endpoint. We deliberately POST
+ * to ONE configured URL (a Zapier/Make webhook or an in-house bridge that
+ * relays to LinkedIn/Indeed/Naukri) rather than embedding three partner-API
+ * clients that each need OAuth + a partner account. Returns a result so the
+ * caller can surface success/failure (unlike the fire-and-forget notifiers).
+ */
+export async function postJobToBoard(payload: Record<string, unknown>): Promise<{ ok: boolean; message: string }> {
+  if (!(await isFeatureEnabled("job_board_posting"))) {
+    return { ok: false, message: "Job-board posting is disabled." };
+  }
+  const r = await getIntegration("jobboards");
+  const url = r.values.endpointUrl;
+  if (!r.enabled || !url) {
+    return { ok: false, message: "No job-board endpoint configured (set it under Integrations)." };
+  }
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(r.values.authHeader ? { Authorization: r.values.authHeader } : {}),
+      },
+      body: JSON.stringify({ event: "job.post", ...payload, at: new Date().toISOString() }),
+    });
+    if (res.status >= 500) return { ok: false, message: `Endpoint error (HTTP ${res.status}).` };
+    return { ok: true, message: `Posted (HTTP ${res.status}).` };
+  } catch (e) {
+    return { ok: false, message: `Unreachable: ${(e as Error).message.slice(0, 100)}` };
+  }
+}
