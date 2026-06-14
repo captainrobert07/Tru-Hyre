@@ -5,7 +5,7 @@ export type SessionUser = {
   id: string;
   email: string;
   fullName: string;
-  role: "admin" | "hr" | "hr_lite" | "client" | "vendor";
+  role: "admin" | "hr" | "hr_lite" | "client" | "vendor" | "candidate";
   permissions?: string[];
 };
 
@@ -42,6 +42,13 @@ export async function requireStaffOrLite(): Promise<SessionUser> {
 /** True for the limited uploader role. */
 export function isLite(u: SessionUser): boolean {
   return u.role === "hr_lite";
+}
+
+/** Gate for the candidate self-service portal. Admin may also view. */
+export async function requireCandidate(): Promise<SessionUser> {
+  const u = await requireUser();
+  if (u.role !== "candidate" && u.role !== "admin") redirect("/");
+  return u;
 }
 
 /**

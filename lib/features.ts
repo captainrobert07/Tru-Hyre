@@ -63,7 +63,8 @@ export type FeatureKey =
   | "vendor_onboarding"
   | "custom_report_builder"
   | "stage_checklists"
-  | "intake_automatch";
+  | "intake_automatch"
+  | "candidate_portal";
 
 export type FeatureCategory = "Scheduling" | "Communication" | "Sourcing" | "Productivity" | "AI" | "Pipeline" | "Analytics" | "Platform" | "Experience";
 
@@ -439,6 +440,13 @@ export const FEATURES: FeatureDef[] = [
     description: "On a candidate, suggest best-fit open jobs by skill overlap.",
     category: "AI",
     defaultEnabled: true,
+  },
+  {
+    key: "candidate_portal",
+    label: "Candidate self-service portal",
+    description: "Invited candidates log in to see only their own application stage, interviews, and offer.",
+    category: "Experience",
+    defaultEnabled: false,
   },
 ];
 

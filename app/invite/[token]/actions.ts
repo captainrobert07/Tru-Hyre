@@ -12,6 +12,9 @@ export async function acceptInvitationAction(token: string, formData: FormData):
   if (!inv) redirect(`/invite/${token}?error=invalid`);
   if (inv.status !== "pending") redirect(`/invite/${token}`);
   if (inv.expiresAt && new Date(inv.expiresAt) < new Date()) redirect(`/invite/${token}`);
+  // A candidate-role invite MUST be bound to a candidate profile, or the portal
+  // login would have nothing to scope to. Reject an unbound candidate invite.
+  if (inv.role === "candidate" && !inv.candidateProfileId) redirect(`/invite/${token}?error=invalid`);
 
   const fullName = ((formData.get("fullName") as string) || "").trim();
   const password = ((formData.get("password") as string) || "").trim();
@@ -28,6 +31,7 @@ export async function acceptInvitationAction(token: string, formData: FormData):
     role: inv.role,
     clientAccountId: inv.clientAccountId,
     vendorAccountId: inv.vendorAccountId,
+    candidateProfileId: inv.candidateProfileId ?? null,
     isActive: true,
     passwordHash,
   });

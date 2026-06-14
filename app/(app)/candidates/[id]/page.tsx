@@ -15,6 +15,7 @@ import { TimeAgo } from "@/components/time-ago";
 import { StageButtons } from "@/components/stage-buttons";
 import { InterviewScheduler, type InterviewItem } from "@/components/interview-scheduler";
 import { SchedulingLink } from "@/components/scheduling-link";
+import { PortalInviteButton } from "@/components/portal-invite-button";
 import { EmailComposer, type OutboxItem, type InboundItem } from "@/components/email-composer";
 import { Scorecard, type ScorecardItem } from "@/components/scorecard";
 import { AiSummaryButton } from "@/components/ai-summary-button";
@@ -29,6 +30,7 @@ import { requestReferenceAction, markReferenceReceivedAction } from "./reference
 import { SEQUENCES } from "@/lib/sequences";
 import { scheduleInterviewAction, cancelInterviewAction } from "./interview-actions";
 import { createSchedulingLinkAction } from "./scheduling-actions";
+import { inviteCandidateToPortalAction } from "./portal-invite-actions";
 import { sendAdHocEmailAction, logInboundReplyAction } from "./email-actions";
 import { submitScorecardAction } from "./scorecard-actions";
 import { generateCandidateSummaryAction, generateOutreachAction, generateRedFlagsAction } from "./ai-actions";
@@ -718,6 +720,16 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
                 return await logInboundReplyAction(candidateId, fd);
               } : undefined}
             />
+            {flags.candidate_portal && cand.email && (
+              <div className="mt-3 pt-3 border-t border-hairline">
+                <PortalInviteButton
+                  onInvite={async () => {
+                    "use server";
+                    return await inviteCandidateToPortalAction(candidateId);
+                  }}
+                />
+              </div>
+            )}
           </Section>
           )}
 

@@ -15,7 +15,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["admin", "hr", "hr_lite", "client", "vendor"]);
+export const roleEnum = pgEnum("role", ["admin", "hr", "hr_lite", "client", "vendor", "candidate"]);
 
 export const jobStatusEnum = pgEnum("job_status", ["open", "hold", "closing", "closed"]);
 export const jobPriorityEnum = pgEnum("job_priority", ["low", "normal", "high", "urgent"]);
@@ -165,6 +165,8 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   clientAccountId: integer("client_account_id").references(() => clientAccounts.id, { onDelete: "set null" }),
   vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
+  // For role="candidate" portal logins — links to the candidate record they may view.
+  candidateProfileId: integer("candidate_profile_id").references(() => candidates.id, { onDelete: "set null" }),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -478,6 +480,7 @@ export const invitations = pgTable("invitations", {
   invitedById: integer("invited_by_id").references(() => users.id, { onDelete: "set null" }),
   clientAccountId: integer("client_account_id").references(() => clientAccounts.id, { onDelete: "set null" }),
   vendorAccountId: integer("vendor_account_id").references(() => vendorAccounts.id, { onDelete: "set null" }),
+  candidateProfileId: integer("candidate_profile_id").references(() => candidates.id, { onDelete: "set null" }),
   status: invitationStatusEnum("status").notNull().default("pending"),
   expiresAt: timestamp("expires_at").notNull(),
   acceptedAt: timestamp("accepted_at"),

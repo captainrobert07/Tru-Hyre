@@ -44,12 +44,14 @@ export const authConfig = {
       const staffOrLite = path.startsWith("/candidates") || path === "/dashboard";
       const clientOnly = path.startsWith("/portal/client");
       const vendorOnly = path.startsWith("/portal/vendor");
+      const candidateOnly = path.startsWith("/portal/candidate");
 
       const isFullStaff = role === "admin" || role === "hr";
       const isAnyStaff = isFullStaff || role === "hr_lite";
       // hr_lite's home is the candidate list (no org-wide dashboard).
       const homeForRole = role === "client" ? "/portal/client"
         : role === "vendor" ? "/portal/vendor"
+        : role === "candidate" ? "/portal/candidate"
         : role === "hr_lite" ? "/candidates"
         : "/dashboard";
 
@@ -59,9 +61,11 @@ export const authConfig = {
         return Response.redirect(new URL("/candidates", nextUrl));
       }
 
+      // Ordered most-restrictive → least, so a new overlapping path can't leak.
       if (adminOnly && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
       if (fullStaffOnly && !isFullStaff) return Response.redirect(new URL(homeForRole, nextUrl));
       if (staffOrLite && !isAnyStaff) return Response.redirect(new URL(homeForRole, nextUrl));
+      if (candidateOnly && role !== "candidate" && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
       if (clientOnly && role !== "client" && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
       if (vendorOnly && role !== "vendor" && role !== "admin") return Response.redirect(new URL(homeForRole, nextUrl));
 

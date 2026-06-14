@@ -17,7 +17,7 @@ import { withToast } from "@/lib/toast";
 const userSchema = z.object({
   email: z.string().email().toLowerCase().trim(),
   fullName: z.string().min(2).max(120),
-  role: z.enum(["admin", "hr", "hr_lite", "client", "vendor"]),
+  role: z.enum(["admin", "hr", "hr_lite", "client", "vendor", "candidate"]),
   clientAccountId: z
     .union([z.coerce.number().int().positive(), z.literal(""), z.literal("none")])
     .transform((v) => (typeof v === "number" ? v : null)),
@@ -85,7 +85,7 @@ export async function updateUserAction(id: number, formData: FormData): Promise<
 
 const inviteSchema = z.object({
   email: z.string().email().toLowerCase().trim(),
-  role: z.enum(["admin", "hr", "hr_lite", "client", "vendor"]),
+  role: z.enum(["admin", "hr", "hr_lite", "client", "vendor", "candidate"]),
   clientAccountId: z
     .union([z.coerce.number().int().positive(), z.literal(""), z.literal("none")])
     .transform((v) => (typeof v === "number" ? v : null)),
@@ -147,7 +147,7 @@ export async function revokeInvitationAction(id: number): Promise<void> {
 
 const bulkInviteSchema = z.object({
   emails: z.string().min(1).max(8000),
-  role: z.enum(["admin", "hr", "hr_lite", "client", "vendor"]),
+  role: z.enum(["admin", "hr", "hr_lite", "client", "vendor", "candidate"]),
   clientAccountId: z
     .union([z.coerce.number().int().positive(), z.literal(""), z.literal("none")])
     .transform((v) => (typeof v === "number" ? v : null)),

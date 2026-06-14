@@ -16,6 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!u.role) redirect("/login");
   if (u.role === "client") redirect("/portal/client");
   if (u.role === "vendor") redirect("/portal/vendor");
+  if (u.role === "candidate") redirect("/portal/candidate");
 
   const flags = await getFeatureStates();
 
