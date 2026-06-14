@@ -171,3 +171,30 @@ sequence makes the tool safe to put real Allianz data into, then approvable to
 roll out. Everything else waits.**
 
 **No code changed this iteration (PM reconciliation/analysis lens).**
+
+---
+
+## Iteration 20 — CHANGELOG (SHIPPED — document the release)
+
+The autopilot run shipped 6 code changes + 4 new E2E specs + a stack of docs
+across ~20 iterations, but the repo had **no CHANGELOG** (`package.json` is at
+0.1.0, no VERSION file). For an internal tool the changelog isn't ceremony —
+it's how the next person (or the user at breakfast) sees what actually changed
+without reading 20 commits. The priority board (iter 15) is forward-looking;
+this is the backward-looking complement.
+
+**Shipped `CHANGELOG.md`** (Keep-a-Changelog format, pre-1.0 date-stamped):
+groups the run's work into Fixed / Added / Changed / Documented, plus an
+`[0.1.0] initial build` baseline. The "Documented" section makes the two
+supervised proposals (TRUNCATE, merge-atomicity) and the strategy/PM docs
+discoverable from one place, so a reviewer lands on the decision queue without
+spelunking the AUTOPILOT-*.md files.
+
+**Why doc, not code:** pure documentation, zero runtime risk; the PM lens
+explicitly permits doc fixes. Verified against the actual merged commit list
+(`git log a388f38..HEAD`) so every entry maps to a real shipped change — no
+aspirational entries.
+
+**Recommendation:** when the supervised P0/P1 items land, add a dated section
+(e.g. `[0.2.0]`) and bump `package.json`. The changelog is now the spine for
+that.
