@@ -70,9 +70,20 @@ A 13-agent completeness audit (5 dimension finders + 8 feature-slice finders →
 - DEAD DATA: surfaced interviews.roundIndex + notes (scheduler) and submissions.notes (/submissions);
   dropped never-written submissions.expectedJoinDate column.
 
-NOW: only provider-secret/sandbox-dependent connector send-flows (job-board post, DocuSign send,
-Outlook, auto Gmail/IMAP sync, availability sync, bg-check, transcription, full SSO, client billing)
-and the user-side live-cutover (enter real API keys at /settings/integrations → Test) remain.
+## Run 6 (branch feat/connectors-complete) ✅ SHIPPED to main @ 7e1bf24, prod green, E2E 12/12 + 11/11
+Completed the buildable half of the connector backlog + made the rest honest:
+- Zapier outbound (pushZapier → candidate.created / stage_changed / offer.accepted; zapier_automation flag).
+- Generic job-board poster: ONE configured endpoint (Zapier/Make/in-house bridge) instead of 3 fake
+  partner APIs; postJobToBoard() + "Post to job board" button on open jobs (job_board_posting flag).
+- IntegrationDef.status (stable|beta|scaffold) + setupNote; Scaffold/Beta badges + amber setup note in
+  the integration card. DocuSign/Outlook/transcription/bg-check/SSO honestly marked scaffold (config +
+  Test are real; the deep send-flow needs a provider SDK/OAuth/partner acct). See INTEGRATIONS.md.
+
+REMAINING = genuinely external-only: the 5 scaffold connectors' send-flows (need provider SDK +
+OAuth/sandbox: DocuSign eSign, MS Graph/Outlook, a transcription provider, bg-check provider, OIDC/SAML
+SSO), auto Gmail/IMAP inbound sync, interviewer availability sync, client billing — none buildable
+without your provider accounts. Plus user-side live cutover (enter real keys at /settings/integrations
+→ Test). Everything buildable-and-verifiable from this repo is now done.
 
 ## Waves
 - [ ] T1a · Multi-round interviews + interview kits (interviews.round + kits table)
