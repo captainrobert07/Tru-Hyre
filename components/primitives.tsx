@@ -112,7 +112,7 @@ const BADGE_STYLES: Record<string, string> = {
   green: "bg-brand-50 text-brand-700",
   amber: "bg-amber-50 text-amber-700",
   red: "bg-red-50 text-red-700",
-  gray: "bg-slate-100 text-slate-600",
+  gray: "bg-canvas text-ink-muted border border-hairline",
   brand: "bg-brand-500 text-white",
   ink: "bg-ink_inverted text-white",
 };
