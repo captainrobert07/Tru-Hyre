@@ -151,10 +151,10 @@ export function OffersPanel({
         <button type="button" onClick={() => setOpen(true)} className="btn-ghost text-xs w-full">+ New offer</button>
       ) : (
         <form action={create} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
-          <input name="title" placeholder="Role / title" className="input text-sm" />
+          <input name="title" placeholder="Role / title" className="input text-sm" aria-label="Offer role / title" />
           <div className="grid grid-cols-2 gap-2">
-            <input name="ctc" placeholder="CTC (number)" className="input text-sm" />
-            <select name="currency" defaultValue="INR" className="input text-sm">
+            <input name="ctc" placeholder="CTC (number)" className="input text-sm" aria-label="CTC amount" />
+            <select name="currency" defaultValue="INR" className="input text-sm" aria-label="Currency">
               <option value="INR">INR</option>
               <option value="EUR">EUR</option>
               <option value="USD">USD</option>
@@ -165,7 +165,7 @@ export function OffersPanel({
             <label className="text-[11px] text-ink-muted">Joining<input name="joiningDate" type="date" className="input text-sm" /></label>
             <label className="text-[11px] text-ink-muted">Expires<input name="expiresOn" type="date" className="input text-sm" /></label>
           </div>
-          <textarea name="notes" rows={2} placeholder="Notes (optional)" className="input text-sm py-2" />
+          <textarea name="notes" rows={2} placeholder="Notes (optional)" className="input text-sm py-2" aria-label="Offer notes" />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">{pending ? "Saving…" : "Create offer"}</button>
             <button type="button" onClick={() => setOpen(false)} className="btn-ghost text-xs">Cancel</button>

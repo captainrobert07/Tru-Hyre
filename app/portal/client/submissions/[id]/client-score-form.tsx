@@ -48,7 +48,7 @@ export function ClientScoreForm({ submissionId, existing }: { submissionId: numb
           <Stars value={criteria[c] || 0} onPick={(n) => setCriteria((p) => ({ ...p, [c]: n }))} />
         </div>
       ))}
-      <textarea name="comment" rows={3} defaultValue={existing?.comment || ""} placeholder="Comments for the recruiter (optional)" className="input py-2 text-sm" />
+      <textarea name="comment" rows={3} defaultValue={existing?.comment || ""} placeholder="Comments for the recruiter (optional)" className="input py-2 text-sm" aria-label="Feedback comments" />
       <button type="submit" disabled={pending} className="btn-primary text-sm">{pending ? "Saving…" : existing ? "Update feedback" : "Submit feedback"}</button>
     </form>
   );

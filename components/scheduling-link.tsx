@@ -40,14 +40,14 @@ export function SchedulingLink({ onCreate }: { onCreate: CreateFn }) {
         <button type="button" onClick={() => setOpen(true)} className="btn-ghost text-xs w-full">+ Let candidate pick a slot</button>
       ) : (
         <form action={submit} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
-          <input name="title" required defaultValue="Interview" placeholder="Title" className="input text-sm" />
+          <input name="title" required defaultValue="Interview" placeholder="Title" className="input text-sm" aria-label="Interview title" />
           <div className="grid grid-cols-2 gap-2">
-            <select name="mode" defaultValue="video" className="input text-sm">
+            <select name="mode" defaultValue="video" className="input text-sm" aria-label="Interview mode">
               <option value="video">Video</option>
               <option value="phone">Phone</option>
               <option value="onsite">On-site</option>
             </select>
-            <select name="durationMins" defaultValue="45" className="input text-sm">
+            <select name="durationMins" defaultValue="45" className="input text-sm" aria-label="Duration">
               <option value="30">30 min</option>
               <option value="45">45 min</option>
               <option value="60">60 min</option>
@@ -59,6 +59,7 @@ export function SchedulingLink({ onCreate }: { onCreate: CreateFn }) {
             rows={4}
             placeholder={"One proposed slot per line (your timezone):\n2026-06-20T14:00\n2026-06-20T16:30\n2026-06-21T10:00"}
             className="input text-sm py-2 font-mono"
+            aria-label="Proposed slots, one per line"
           />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">{pending ? "Creating…" : "Create link"}</button>

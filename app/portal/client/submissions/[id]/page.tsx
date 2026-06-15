@@ -189,7 +189,7 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
           <form action={clientFeedbackAction.bind(null, submissionId)} className="space-y-2 pt-3 border-t border-hairline">
             <label className="text-xs text-ink-muted block">Or send a note without changing the decision:</label>
             <input type="hidden" name="kind" value="note" />
-            <textarea name="body" rows={2} placeholder="Add a note for the recruiter…" className="input py-2 text-sm" />
+            <textarea name="body" rows={2} placeholder="Add a note for the recruiter…" className="input py-2 text-sm" aria-label="Note to recruiter" />
             <button type="submit" className="btn-ghost text-xs">Send note</button>
           </form>
         </section>
@@ -199,7 +199,7 @@ export default async function ClientSubmissionDetail({ params }: { params: Promi
           <p className="text-[11px] text-amber-700 mb-3">{APP_NAME} HR can&apos;t see these. Use for internal back-and-forth.</p>
 
           <form action={addClientInternalCommentAction.bind(null, submissionId)} className="space-y-2 mb-3">
-            <textarea name="body" rows={2} placeholder="Note for your team…" className="input py-2 text-sm" />
+            <textarea name="body" rows={2} placeholder="Note for your team…" className="input py-2 text-sm" aria-label="Internal team note" />
             <button type="submit" className="btn-ghost text-xs">Add internal note</button>
           </form>
 

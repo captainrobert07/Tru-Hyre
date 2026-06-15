@@ -34,7 +34,7 @@ export function ApiKeysCard({ keys, enabled }: { keys: KeyRow[]; enabled: boolea
         </div>
       )}
       <form action={create} className="flex gap-2 mb-3">
-        <input name="name" placeholder="Key name (e.g. Analytics export)" className="input text-sm" />
+        <input name="name" placeholder="Key name (e.g. Analytics export)" className="input text-sm" aria-label="API key name" />
         <button type="submit" disabled={pending} className="btn-primary text-xs shrink-0">Create</button>
       </form>
       {keys.length === 0 ? (
@@ -78,9 +78,9 @@ export function WebhooksCard({ hooks, enabled }: { hooks: HookRow[]; enabled: bo
     <section className="card p-5">
       <h2 className="text-base font-semibold mb-3">Webhooks</h2>
       <form action={create} className="space-y-2 mb-3">
-        <input name="url" placeholder="https://example.com/hook" className="input text-sm" />
-        <input name="events" placeholder="candidate.created, candidate.stage_changed, offer.accepted" className="input text-sm" />
-        <input name="secret" placeholder="Shared secret (optional)" className="input text-sm" />
+        <input name="url" placeholder="https://example.com/hook" className="input text-sm" aria-label="Webhook URL" />
+        <input name="events" placeholder="candidate.created, candidate.stage_changed, offer.accepted" className="input text-sm" aria-label="Subscribed events (comma-separated)" />
+        <input name="secret" placeholder="Shared secret (optional)" className="input text-sm" aria-label="Webhook shared secret" />
         <button type="submit" disabled={pending} className="btn-primary text-xs">Add webhook</button>
       </form>
       {hooks.length === 0 ? (

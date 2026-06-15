@@ -122,8 +122,8 @@ export function EmailComposer({
       {onLogReply && (
         replyOpen ? (
           <form action={logReply} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
-            <input name="subject" placeholder="Subject (optional)" maxLength={240} className="input text-sm" />
-            <textarea name="body" rows={3} required placeholder="Paste the candidate's reply…" className="input text-sm py-2" />
+            <input name="subject" placeholder="Subject (optional)" maxLength={240} className="input text-sm" aria-label="Reply subject" />
+            <textarea name="body" rows={3} required placeholder="Paste the candidate's reply…" className="input text-sm py-2" aria-label="Logged reply body" />
             <div className="flex gap-2">
               <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">{pending ? "Saving…" : "Log reply"}</button>
               <button type="button" onClick={() => setReplyOpen(false)} className="btn-ghost text-xs">Cancel</button>
@@ -168,13 +168,14 @@ export function EmailComposer({
               </select>
             ) : (
               <>
-                <input name="subject" placeholder="Subject" maxLength={240} className="input text-sm" />
+                <input name="subject" placeholder="Subject" maxLength={240} className="input text-sm" aria-label="Email subject" />
                 <textarea
                   name="body"
                   rows={6}
                   maxLength={8000}
                   placeholder={"Message…\n\nTokens like {{candidate.firstName}} are filled in automatically."}
                   className="input text-sm py-2"
+                  aria-label="Email body"
                 />
               </>
             )}

@@ -117,8 +117,8 @@ export default async function CustomReportPage({ searchParams }: { searchParams:
         <input type="hidden" name="measure" value={measure} />
         <input type="hidden" name="days" value={days} />
         <div className="flex-1 min-w-[200px]">
-          <label className="label">Save this view as</label>
-          <input name="name" placeholder="e.g. Q3 source effectiveness" className="input text-sm" />
+          <label className="label" htmlFor="custom-report-name">Save this view as</label>
+          <input id="custom-report-name" name="name" placeholder="e.g. Q3 source effectiveness" className="input text-sm" />
         </div>
         <button type="submit" className="btn-ghost text-sm">Save report</button>
       </form>

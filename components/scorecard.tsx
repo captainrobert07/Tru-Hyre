@@ -173,7 +173,7 @@ export function Scorecard({
             </select>
           )}
 
-          <textarea name="body" rows={3} placeholder="Notes (optional)" className="input text-sm py-2" />
+          <textarea name="body" rows={3} placeholder="Notes (optional)" className="input text-sm py-2" aria-label="Scorecard notes" />
 
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">
