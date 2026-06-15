@@ -158,7 +158,7 @@ production data raises the stakes. Fix the landmines before loading the truck.
 | 8 | **One-page build-vs-buy memo** (AI econ + residency + zero per-seat) | Arms whoever approves this internally; the moat is economics, not features | STRATEGY iter 14 |
 | 9 | **Hide SaaS gold-plating from `/settings/features`** | public_api/Zapier/job-board/vendor-self-onboard — internal teams won't use them; declutters admin | STRATEGY iter 4 |
 | 10 | **Instrument displacement** (spreadsheet-death date / time-in-tool) | Measure real adoption, not vanity counts | STRATEGY iter 9 |
-| 11 | **Modal focus-trap + focus-restore** (eng/UI) — **IN PROGRESS 2/4** | Shared `useFocusTrap` hook built + applied to **SlideOver (iter 71)** and **confirm (iter 73)**, both verified live; **quick-add + command-palette remain**. Closes the WCAG 2.4.3 gap (no Tab-trap / focus-restore) found iter 68. One modal per UI/dev rotation. | DEV iter 68 → hook iter 71 → confirm iter 73; regression test iter 72 |
+| 11 | **Modal focus-trap + focus-restore** (eng/UI) — **DONE (3/4 + 1 excluded)** | Shared `useFocusTrap` hook applied to SlideOver (71), confirm (73), quick-add (76) — all verified live. command-palette **intentionally excluded** (iter 78): it's cmdk-managed (owns its input autofocus + arrow-nav); the generic hook would regress that. WCAG 2.4.3 gap (iter 68) closed for the hand-rolled modals. | DEV 68 → hook 71 → confirm 73 → quick-add 76 → cmdk-excluded 78; test 72 |
 
 ### Explicitly DEFER / DON'T do
 - **No feature #56.** The portfolio is already wider than an internal team needs
