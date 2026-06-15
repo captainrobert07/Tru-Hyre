@@ -393,3 +393,42 @@ maintenance cost below the labor savings" — and the cost-discipline work
   signal (iter 9) and the ROI validator — one number does double duty.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 34 — consolidated risk register (one table, sponsor-actionable)
+
+Risks have been named across iters 4/9/14/18/24 + the two DEV data-loss
+proposals, but scattered prose isn't actionable. This consolidates them into one
+likelihood × severity × status × mitigation table — the standard artifact a
+sponsor signs off against. Not a new analysis; a reconciliation (like the PM
+board did for tasks). Status reflects what THIS run has already closed.
+
+| # | Risk | Likelihood | Severity | Status | Mitigation / owner |
+|---|---|---|---|---|---|
+| R1 | `fix-types.ts` TRUNCATE wipes resumes on a deploy that sees legacy `blob_*` cols | Low (today) | **Critical** (irreversible prod data loss) | **OPEN** | Supervised fix in AUTOPILOT-DEV.md iter 3 (row-count guard + env flag, or retire the script). Do before real data. |
+| R2 | Non-atomic candidate merge corrupts a record graph on mid-run failure | Low | High (irreversible partial corruption) | **OPEN** | Supervised: neon-http `db.batch` (AUTOPILOT-DEV.md iter 13) + merge-integrity test. |
+| R3 | No SSO → Allianz IT won't approve for real PII; stuck in pilot purgatory | High | High (blocks all adoption) | **OPEN** | Azure AD via Auth.js drop-in (PM iter 5). #1 increment. Org bottleneck, not eng. |
+| R4 | Key-person / bus-factor on a from-scratch internal build | Medium | High (no vendor to fall back on) | **MITIGATING** | Doc-honesty discipline (README sync iter 10, INTEGRATIONS badges, INDEX iter 25) is the live hedge — keep current. |
+| R5 | Compliance debt: no stated EU data-residency / audit posture | Medium | High (legal sign-off gate) | **OPEN** | Write the posture doc (PM board P2 #7); cheap, unlocks legal. |
+| R6 | AI cost surprise (unbounded prompts / AI on page-load) | Low | Medium (runaway token bill) | **CLOSED** | Shipped iter 18: prompt-length cap + haiku-default + key-gate + user-initiated. Keep the "no AI on page load" rule. |
+| R7 | Production digest crash (digest:3495001251) recurs unexplained | Unknown | Medium (user-facing 500) | **INSTRUMENTED** | `instrumentation.ts` live since iter 1 — next occurrence yields the real stack. Passive until it fires. |
+| R8 | Over-broad feature surface (55 features) dilutes the internal tool | Medium | Low-Medium (maintenance + confusion) | **OPEN (decision)** | Hide gold-plating from `/settings/features` for the internal build (iter 4 / PM board P2 #9). |
+
+### How to read this
+- **Two CRITICAL/High-severity OPEN items are data-loss (R1, R2)** — both
+  supervised-only, both the P0 of the PM board. Nothing else competes with them.
+- **The highest-likelihood OPEN risk is R3 (SSO)** — not a data risk but the
+  adoption gate; it's High×High and the #1 increment for a reason.
+- **R6 is CLOSED and R7 INSTRUMENTED by this run** — concrete evidence the
+  unsupervised quality work retired real risk, not just polish.
+- **R4 (key-person) is the quiet one** — its mitigation is the doc discipline
+  this run has been compounding, which is why those doc iterations had teeth.
+
+### Recommendation (decisions for breakfast, not auto-built)
+- **Gate "real Allianz data goes in" on R1 + R2 being closed.** That's the
+  single hard line; everything else can run in parallel.
+- **Track this register, not the prose.** When a supervised item lands, flip its
+  status here — it's the one-glance health view for whoever owns the call.
+
+**No code changed this iteration (analysis-only lens).**
