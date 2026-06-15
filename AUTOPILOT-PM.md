@@ -158,7 +158,7 @@ production data raises the stakes. Fix the landmines before loading the truck.
 | 8 | **One-page build-vs-buy memo** (AI econ + residency + zero per-seat) | Arms whoever approves this internally; the moat is economics, not features | STRATEGY iter 14 |
 | 9 | **Hide SaaS gold-plating from `/settings/features`** | public_api/Zapier/job-board/vendor-self-onboard — internal teams won't use them; declutters admin | STRATEGY iter 4 |
 | 10 | **Instrument displacement** (spreadsheet-death date / time-in-tool) | Measure real adoption, not vanity counts | STRATEGY iter 9 |
-| 11 | **Modal focus-trap + focus-restore** (eng/UI) | The 4 modals (slide-over, quick-add, confirm, command-palette) have role=dialog + Escape (iter 66) but don't trap Tab focus or restore focus to the trigger on close — a real WCAG 2.4.3 gap. Best as careful per-modal UI-lens work, not a blind sweep. | DEV iter 68 (found), flagged for UI lens |
+| 11 | **Modal focus-trap + focus-restore** (eng/UI) — **IN PROGRESS 2/4** | Shared `useFocusTrap` hook built + applied to **SlideOver (iter 71)** and **confirm (iter 73)**, both verified live; **quick-add + command-palette remain**. Closes the WCAG 2.4.3 gap (no Tab-trap / focus-restore) found iter 68. One modal per UI/dev rotation. | DEV iter 68 → hook iter 71 → confirm iter 73; regression test iter 72 |
 
 ### Explicitly DEFER / DON'T do
 - **No feature #56.** The portfolio is already wider than an internal team needs
