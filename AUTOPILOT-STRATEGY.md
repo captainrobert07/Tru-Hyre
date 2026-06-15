@@ -432,3 +432,72 @@ board did for tasks). Status reflects what THIS run has already closed.
   status here — it's the one-glance health view for whoever owns the call.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 39 — falsification pass: steelman "just buy an ATS" + kill-criteria
+
+Every section above builds the case to build. A strategist who only confirms
+their own thesis is doing PR. This pass does the opposite: argue the strongest
+version of "kill the build, buy Greenhouse/SmartRecruiters," then state the
+concrete conditions under which that's the right call. If the build thesis
+survives an honest steelman, it's robust; if it doesn't, that's the single most
+important finding of this run — better to know now than after more sunk cost.
+
+### Steelman: the strongest case to STOP and buy
+1. **The moat may be renting, not owning.** "AI economics" assumes Allianz's own
+   Anthropic key stays cheaper than a vendor's per-seat AI. But vendors bundle AI
+   into a seat price that also covers compliance, uptime, and support — and their
+   per-token cost is lower at their scale. If Allianz already pays for a Workday
+   recruiting module, the marginal cost of its AI add-on may be near zero to the
+   budget holder. The "cheap moat" could be cheaper-looking than real.
+2. **Data residency is a vendor checkbox, not a build-only win.** Enterprise ATSs
+   sell EU data-residency + signed DPAs as a standard SKU. The build doesn't
+   *uniquely* own residency — it just defers the compliance paperwork Allianz
+   legal will demand anyway, and a vendor has already done that work.
+3. **Total cost of ownership is understated.** The ROI model (iter 24) counts
+   recruiter hours saved but under-weights the build's ongoing eng cost,
+   on-call, security patching, and the key-person risk (R4) — all of which a
+   vendor amortizes across thousands of customers. "Zero per-seat" ignores the
+   non-zero per-engineer.
+4. **Opportunity cost.** Every hour maintaining an internal ATS is an hour not
+   spent on something only Allianz can build. Recruiting is not Allianz's
+   differentiator; an insurer's eng talent is arguably mis-deployed here.
+
+### Why the build thesis still survives (the rebuttals that hold)
+- On (1)/(2): the decisive factor isn't cost or residency in isolation — it's
+  **control + fit**. A vendor's AI ranks candidates by *its* model on *its*
+  schema; the build ranks on Allianz's own data with prompts tuned to Allianz's
+  roles, and the data never leaves. For a regulated insurer that's a control
+  argument money doesn't settle.
+- On (3): TCO is the real risk, and the honest answer is **it depends on a number
+  we don't have yet** — which is exactly why iter 24 says measure it and iter 9
+  says instrument utilization. The thesis isn't "build regardless," it's "build
+  IF the measured savings clear the measured maintenance."
+- On (4): true at scale, but a *small* internal tool that a pod actually adopts
+  has already sunk most of its build cost; the remaining question is marginal
+  maintenance vs. marginal value, not greenfield build vs. buy.
+
+### Kill-criteria — when to STOP the build and buy (decide against these)
+Pre-commit to these so the decision is evidence-driven, not sunk-cost-driven:
+- **K1 — Adoption fails the pilot.** If the iter-19 pilot pod does NOT hit
+  spreadsheet-death + a time-to-submit drop in 4-6 weeks, the tool isn't
+  displacing anything → buy or stop. This is the dominant kill-signal.
+- **K2 — SSO/compliance proves load-bearing-hard.** If Allianz IT won't approve
+  the custom auth/data posture even with SSO shipped, the build can't hold real
+  PII → a pre-certified vendor wins.
+- **K3 — Maintenance > savings.** If measured eng maintenance (post-instrument)
+  exceeds the measured recruiter-hours value, the ROI inverts → buy.
+- **K4 — Bus-factor materializes.** If the build can't survive the key person
+  leaving (no second maintainer, docs notwithstanding), the operational risk
+  outweighs the fit advantage → buy.
+
+### The honest verdict
+The build thesis is **robust but conditional** — it survives the steelman on
+*control + fit* grounds, but every cost/risk rebuttal resolves to "measure it,"
+not "trust it." So the real recommendation tightens: **don't treat the build as
+decided — treat it as on-probation against K1-K4, with the iter-19 pilot as the
+trial.** That's a stronger position than any of the build-the-case sections,
+because it's the one a skeptical exec can't dismiss as advocacy.
+
+**No code changed this iteration (analysis-only lens).**
