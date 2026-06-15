@@ -342,3 +342,44 @@ optimized for "one small unit per tick" eventually spends real resources
 **Recommendation stands and is now cost-backed: pause the cron and redirect to
 the supervised queue (R1/R2/R3).** If the loop continues, it should batch (merge
 several iterations per prod deploy) rather than deploy every tick.
+
+---
+
+## Iteration 55 — board status refresh #2 (iters 31-54)
+
+The last "shipped since" snapshot stopped at iter 29. Bringing the board current
+through iter 54 — and the headline is that the autopilot's lane produced one
+genuinely high-value result, not just polish.
+
+### Shipped since the last refresh (iters 31-54), all green
+- **🔒 Stored-XSS found AND fixed (iters 51-52, register R9, CLOSED).** The run's
+  most important self-found result: user URLs (linkedinUrl/githubUrl/website)
+  rendered into `href` without scheme validation → `javascript:` XSS in the
+  viewer's session. `safeExternalUrl()` gates to http(s); regression-locked.
+  This is the one item here that *moved real risk*, not just tidiness.
+- **Reliability/correctness:** N+1 collapse on bulk-tag (43), activity-timeline
+  stable React key (38).
+- **UI/a11y:** completed the a11y form-label sweep — 0 label-less inputs app-wide
+  (31, 36); detail-page loading skeletons completed (41); browser-tab titles for
+  the 5 untitled detail pages (46).
+- **E2E 9 → 13 specs:** auth lifecycle (32), portal render net (42), broad
+  32-route render smoke net (37), internal-API auth gate (47), + the XSS unit
+  test (52).
+- **Docs/audits:** retro (40), risk register (34) now incl. R9, falsification +
+  kill-criteria (39), pilot scorecard (44), several keep-it-honest refreshes.
+
+### Operational reality to record: the deploy quota (iters 43-51)
+The run hit the Vercel free-tier **100-deploys/day** cap; main→prod auto-deploy
+stalled for ~2 iterations and a security fix (R9) briefly sat unverified on
+`main` before the quota freed and auto-deploy shipped it. **Now reconciled** —
+prod == main, auto-deploy working. But it's a hard ceiling: see the iter-45
+incident note. If the loop continues, deploy should be batched, not per-tick.
+
+### Net read (unchanged, now even sharper)
+Two refreshes later the headline still holds: **the unsupervised backlog is
+drained; remaining value = R1/R2 data-loss fixes + R3 SSO, all supervised.** The
+XSS find (R9) shows the autonomous loop *can* still surface a real issue, but
+those are now rare exceptions in a stream of audits/refinements — consistent
+with the iter-40 retro's call to redirect to the supervised queue.
+
+**No code changed this iteration (PM status-refresh/analysis lens).**
