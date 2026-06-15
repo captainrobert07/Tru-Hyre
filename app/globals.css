@@ -141,3 +141,20 @@
     filter: drop-shadow(0 24px 48px rgba(5,150,105,0.35));
   }
 }
+
+/*
+ * Respect prefers-reduced-motion (WCAG 2.3.3 / vestibular safety). The app uses
+ * animate-in / slide-in / fade / pulse across ~48 components; for users who ask
+ * the OS to reduce motion, collapse all animation + transition + smooth-scroll
+ * to effectively-instant. One global override beats touching each component.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
