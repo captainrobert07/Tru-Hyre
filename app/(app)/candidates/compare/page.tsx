@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { candidates } from "@/db/schema";
 import { requireStaff } from "@/lib/rbac";
 import { PageHeader, Badge, StageBadge, EmptyState } from "@/components/primitives";
+import { safeExternalUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Compare candidates" };
@@ -76,15 +77,21 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
     },
     {
       label: "LinkedIn",
-      render: (c) => c.linkedinUrl ? (
-        <a href={c.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 text-xs hover:underline truncate inline-block max-w-full">View</a>
-      ) : "—",
+      render: (c) => {
+        const href = safeExternalUrl(c.linkedinUrl);
+        return href ? (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-700 text-xs hover:underline truncate inline-block max-w-full">View</a>
+        ) : "—";
+      },
     },
     {
       label: "GitHub",
-      render: (c) => c.githubUrl ? (
-        <a href={c.githubUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 text-xs hover:underline truncate inline-block max-w-full">View</a>
-      ) : "—",
+      render: (c) => {
+        const href = safeExternalUrl(c.githubUrl);
+        return href ? (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-700 text-xs hover:underline truncate inline-block max-w-full">View</a>
+        ) : "—";
+      },
     },
     {
       label: "Summary",
