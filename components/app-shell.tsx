@@ -7,6 +7,7 @@ import { CommandPalette, CommandTrigger } from "./command-palette";
 import { ConfirmProvider } from "./confirm";
 import { ShortcutHelp, ShortcutTrigger } from "./shortcut-help";
 import { QuickAdd } from "./quick-add";
+import { NavLink } from "./nav-link";
 import { ThemeToggle } from "./theme-toggle";
 import { Avatar } from "./avatar";
 import {
@@ -105,10 +106,10 @@ export function AppShell({
 
         <nav className="nav-pill flex-1 max-w-fit mx-auto">
           {primary.map((n) => (
-            <Link key={n.href} href={n.href} className="nav-pill-item">
+            <NavLink key={n.href} href={n.href} className="nav-pill-item">
               {n.label}
               <NotificationDot count={dotFor(n.href)} />
-            </Link>
+            </NavLink>
           ))}
           {overflow.length > 0 && (
             <details className="relative">
