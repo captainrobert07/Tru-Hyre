@@ -288,3 +288,67 @@ distracted into evaluating Zapier/job-board toggles they'll never use.
   flag-revertible. This is the safe version of the iter-15 P1 adoption work.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 24 — the ROI model (does the AI moat pay for the maintenance?)
+
+Iter 14 argued *qualitatively* that the AI moat justifies building. The exec's
+next question is quantitative: **does it actually save enough recruiter time to
+pay for a from-scratch internal tool's maintenance?** A build-vs-buy case
+without a number is a vibe. This is the back-of-envelope a sponsor needs — with
+assumptions stated, so it's honest estimation, not fabricated precision.
+
+> ⚠️ These are ILLUSTRATIVE assumptions, not measured data. The whole point of
+> the iter-9 displacement instrument + iter-19 baseline capture is to REPLACE
+> these guesses with the pilot pod's real numbers. Treat as a model to fill in.
+
+### Where the AI features save time (mapped to the workflow step each shortcuts)
+| AI feature (`lib/`) | Manual step it replaces | Illustrative time saved |
+|---|---|---|
+| **Match scoring** (`match.ts`) | Recruiter reads N resumes to rank a shortlist | ~10-15 min per req's first pass |
+| **Semantic search** (`semantic-search.ts`) | Boolean-guessing keyword searches to find a profile | ~5 min per search, several/day |
+| **AI summary** | Skimming a resume to brief a hiring manager | ~3-5 min per submitted candidate |
+| **JD generator** | Drafting a job description from scratch | ~20-30 min per new req |
+| **Screening questions** | Writing role-specific screen questions | ~10 min per req |
+| **Dedupe + red-flags** | Manual duplicate hunting / resume scanning | ~variable; catches misses, not just time |
+
+### The model (fill in with real headcount + volume)
+Pick conservative numbers and let the sponsor adjust:
+- Assume **1 recruiter saves ~30-45 min/day** across these (one ranked
+  shortlist + a few searches + a couple of summaries). Call it **~3 hrs/week**.
+- A **10-recruiter team** → ~30 recruiter-hours/week reclaimed → at a loaded
+  cost of, say, €40-60/hr, that's **~€1,200-1,800/week** of recovered capacity,
+  i.e. **~€60-90k/year** — redeployed into more reqs filled, not layoffs.
+- **AI cost against that:** haiku-default (iter 18 cap keeps it bounded). Even
+  at thousands of AI calls/week, token spend is **double-digit to low-hundreds
+  €/month** — one to two orders of magnitude below the labor value. The moat is
+  cheap *because* of the cost discipline shipped this run (haiku + key-gate +
+  prompt cap).
+- **Maintenance cost (the honest debit):** the from-scratch build needs eng
+  time — call it a fraction of one engineer ongoing. That's the real number to
+  weigh against the ~€60-90k/yr, and the one a vendor's per-seat license avoids.
+
+### The one honest sentence for the sponsor
+**"If a 10-person team reclaims ~3 hrs/recruiter/week from the AI features, that's
+~€60-90k/yr of capacity for low-hundreds-€/month of tokens — the question isn't
+whether it saves time, it's whether maintaining it costs less than that gap."**
+That reframes the decision correctly: not "is the tool good" (it is) but "is our
+maintenance cost below the labor savings" — and the cost-discipline work
+(iter 18) is what keeps the token side of that inequality negligible.
+
+### What makes this real instead of a slide
+- **Instrument AI utilization** (proposed iter 9/19): calls per recruiter per
+  week. If the moat features go unused, the numerator collapses and the whole
+  ROI case is fiction — so usage is the metric that validates or kills this.
+- **Capture time-to-submit before/after** (iter 19 baseline): the cleanest
+  external proxy for "hours saved" without a stopwatch study.
+
+### Recommendation (decisions for breakfast, not auto-built)
+- **Put a number on it before the build-vs-buy memo (iter 14):** plug the real
+  team size + loaded hourly cost into the model above; lead the memo with the
+  labor-savings-vs-maintenance inequality, not a feature list.
+- **Make AI utilization the headline pilot metric.** It's both the adoption
+  signal (iter 9) and the ROI validator — one number does double duty.
+
+**No code changed this iteration (analysis-only lens).**
