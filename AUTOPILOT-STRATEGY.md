@@ -414,14 +414,16 @@ board did for tasks). Status reflects what THIS run has already closed.
 | R6 | AI cost surprise (unbounded prompts / AI on page-load) | Low | Medium (runaway token bill) | **CLOSED** | Shipped iter 18: prompt-length cap + haiku-default + key-gate + user-initiated. Keep the "no AI on page load" rule. |
 | R7 | Production digest crash (digest:3495001251) recurs unexplained | Unknown | Medium (user-facing 500) | **INSTRUMENTED** | `instrumentation.ts` live since iter 1 — next occurrence yields the real stack. Passive until it fires. |
 | R8 | Over-broad feature surface (55 features) dilutes the internal tool | Medium | Low-Medium (maintenance + confusion) | **OPEN (decision)** | Hide gold-plating from `/settings/features` for the internal build (iter 4 / PM board P2 #9). |
+| R9 | Stored XSS via user-supplied URLs (candidate linkedinUrl/githubUrl, client website rendered into `href`; `javascript:` fires in the viewer's authenticated session) | Medium (public careers form is an unauth write path) | High (session compromise of a recruiter/admin) | **CLOSED** | Fixed + live iter 51: `safeExternalUrl()` (lib/utils) gates href to http(s) only; regression-locked iter 52. |
 
 ### How to read this
 - **Two CRITICAL/High-severity OPEN items are data-loss (R1, R2)** — both
   supervised-only, both the P0 of the PM board. Nothing else competes with them.
 - **The highest-likelihood OPEN risk is R3 (SSO)** — not a data risk but the
   adoption gate; it's High×High and the #1 increment for a reason.
-- **R6 is CLOSED and R7 INSTRUMENTED by this run** — concrete evidence the
-  unsupervised quality work retired real risk, not just polish.
+- **R6, R9 are CLOSED and R7 INSTRUMENTED by this run** — concrete evidence the
+  unsupervised quality work retired real risk, not just polish. R9 (stored XSS)
+  was the highest-severity issue the run *found* on its own, not just hardened.
 - **R4 (key-person) is the quiet one** — its mitigation is the doc discipline
   this run has been compounding, which is why those doc iterations had teeth.
 
