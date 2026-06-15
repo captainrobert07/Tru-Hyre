@@ -198,3 +198,12 @@ existing-surface audit is comprehensive; remaining real dev work is the two
 supervised proposals at the top of this file.
 
 **No code changed this iteration (completeness-audit pass).**
+
+> **Iter 53 — two more classes checked clean (no separate section warranted):**
+> (a) unhandled promise rejections — every `.then((r)=>r[0])` is inside an
+> `await Promise.all`, and the one fire-and-forget-looking call
+> (`bulk-actions.ts:139` Drive delete) is awaited and uses the two-arg
+> `.then(ok, err)` form, so nothing is unhandled. (b) `process.env` derefs —
+> none used without a fallback/guard. The swept surface now also covers
+> promise-rejection and env-var classes. Stop-signal honored: not writing a
+> full audit section for a clean result.
