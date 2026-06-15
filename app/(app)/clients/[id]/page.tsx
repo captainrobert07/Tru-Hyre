@@ -111,10 +111,10 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
 
           <Section title="Add contact">
             <form action={addContactAction.bind(null, clientId)} className="space-y-2">
-              <input name="name" placeholder="Name" required className="input text-sm" />
-              <input name="title" placeholder="Title" className="input text-sm" />
-              <input name="email" type="email" placeholder="Email" className="input text-sm" />
-              <input name="phone" placeholder="Phone" className="input text-sm" />
+              <input name="name" placeholder="Name" required className="input text-sm" aria-label="Contact name" />
+              <input name="title" placeholder="Title" className="input text-sm" aria-label="Contact title" />
+              <input name="email" type="email" placeholder="Email" className="input text-sm" aria-label="Contact email" />
+              <input name="phone" placeholder="Phone" className="input text-sm" aria-label="Contact phone" />
               <label className="flex items-center gap-2 text-xs text-ink-soft">
                 <input type="checkbox" name="isPrimary" value="true" /> Primary
               </label>
