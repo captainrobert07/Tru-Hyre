@@ -545,3 +545,33 @@ team quietly keeps its real workflow elsewhere — so M1 gates the GO and is the
 dominant NO-GO. Everything else refines the call; M1 makes it.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 49 — consistency audit (no new analysis; the doc is complete)
+
+The strategist lens has produced its full set: 5 analysis angles, an executive
+summary, a risk register, a falsification pass, and a pilot scorecard. Rather
+than pad a complete document with a redundant 10th angle, this iteration is a
+QA pass on the artifact itself — checking the 9 sections (written across ~45
+iterations) for internal contradiction.
+
+**Result: consistent.** Cross-checked the load-bearing claims:
+- Feature count cited as **55** in every section that references it (iters 4, 9, 14).
+- The moat is stated identically as **AI economics + data residency + zero
+  per-seat** in the exec summary and the build-vs-buy section.
+- **SSO is the #1 adoption gate** consistently — exec summary, iter 4, risk
+  register R3, ROI section all agree, none contradicts.
+- ROI figures align: **~3 hrs/recruiter/week → ~€60-90k/yr** for a 10-person
+  team, cited consistently in the exec summary and the ROI model.
+- The blocking dependency (**name a pilot pod + success bar**) is stated once
+  (iter 19) and referenced by the scorecard/kill-criteria — no duplication or drift.
+
+**Verdict: the strategy doc is complete, consistent, and self-critical (it
+argues its case, ranks its risks, steelmans itself, and gives a fill-in
+go/no-go). No further strategist analysis is warranted until real pilot data
+exists to update it against.** Future strategist rotations should update the
+risk-register statuses and the scorecard with measured numbers once a pilot
+runs — not add more pre-pilot theory.
+
+**No code changed this iteration (analysis/QA pass).**
