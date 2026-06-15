@@ -41,7 +41,15 @@ test("create → persist (reload) → delete a saved view", async ({ page }) => 
   await page.goto("/candidates");
   await expect(page.getByText(VIEW_NAME)).toBeVisible({ timeout: 15_000 });
 
-  // DELETE (self-cleanup) — goes through the confirm dialog.
+  // ESCAPE-CANCELS the confirm dialog (iter-66 a11y fix): open the delete
+  // confirm, press Escape, and the view must SURVIVE (nothing deleted).
+  await page.getByRole("button", { name: new RegExp(`Delete view ${VIEW_NAME}`, "i") }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText(VIEW_NAME)).toBeVisible(); // cancelled, still there
+
+  // DELETE for real (self-cleanup) — confirm this time.
   await page.getByRole("button", { name: new RegExp(`Delete view ${VIEW_NAME}`, "i") }).first().click();
   await page.getByRole("button", { name: /delete view/i }).click();
   await expect(page.getByText(VIEW_NAME)).toHaveCount(0, { timeout: 15_000 });
