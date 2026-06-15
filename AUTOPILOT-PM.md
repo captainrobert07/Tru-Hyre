@@ -290,3 +290,23 @@ real merged commit.
 This is the third "keep it honest" refresh (board iter 30, register iter 34,
 changelog now) — the recurring PM job once a run is long enough that its own
 records drift. Doc-only, zero runtime risk.
+
+---
+
+## Iteration 40 — retrospective & wind-down recommendation (`AUTOPILOT-RETRO.md`)
+
+At 8 full rotations, the highest-value PM move is no longer another artifact —
+it's to call the run's state honestly. Wrote `AUTOPILOT-RETRO.md`: what shipped
+(40/40 green, ~12 code fixes, E2E 3→11, five decision docs), the data showing
+the inflection (half the last 8 iterations were analysis/doc; the unsupervised
+backlog is drained and every lens has hit completion), and the recommendation —
+**redirect the loop to the 3 supervised items (R1 TRUNCATE, R2 atomic merge,
+R3 SSO) with a human in the loop, rather than spin marginal rotations.**
+
+A PM whose backlog is drained doesn't manufacture work; they say so and
+recommend reallocation. That's this doc. It's the one deliverable that helps the
+user decide what to do with the loop, which no prior artifact addressed.
+
+This likely closes the PM lens's net-new work for the run — future PM rotations,
+if the loop continues, will be status refreshes (the iter-30/34/35 pattern)
+until a new feature wave creates genuinely new ground.
