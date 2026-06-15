@@ -106,33 +106,40 @@ export async function GET(req: Request) {
   }
 
   // Interview reminders: notify interviewers about interviews happening today.
+  // Wrapped like the sequence/digest blocks above: a failure here (bad row,
+  // transient DB error) must NOT abort the handler before the core SLA
+  // task-creation below runs — that's the cron's main job.
   let interviewReminders = 0;
   if (remindersOn) {
-    const todayIvs = await db
-      .select({ id: interviews.id, candidateId: interviews.candidateId, title: interviews.title, interviewerIds: interviews.interviewerIds, createdById: interviews.createdById })
-      .from(interviews)
-      .where(and(
-        eq(interviews.status, "scheduled"),
-        sql`${interviews.scheduledStart}::date = now()::date`,
-      ))
-      .limit(200);
-    const notifRows: { userId: number; kind: "interview"; title: string; body: string; url: string }[] = [];
-    for (const iv of todayIvs) {
-      const recipients = new Set<number>([...(iv.interviewerIds || [])]);
-      if (iv.createdById) recipients.add(iv.createdById);
-      for (const userId of recipients) {
-        notifRows.push({
-          userId,
-          kind: "interview",
-          title: `Interview today: ${iv.title}`,
-          body: "You have an interview scheduled today.",
-          url: `/candidates/${iv.candidateId}`,
-        });
+    try {
+      const todayIvs = await db
+        .select({ id: interviews.id, candidateId: interviews.candidateId, title: interviews.title, interviewerIds: interviews.interviewerIds, createdById: interviews.createdById })
+        .from(interviews)
+        .where(and(
+          eq(interviews.status, "scheduled"),
+          sql`${interviews.scheduledStart}::date = now()::date`,
+        ))
+        .limit(200);
+      const notifRows: { userId: number; kind: "interview"; title: string; body: string; url: string }[] = [];
+      for (const iv of todayIvs) {
+        const recipients = new Set<number>([...(iv.interviewerIds || [])]);
+        if (iv.createdById) recipients.add(iv.createdById);
+        for (const userId of recipients) {
+          notifRows.push({
+            userId,
+            kind: "interview",
+            title: `Interview today: ${iv.title}`,
+            body: "You have an interview scheduled today.",
+            url: `/candidates/${iv.candidateId}`,
+          });
+        }
       }
-    }
-    if (notifRows.length) {
-      await db.insert(notifications).values(notifRows);
-      interviewReminders = notifRows.length;
+      if (notifRows.length) {
+        await db.insert(notifications).values(notifRows);
+        interviewReminders = notifRows.length;
+      }
+    } catch (e) {
+      console.error("[cron] interview reminders failed", (e as Error).message);
     }
   }
 
