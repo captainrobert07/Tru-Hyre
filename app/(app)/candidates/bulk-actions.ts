@@ -33,11 +33,15 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
     if (!tag) return { ok: false, error: "Tag is required." };
     const norm = tag.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 40);
     let affected = 0;
-    for (const id of ids) {
-      const cur = (await db.select({ tags: candidates.tags }).from(candidates).where(eq(candidates.id, id)))[0];
-      if (!cur) continue;
+    // Fetch all current tag arrays in ONE query (was N selects — up to 500 on a
+    // bulk action). The jsonb merge differs per row, so updates stay per-row.
+    const existing = await db
+      .select({ id: candidates.id, tags: candidates.tags })
+      .from(candidates)
+      .where(inArray(candidates.id, ids));
+    for (const cur of existing) {
       const next = Array.from(new Set([...(cur.tags || []), norm])).slice(0, 30);
-      await db.update(candidates).set({ tags: next, updatedAt: new Date() }).where(eq(candidates.id, id));
+      await db.update(candidates).set({ tags: next, updatedAt: new Date() }).where(eq(candidates.id, cur.id));
       affected++;
     }
     await logAudit({
