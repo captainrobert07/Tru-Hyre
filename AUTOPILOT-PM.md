@@ -198,3 +198,28 @@ aspirational entries.
 **Recommendation:** when the supervised P0/P1 items land, add a dated section
 (e.g. `[0.2.0]`) and bump `package.json`. The changelog is now the spine for
 that.
+
+---
+
+## Iteration 25 — AUTOPILOT doc index (SHIPPED — navigability + honest archive)
+
+The repo now has **nine `AUTOPILOT-*.md` files**: five live ones from this
+quality run (PM, DEV, STRATEGY, LOG, 24H) and four from the original build phases
+(`AUTOPILOT.md`, `-2`, `-3`, `-UX`). A new reader — or the user at breakfast —
+can't tell a current proposal from a 2-week-old shipped task list. Stale docs
+that read as current are a doc-honesty problem, not just clutter.
+
+**Shipped `AUTOPILOT-INDEX.md`:** a one-screen map splitting the set into
+**Live (read these)** — with a one-line "why you'd open it" per doc and "start
+at PM.md's action board" — and **Archived build history** — the four old docs,
+each verified to carry a `STATUS: … done/shipped` line, so labeling them archive
+is honest, not a guess. Includes a flagged-but-not-taken cleanup suggestion
+(move to `docs/archive/` or delete) left as a supervised call since deletion is
+irreversible.
+
+**Why doc, not code:** pure navigability fix, zero runtime risk; the PM lens
+permits doc fixes. I verified the archive claim against each file's own status
+line rather than assuming — same honesty discipline as the iter-5/10 audits.
+
+This closes the doc-sprawl loop: iter 15 reconciled the *findings* into one
+board; this reconciles the *files* into one map.
