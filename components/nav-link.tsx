@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { isNavActive } from "@/lib/utils";
 
 /**
  * A nav Link that marks itself active for the current route. The app shell is a
@@ -11,9 +12,8 @@ import type { ReactNode } from "react";
  * where you are, and screen readers got no `aria-current`. This client wrapper
  * fixes both: adds the `active` class + aria-current="page" on a match.
  *
- * Match rule: exact for "/dashboard"; prefix for section roots (so /candidates/123
- * still lights up the Candidates tab) — but a prefix only counts on a path
- * boundary, so /clients doesn't match /clients-archive.
+ * Active-match rule lives in `isNavActive` (lib/utils) so the desktop and mobile
+ * navs share one definition of "current page".
  */
 export function NavLink({
   href,
@@ -25,10 +25,7 @@ export function NavLink({
   children: ReactNode;
 }) {
   const pathname = usePathname() || "/";
-  const active =
-    href === "/dashboard"
-      ? pathname === "/dashboard"
-      : pathname === href || pathname.startsWith(href + "/");
+  const active = isNavActive(pathname, href);
   return (
     <Link href={href} className={active ? `${className} active` : className} aria-current={active ? "page" : undefined}>
       {children}

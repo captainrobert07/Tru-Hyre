@@ -8,6 +8,7 @@ import { ConfirmProvider } from "./confirm";
 import { ShortcutHelp, ShortcutTrigger } from "./shortcut-help";
 import { QuickAdd } from "./quick-add";
 import { NavLink } from "./nav-link";
+import { MobileNavLink } from "./mobile-nav-link";
 import { ThemeToggle } from "./theme-toggle";
 import { Avatar } from "./avatar";
 import {
@@ -190,13 +191,13 @@ export function AppShell({
       {/* Mobile bottom nav */}
       <nav className="md:hidden bg-surface border-t border-hairline grid grid-cols-5 h-14 sticky bottom-0 z-40">
         {items.slice(0, items.length > 5 ? 4 : 5).map((n) => (
-          <Link key={n.href} href={n.href} className="flex flex-col items-center justify-center text-[10px] text-ink-soft gap-0.5 relative">
-            <span className="text-ink-muted">{n.icon}</span>
+          <MobileNavLink key={n.href} href={n.href}>
+            <span>{n.icon}</span>
             <span>{n.label}</span>
             {dotFor(n.href) > 0 && (
               <span className="absolute top-2 right-1/3 translate-x-2 size-1.5 rounded-full bg-attention-500" />
             )}
-          </Link>
+          </MobileNavLink>
         ))}
         {items.length > 5 && (
           <MobileMore
