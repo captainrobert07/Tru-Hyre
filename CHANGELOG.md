@@ -39,11 +39,27 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   Blob, Gmail SMTP not Resend, real `vercel-build` chain) and scrubbed a stale
   company-name string from the README + `.env.example`.
 
+### Security
+- **Stored-XSS via user-supplied URLs (fixed).** Candidate `linkedinUrl`/
+  `githubUrl` and client `website` were rendered into `href` without scheme
+  validation, so a `javascript:` URL fired in the viewer's authenticated session.
+  Added `safeExternalUrl()` (http(s)-only) at all render sites; regression-locked.
+
 ### Accessibility
-- **Screen-reader labels on label-less forms.** Three form clusters relied on
-  placeholders/option-text only (candidate-detail sidebar, client "Add contact",
-  the shared interview scheduler) — date inputs and selects had no accessible
-  name. Added `aria-label`s (WCAG 4.1.2); visual layout unchanged.
+- **Screen-reader labels on label-less forms.** Date inputs, selects, and
+  placeholder-only fields across the candidate sidebar, client/vendor contact
+  forms, interview scheduler, offers, references, email composer, scheduling
+  link, scorecard, and platform settings now have `aria-label`s — 0 label-less
+  inputs app-wide (WCAG 4.1.2). Layout unchanged.
+- **Modal focus management.** Shared `useFocusTrap` hook on SlideOver, confirm,
+  and quick-add: focus moves into the dialog, Tab cycles within it, and focus
+  restores to the trigger on close (WCAG 2.4.3). command-palette intentionally
+  left to its `cmdk` library. Escape now cancels the confirm dialog too.
+- **`prefers-reduced-motion`.** A global media query collapses all animation/
+  transition/smooth-scroll to ~instant for users who request reduced motion
+  (WCAG 2.3.3); no effect on the default experience.
+- **Set-password autocomplete.** Invite + admin user-form password fields use
+  `autocomplete="new-password"` so password managers offer/save correctly.
 
 ### Added
 - **Production error instrumentation.** `instrumentation.ts` (`onRequestError`)
@@ -52,18 +68,24 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 10 specs** (Playwright): `hr_lite` ownership isolation,
-  public careers self-apply (non-polluting), client/vendor portal cross-tenant
-  isolation, the feature-flag gating contract (`public_api` never serves data
-  unauthenticated; gated routes redirect when off), public token-route security
-  (bad invite/schedule tokens never render the actionable surface), the public
-  landing page (renders + Sign-in CTA + compliance no-company-name guard), and
-  the auth session lifecycle (login → real signOut → session gone).
+- **E2E suite grew 3 → 19 specs** (Playwright): `hr_lite` ownership isolation,
+  public careers self-apply, client/vendor portal cross-tenant isolation,
+  feature-flag gating (`public_api` never serves data unauthenticated), public
+  token-route security, the landing page (+ compliance guard), auth session
+  lifecycle (login → real signOut → gone), a broad 32-route render smoke net +
+  a portal render net, an internal-API auth gate, a saved-view write round-trip,
+  candidate search/filter, the quick-add menu, and regression locks for the
+  XSS, focus-trap, and reduced-motion fixes.
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw
   `rounded-2xl` to the `rounded-xl2` design token (pixel-identical; prevents
   drift if the token is retuned).
+- **Bulk-action perf.** Bulk tag + stage-change collapsed their per-row
+  read-N+1 into one `inArray` query (up to 500 fewer round-trips per action).
+- **Stable React keys / detail-page titles / dependency trim.** Activity-feed
+  rows keyed by id (not index); the 5 untitled detail pages got tab titles;
+  dropped 2 unused deps (`@dnd-kit/sortable`, `postgres`).
 
 ### Documented (decision-ready, not auto-built)
 - `AUTOPILOT-DEV.md` — two supervised-only fix proposals: the `db/fix-types.ts`
