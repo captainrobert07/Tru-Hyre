@@ -86,6 +86,14 @@ export function AppShell({
   return (
     <ConfirmProvider>
     <div className="min-h-screen flex flex-col">
+      {/* Skip-link (WCAG 2.4.1): hidden until a keyboard user tabs to it, then
+          jumps past the nav to the page content. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[200] focus:top-3 focus:left-3 focus:px-4 focus:py-2 focus:rounded-full focus:bg-ink_inverted focus:text-white focus:text-sm focus:shadow-pop"
+      >
+        Skip to content
+      </a>
       {paletteEnabled && <CommandPalette />}
       {shortcutsEnabled && <ShortcutHelp />}
       {/* Top bar — desktop pill nav */}
@@ -176,7 +184,7 @@ export function AppShell({
         </form>
       </header>
 
-      <div className="flex-1 px-4 md:px-8 lg:px-10 py-6 md:py-8 max-w-[1400px] w-full mx-auto">{children}</div>
+      <main id="main-content" className="flex-1 px-4 md:px-8 lg:px-10 py-6 md:py-8 max-w-[1400px] w-full mx-auto">{children}</main>
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden bg-surface border-t border-hairline grid grid-cols-5 h-14 sticky bottom-0 z-40">
