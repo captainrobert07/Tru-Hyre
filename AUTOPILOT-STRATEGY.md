@@ -501,3 +501,47 @@ trial.** That's a stronger position than any of the build-the-case sections,
 because it's the one a skeptical exec can't dismiss as advocacy.
 
 **No code changed this iteration (analysis-only lens).**
+
+---
+
+## Iteration 44 — the pilot scorecard (the fill-in go/no-go sheet)
+
+Iter 19 named the pilot metrics; iter 39 pre-committed the kill-criteria
+(K1-K4). This operationalizes both into ONE sheet a sponsor fills in at the end
+of the pilot to get a go/no-go — turning scattered "measure this / kill if that"
+prose into a decision instrument. Nothing new to analyze; this is the artifact
+that makes the prior two sections usable in a room.
+
+### How to run it
+Capture the **baseline** column the week BEFORE turning Tru Hyre on for the pod
+(you can't prove improvement without it). Fill **result** at end of week 4-6.
+**Verdict** is per-row pass/fail against the threshold; the overall call follows
+the decision rule below.
+
+| # | Metric | Source | Baseline (pre) | Threshold to PASS | Result | Verdict | Kills |
+|---|---|---|---|---|---|---|---|
+| M1 | Spreadsheet displacement | observed | pod maintains old tracker | pod STOPPED maintaining it by wk 2 | ___ | ☐ | K1 |
+| M2 | Time-to-submit | `getCycleTimePerStage` | ___ days | ↓ ≥ 15% vs baseline | ___ | ☐ | K1 |
+| M3 | AI utilization | (needs iter-9 instrument) | n/a | ≥ 3 AI actions / recruiter / week | ___ | ☐ | K1 |
+| M4 | Pipeline coverage | `getCoverageRatio` | ___% | every open req has movement; no worse than baseline | ___ | ☐ | K1 |
+| M5 | SSO / IT sign-off | IT | none | Allianz IT approves the auth/data posture | ___ | ☐ | K2 |
+| M6 | Maintenance vs savings | eng log + M2/M3 | n/a | measured eng hours < recruiter hours saved | ___ | ☐ | K3 |
+| M7 | Second maintainer exists | team | 1 (key-person) | ≥ 2 people can run/deploy it | ___ | ☐ | K4 |
+
+### Decision rule (pre-committed, so it's not relitigated under sunk cost)
+- **GO (expand):** M1 passes AND ≥ 3 of M2-M4 pass AND M5 is on a credible path.
+  The tool is displacing work and the moat features are used.
+- **FIX-AND-RETRY:** M1 passes but the AI/cycle metrics (M2-M4) lag → adoption is
+  real but the moat isn't landing; address utilization (training/UX) and re-run
+  one cycle before deciding.
+- **NO-GO (buy or stop):** M1 fails (K1) → the tool isn't displacing anything,
+  the dominant kill-signal. Also NO-GO if M5 fails hard (K2) or M6 inverts (K3),
+  regardless of the rest.
+
+### Why M1 is weighted highest
+Displacement is the one metric that can't be gamed: a pod either stopped using
+its spreadsheet or it didn't. Cycle-time and AI-usage can look fine while the
+team quietly keeps its real workflow elsewhere — so M1 gates the GO and is the
+dominant NO-GO. Everything else refines the call; M1 makes it.
+
+**No code changed this iteration (analysis-only lens).**
