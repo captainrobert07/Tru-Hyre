@@ -207,3 +207,15 @@ supervised proposals at the top of this file.
 > none used without a fallback/guard. The swept surface now also covers
 > promise-rejection and env-var classes. Stop-signal honored: not writing a
 > full audit section for a clean result.
+
+> **Iter 56 — `dangerouslySetInnerHTML` (the XSS sibling of R9) checked clean:**
+> Two sinks. `app/layout.tsx:39` is a static dev-authored THEME_SCRIPT (no user
+> input). `template-editor.tsx:109` renders `previewHtml` from admin-edited
+> template HTML — but it's **admin-only** (`/settings` gate) and the admin views
+> their *own* HTML in their *own* session (self-XSS, and previewing HTML is the
+> feature's purpose). Critically, that template HTML is only ever previewed by
+> its author or **sent as an email** — it is NEVER rendered into a candidate/
+> client/portal page (zero `dangerouslySetInnerHTML` in portal/careers/
+> components). So the R9 vector (untrusted input → another user's DOM) does not
+> recur here. No fix; sanitizing the admin preview would break legitimate HTML
+> authoring.
