@@ -170,3 +170,31 @@ returns; highest value is verifying new code as features land, not hunting the
 (now well-swept) existing surface.
 
 **No code changed this iteration (completeness-audit pass).**
+
+---
+
+## Iteration 48 — numeric-edge audit (division-by-zero / Math.max-of-empty): clean
+
+Scanned the two classes most likely to surface a `NaN`/`±Infinity` rendering or
+logic bug. Both came up **correctly guarded** — recording so future dev
+rotations don't re-chase them, and noting the pattern the codebase uses.
+
+- **Division-by-zero in reports/metrics:** every percentage/ratio divisor is
+  protected. `lib/metrics.ts` uses explicit `denominator > 0 ? … : 0` (lines
+  154/230/282/414). `app/(app)/reports/page.tsx` floors bar-width divisors with
+  `Math.max(1, …)` (sourceMax/locationMax/the per-chart `max` at 62/63/149/467)
+  and guards the one without a Math.max via `totals > 0 ?` (418). No NaN width
+  reaches the DOM even on an empty/new instance.
+- **`Math.max(...spread)` of a possibly-empty array → `-Infinity`:**
+  `lib/parse.ts:145` does `Math.max(...filtered)` with no seed, so an empty
+  filter yields `-Infinity` — but line 146 immediately guards it
+  (`Number.isFinite(max) && max > 0 ? String(max) : null`), so it correctly
+  returns null. Not a bug.
+
+**Conclusion:** numeric-edge handling is consistent and defensive. With this,
+the Senior-Dev lens has swept network I/O (8, 28), AI cost (18), cron (23),
+input hardening (33), React keys + N+1 (38, 43), and numeric edges (48). The
+existing-surface audit is comprehensive; remaining real dev work is the two
+supervised proposals at the top of this file.
+
+**No code changed this iteration (completeness-audit pass).**
