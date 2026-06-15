@@ -136,3 +136,37 @@ radius per occurrence (silent corruption of a real candidate's record graph).
 
 **Files:** `app/(app)/candidates/duplicates/merge-actions.ts:29-99`,
 `db/index.ts` (neon-http driver).
+
+---
+
+## Iteration 33 — input-hardening completeness audit (clean; recorded to avoid re-tread)
+
+Per the brief's "out of safe work → completeness-audit pass rather than invent
+risky features." After 5 prior Senior-Dev passes (timeouts, AI cost, cron,
+file-serving auth, the merge proposal), I audited the remaining untrusted-input
+surfaces for abuse/validation/error-isolation gaps. **All solid — no
+shippable fix found.** Recording so a future dev rotation doesn't re-scan the
+same ground.
+
+| Surface | Guard verified | File |
+|---|---|---|
+| Public careers self-apply | zod schema (name/email/phone/url bounded), **honeypot** (`website` max-0), consent gate, **10MB cap**, **PDF type check** (mime or .pdf) | `app/careers/[id]/apply-actions.ts:17-71` |
+| Single resume upload | 10MB cap + PDF type check | `candidates/upload/actions.ts:228-229` |
+| Bulk resume upload | per-file 10MB + type check, per-file error collection (one bad file doesn't kill the batch) | `candidates/upload/actions.ts:173-174` |
+| CSV import | per-row try/catch + `continue` (one bad row logged & skipped, not fatal), own RFC-4180-ish parser, 5MB cap, missing-fullName guard | `candidates/import/actions.ts:41-108` |
+| File serving | per-role authorization (admin/hr full, hr_lite own-upload, vendor own-account, client own-job-packets), outer try/catch, 404 on missing | `api/files/[fileId]/route.ts:53-90` (audited iter 28) |
+
+**Conclusion:** the untrusted-input hardening surface is comprehensive — size
+caps, type checks, honeypot, consent, schema validation, and per-item error
+isolation are all present and consistent. The codebase was built defensively;
+the Senior-Dev lens has now swept network I/O (iters 8, 28), AI cost (18), cron
+resilience (23), and input hardening (33) and found everything either already
+solid or fixed.
+
+**Remaining real Senior-Dev work is the two SUPERVISED proposals above**
+(fix-types TRUNCATE, atomic merge) — both need a human-in-the-loop session, not
+an unattended ship. Future unsupervised dev rotations are into diminishing
+returns; highest value is verifying new code as features land, not hunting the
+(now well-swept) existing surface.
+
+**No code changed this iteration (completeness-audit pass).**
