@@ -27,9 +27,23 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **AI prompt input was unbounded.** `lib/ai.ts` capped output tokens but sent
   prompts verbatim; raw-text entry points (AI-search box, semantic search)
   could paste-bomb input tokens. Added a 24k-char cap at the chokepoint.
+- **SLA cron could abort before its main job.** The interview-reminders block
+  was unwrapped while its siblings had try/catch; a bad row 500'd the handler
+  and skipped the core SLA task-creation. Isolated it (log-and-continue).
+- **Google Drive SDK calls had no timeout.** A hung `files.create`/`delete`/
+  metadata-`get` stalled resume upload / packet gen until the function timeout
+  (the iter-8 fix, extended to the Drive client). Added a 20s timeout; the
+  streaming download is intentionally left unbounded (large files are slow,
+  not hung).
 - **Stale README.** Synced docs to shipped reality (Google Drive not Vercel
   Blob, Gmail SMTP not Resend, real `vercel-build` chain) and scrubbed a stale
   company-name string from the README + `.env.example`.
+
+### Accessibility
+- **Screen-reader labels on label-less forms.** Three form clusters relied on
+  placeholders/option-text only (candidate-detail sidebar, client "Add contact",
+  the shared interview scheduler) — date inputs and selects had no accessible
+  name. Added `aria-label`s (WCAG 4.1.2); visual layout unchanged.
 
 ### Added
 - **Production error instrumentation.** `instrumentation.ts` (`onRequestError`)
@@ -38,10 +52,13 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 7 specs** (Playwright): `hr_lite` ownership isolation,
+- **E2E suite grew 3 → 10 specs** (Playwright): `hr_lite` ownership isolation,
   public careers self-apply (non-polluting), client/vendor portal cross-tenant
-  isolation, and the feature-flag gating contract (`public_api` never serves
-  data unauthenticated; gated routes redirect when off).
+  isolation, the feature-flag gating contract (`public_api` never serves data
+  unauthenticated; gated routes redirect when off), public token-route security
+  (bad invite/schedule tokens never render the actionable surface), the public
+  landing page (renders + Sign-in CTA + compliance no-company-name guard), and
+  the auth session lifecycle (login → real signOut → session gone).
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw
@@ -52,11 +69,17 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - `AUTOPILOT-DEV.md` — two supervised-only fix proposals: the `db/fix-types.ts`
   `TRUNCATE`-on-deploy data-loss landmine, and the non-atomic `mergeCandidatesAction`
   (needs neon-http `db.batch`, not `db.transaction`).
-- `AUTOPILOT-STRATEGY.md` — feature-portfolio triage, adoption/switching-cost,
-  build-vs-buy defensibility, and the rollout-wedge plan.
+- `AUTOPILOT-STRATEGY.md` — an executive summary (BLUF) over five angles:
+  feature-portfolio triage, adoption/switching-cost, build-vs-buy defensibility,
+  the rollout-wedge plan, and an ROI model — plus a consolidated risk register
+  (R1-R8, likelihood × severity × status).
 - `AUTOPILOT-PM.md` — doc-honesty audits, an Azure AD SSO proposal, and a single
   prioritized action board reconciling all findings (P0 data-loss gates → P1
-  adoption → P2 posture).
+  adoption → P2 posture), kept status-refreshed.
+- `AUTOPILOT-INDEX.md` — a map of the nine `AUTOPILOT-*.md` files (live decision
+  surfaces vs archived build history).
+- `AUTOPILOT-DEV.md` also records an input-hardening completeness audit (the
+  untrusted-input surface is comprehensively guarded).
 
 ## [0.1.0] — initial build
 - Next.js 15 + Drizzle/Neon rebuild of the recruitment platform: candidates,

@@ -269,3 +269,24 @@ difference vs iter 15: there's now nothing *else* worth doing unsupervised ahead
 of them — the polish/test/doc backlog is drained.
 
 **No code changed this iteration (PM status-refresh/analysis lens).**
+
+---
+
+## Iteration 35 — CHANGELOG refresh (keep the release record honest)
+
+The CHANGELOG (iter 20) recorded the run through ~iter 19 and had gone stale: it
+claimed "E2E grew 3 → 7 specs" when there are now **10**, and omitted everything
+shipped iters 21-34 (cron isolation, Drive timeouts, three a11y rounds, three
+new E2E specs, the strategy/PM doc work). A release record that misstates what
+shipped is the same doc-honesty problem as the iter-30 stale board — verified
+against `git log` / `ls e2e`, not memory.
+
+Updated the Unreleased section: corrected the spec count + listed the 7 new
+specs, added the cron + Drive-timeout fixes and a new **Accessibility** group,
+and refreshed the Documented section (strategy now 5 angles + exec summary +
+risk register; added INDEX + the input-hardening audit). Every entry maps to a
+real merged commit.
+
+This is the third "keep it honest" refresh (board iter 30, register iter 34,
+changelog now) — the recurring PM job once a run is long enough that its own
+records drift. Doc-only, zero runtime risk.
