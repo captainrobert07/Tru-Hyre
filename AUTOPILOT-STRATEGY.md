@@ -10,6 +10,47 @@ Analysis only — no code, no deploy from this lens.
 
 ---
 
+## Executive summary (iteration 29 — bottom line up front)
+
+Five analysis passes (iters 4, 9, 14, 19, 24) converge on one thesis, distilled
+here so a sponsor reads the conclusion before the 350 lines of working. If you
+read nothing else in this file, read this.
+
+**The thesis in one paragraph.** Tru Hyre's defensible reason to exist as a
+build (not a bought ATS) is **AI economics + data residency + zero per-seat**:
+the AI features save real recruiter hours at metered token cost (haiku-default,
+cost-capped — iters 14, 24), and candidate PII stays in Allianz's own
+infrastructure, which is a compliance edge for an EU insurer. It will **lose any
+feature-count contest to a vendor**, so it should stop competing on breadth (the
+55-feature surface is already wider than an internal team needs — iter 4) and
+lean into the moat. The single thing standing between "good internal tool" and
+"actually deployed at Allianz" is **adoption, not features** — specifically SSO
+and Microsoft-ecosystem fit (iters 4, 9). Everything else is secondary.
+
+**The four decisions that matter, in order:**
+1. **Ship SSO (Azure AD).** The #1 adoption gate; low-code (Auth.js drop-in),
+   bottleneck is the Azure tenant/IT approval, not engineering. → iter 4/PM iter 5.
+2. **Pilot one high-volume pod, not the org.** Define success as displacement
+   (they stop using their spreadsheet) + a time-to-submit drop, measured against
+   a pre-captured baseline. → iter 19.
+3. **Lead the sponsor memo with the ROI inequality,** not a feature list:
+   ~€60-90k/yr of reclaimed capacity (10-person team) vs low-hundreds-€/month of
+   tokens vs the maintenance cost. → iter 24.
+4. **Hold the line on scope and AI cost.** No feature #56; hide the SaaS
+   gold-plating for the internal build; keep AI user-initiated + capped so the
+   moat stays cheap. → iters 4, 14, 18 (the shipped prompt-cap).
+
+**The one risk that kills it quietly:** key-person/bus-factor — it's a
+from-scratch internal build. The doc-honesty discipline in this repo (honest
+README, INTEGRATIONS maturity badges, these logs) is the cheapest hedge; treat
+it as insurance, not housekeeping. → iter 14.
+
+Detailed working follows: feature triage (iter 4), adoption & switching cost
+(iter 9), build-vs-buy & risk (iter 14), rollout wedge (iter 19), ROI model
+(iter 24).
+
+---
+
 ## Iteration 4 — feature portfolio triage (55 features, 9 categories)
 
 ### The framing that matters
