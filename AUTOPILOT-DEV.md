@@ -219,3 +219,34 @@ supervised proposals at the top of this file.
 > components). So the R9 vector (untrusted input → another user's DOM) does not
 > recur here. No fix; sanitizing the admin preview would break legitimate HTML
 > authoring.
+
+---
+
+## Iteration 78 — focus-trap rollout: command-palette intentionally EXCLUDED (reasoned)
+
+Completing P2 #11 (focus-trap on the 4 modals), the 4th — `command-palette.tsx`
+— was assessed and **deliberately NOT given the generic `useFocusTrap` hook.**
+This is a decision, not an omission:
+
+- The palette is built on **`cmdk`** (`import { Command } from "cmdk"`), a
+  purpose-built command-menu library that already manages focus: it `autoFocus`es
+  its search input on open and owns arrow-key list navigation + the input/list
+  focus model.
+- The generic hook focuses the *first focusable* on open — which would **steal
+  focus from cmdk's search input** (a UX regression: a command palette must
+  focus its input) and its Tab-cycling could fight cmdk's own key handling.
+- It opens via a global **⌘K shortcut with no trigger element**, so the
+  "restore focus to trigger" half is also largely moot (nothing specific to
+  restore to).
+
+**Verdict:** forcing the hook here to make the checklist read "4/4" would
+degrade a working, library-managed keyboard UX for marginal gain — exactly the
+"don't half-build a risky change" rule. The right state is **3/4 modals on the
+shared hook (SlideOver, confirm, quick-add) + command-palette correctly left to
+cmdk.** P2 #11 is effectively complete.
+
+If a future audit wants belt-and-suspenders here, the *only* safe addition would
+be focus-restore-on-close (not a full trap), and only if a real trigger element
+is introduced — low priority.
+
+**No code changed this iteration (reasoned exclusion + assessment).**
