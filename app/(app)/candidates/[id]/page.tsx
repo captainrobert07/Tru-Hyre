@@ -41,6 +41,7 @@ import { InlineEdit } from "@/components/inline-edit";
 import { Comments } from "@/components/comments";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Candidate" };
 
 export default async function CandidateDetail({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireStaffOrLite();

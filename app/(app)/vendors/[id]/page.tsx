@@ -12,6 +12,7 @@ import { JobApproval } from "@/components/job-approval";
 import { approveVendorAction } from "../actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Vendor" };
 
 export default async function VendorDetail({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireStaff();
