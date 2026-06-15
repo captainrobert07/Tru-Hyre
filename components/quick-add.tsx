@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, X, Users, Briefcase, Building2, Truck, Send, ListTodo } from "lucide-react";
+import { useFocusTrap } from "@/components/use-focus-trap";
 
 const ITEMS: Array<{
   href: string;
@@ -21,6 +22,8 @@ const ITEMS: Array<{
 
 export function QuickAdd() {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, panelRef);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -55,7 +58,7 @@ export function QuickAdd() {
       {open && (
         <div className="fixed inset-0 z-[110] flex items-start justify-center pt-[18vh] px-4" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-ink_inverted/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative w-full max-w-md card overflow-hidden">
+          <div ref={panelRef} className="relative w-full max-w-md card overflow-hidden">
             <div className="flex items-center justify-between px-5 h-14 border-b border-hairline">
               <div className="flex items-center gap-2">
                 <Plus size={16} className="text-ink-muted" />
