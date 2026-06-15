@@ -59,13 +59,16 @@ export async function bulkCandidateAction(input: unknown): Promise<{ ok: true; a
     if (!stage) return { ok: false, error: "Stage is required." };
     let affected = 0;
     const movedRows: Array<{ cur: typeof candidates.$inferSelect }> = [];
-    for (const id of ids) {
-      const cur = (await db.select().from(candidates).where(eq(candidates.id, id)))[0];
-      if (!cur) continue;
+    // Read all candidates in ONE query (was N selects — up to 500 on a bulk
+    // action). The per-row UPDATE + stage_history INSERT stay in the loop:
+    // each history row records that candidate's OWN previous stage, so the
+    // writes genuinely differ per row and can't be batched on neon-http.
+    const existing = await db.select().from(candidates).where(inArray(candidates.id, ids));
+    for (const cur of existing) {
       if (cur.stage === stage) continue;
-      await db.update(candidates).set({ stage, updatedAt: new Date() }).where(eq(candidates.id, id));
+      await db.update(candidates).set({ stage, updatedAt: new Date() }).where(eq(candidates.id, cur.id));
       await db.insert(stageHistory).values({
-        candidateId: id,
+        candidateId: cur.id,
         fromStage: cur.stage,
         toStage: stage,
         changedById: Number(user.id),
