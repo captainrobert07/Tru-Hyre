@@ -8,6 +8,16 @@ export type DriveUploadResult = {
   name: string;
 };
 
+/**
+ * Per-request timeout (ms) for Drive API calls. googleapis has no default
+ * timeout, so a hung Drive request would otherwise stall the awaiting action
+ * (resume upload, packet generation) until the platform function timeout —
+ * the same failure mode fixed for outbound fetch() in lib/connectors.ts.
+ * Applied to create/delete/metadata-get. NOT applied to the streaming
+ * download, where a long transfer for a large file is legitimate, not a hang.
+ */
+const DRIVE_TIMEOUT_MS = 20_000;
+
 // Resolve the Google service-account client from admin Integrations (DB) → env.
 async function getDriveClient(): Promise<drive_v3.Drive | null> {
   const r = await getIntegration("google");
@@ -62,19 +72,22 @@ async function uploadToDrive(
   }
 
   const finalName = `${subPrefix}-${Date.now()}-${safeName(name)}`;
-  const res = await drive.files.create({
-    requestBody: {
-      name: finalName,
-      parents: [folderId],
-      mimeType,
+  const res = await drive.files.create(
+    {
+      requestBody: {
+        name: finalName,
+        parents: [folderId],
+        mimeType,
+      },
+      media: {
+        mimeType,
+        body: Readable.from(buffer),
+      },
+      fields: "id, webViewLink, name",
+      supportsAllDrives: true,
     },
-    media: {
-      mimeType,
-      body: Readable.from(buffer),
-    },
-    fields: "id, webViewLink, name",
-    supportsAllDrives: true,
-  });
+    { timeout: DRIVE_TIMEOUT_MS },
+  );
 
   const id = res.data.id;
   if (!id) throw new Error("drive_create_returned_no_id");
@@ -98,7 +111,7 @@ export async function deleteDriveFile(driveFileId: string): Promise<void> {
   if (!driveFileId || driveFileId.startsWith("dev-")) return;
   const drive = await getDriveClient();
   if (!drive) return;
-  await drive.files.delete({ fileId: driveFileId, supportsAllDrives: true });
+  await drive.files.delete({ fileId: driveFileId, supportsAllDrives: true }, { timeout: DRIVE_TIMEOUT_MS });
 }
 
 export type DriveStream = {
@@ -113,11 +126,14 @@ export async function streamDriveFile(driveFileId: string): Promise<DriveStream 
   const drive = await getDriveClient();
   if (!drive) return null;
 
-  const meta = await drive.files.get({
-    fileId: driveFileId,
-    fields: "id, name, mimeType, size",
-    supportsAllDrives: true,
-  });
+  const meta = await drive.files.get(
+    {
+      fileId: driveFileId,
+      fields: "id, name, mimeType, size",
+      supportsAllDrives: true,
+    },
+    { timeout: DRIVE_TIMEOUT_MS },
+  );
 
   const dl = await drive.files.get(
     { fileId: driveFileId, alt: "media", supportsAllDrives: true },
