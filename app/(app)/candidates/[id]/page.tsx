@@ -275,12 +275,12 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
   }));
 
   type Activity =
-    | { kind: "stage"; at: Date; from: string | null; to: string; note: string | null }
-    | { kind: "feedback"; at: Date; feedbackKind: string; body: string | null; submissionId: number };
+    | { kind: "stage"; id: number; at: Date; from: string | null; to: string; note: string | null }
+    | { kind: "feedback"; id: number; at: Date; feedbackKind: string; body: string | null; submissionId: number };
 
   const activity: Activity[] = [
-    ...history.map((h): Activity => ({ kind: "stage", at: h.createdAt, from: h.fromStage, to: h.toStage, note: h.note })),
-    ...feedback.map((f): Activity => ({ kind: "feedback", at: f.createdAt, feedbackKind: f.kind, body: f.body, submissionId: f.submissionId })),
+    ...history.map((h): Activity => ({ kind: "stage", id: h.id, at: h.createdAt, from: h.fromStage, to: h.toStage, note: h.note })),
+    ...feedback.map((f): Activity => ({ kind: "feedback", id: f.id, at: f.createdAt, feedbackKind: f.kind, body: f.body, submissionId: f.submissionId })),
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
   const latestResume = resume[0];
@@ -601,8 +601,8 @@ export default async function CandidateDetail({ params }: { params: Promise<{ id
               <div className="text-sm text-ink-soft px-1 py-2">No activity yet.</div>
             ) : (
               <ol className="relative pl-5 space-y-3 before:absolute before:left-[7px] before:top-1.5 before:bottom-1.5 before:w-px before:bg-hairline">
-                {activity.map((a, i) => (
-                  <li key={i} className="relative">
+                {activity.map((a) => (
+                  <li key={`${a.kind}-${a.id}`} className="relative">
                     <span
                       className={`absolute -left-5 top-1.5 size-3 rounded-full border-2 border-surface ${
                         a.kind === "stage" && a.to === "rejected"
