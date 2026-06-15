@@ -223,3 +223,49 @@ line rather than assuming — same honesty discipline as the iter-5/10 audits.
 
 This closes the doc-sprawl loop: iter 15 reconciled the *findings* into one
 board; this reconciles the *files* into one map.
+
+---
+
+## Iteration 30 — action-board status refresh (keep the decision surface honest)
+
+The prioritized board (iter 15) is now 14 iterations old. Its **open items are
+still accurate** — nothing in P0/P1 was touched, correctly, since they're all
+supervised-only (data-loss fixes, SSO). But the board didn't reflect what the
+autopilot *closed* in the meantime, and a decision surface that's silently stale
+misleads as much as a wrong one. This refresh keeps it honest.
+
+### Still open — unchanged, still the priority (re-confirmed against current main)
+- **P0 #1 Defuse `fix-types.ts` TRUNCATE** — OPEN (supervised). The deploy-path
+  data-loss landmine is untouched; still the #1 thing before real data.
+- **P0 #2 Atomic candidate merge** — OPEN (supervised). neon-http `db.batch`
+  fix still needed; AUTOPILOT-DEV.md iter 13 has the design.
+- **P0 #3 Read digest crash logs** — STILL PASSIVE. `instrumentation.ts` is live
+  (shipped iter 1); waiting for the crash to fire to pull the real stack.
+- **P1 #4 SSO**, **#5 HRIS handoff**, **#6 M365/Teams** — all OPEN. SSO remains
+  the single highest-leverage increment.
+- **P2 #7-10** (data-residency doc, build-vs-buy memo, hide gold-plating,
+  displacement instrument) — OPEN; all leadership/decision items, not eng.
+
+### Shipped since the board (iters 16-29) — quality work that DIDN'T need a decision
+These were the autopilot's lane: clearly-correct fixes + tests + analysis, all
+green, no supervision needed. Recorded so the board reflects reality:
+- **Reliability fixes (3):** AI prompt-length cap (iter 18, closes the STRATEGY
+  iter-14 AI-cost risk), cron interview-reminders isolation (iter 23), Drive SDK
+  timeouts (iter 28, extends the iter-8 connector fix).
+- **UI/a11y (3):** loading skeletons for the 2 heaviest routes (iter 16), and
+  two screen-reader label rounds — candidate sidebar (iter 21) + client contact
+  form (iter 26).
+- **E2E suite 3 → 9 specs:** feature-gating (17), token-route security (22),
+  landing page + compliance guard (27), on top of the rotation-1/2 isolation
+  specs.
+- **Docs:** CHANGELOG (20), AUTOPILOT-INDEX (25), plus STRATEGY rounded out to
+  five angles + an exec summary (19, 24, 29).
+
+### Net read for breakfast (unchanged headline)
+The autopilot has cleared all the safe-to-ship quality work; **what remains is
+exactly the supervised queue** — the two data-loss fixes and SSO. The one
+sentence still holds: **fix the two P0 data-loss landmines, then chase SSO.** The
+difference vs iter 15: there's now nothing *else* worth doing unsupervised ahead
+of them — the polish/test/doc backlog is drained.
+
+**No code changed this iteration (PM status-refresh/analysis lens).**
