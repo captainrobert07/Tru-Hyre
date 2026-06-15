@@ -68,7 +68,7 @@ export function ReferencesPanel({
               {r.status === "requested" && (
                 logging === r.id ? (
                   <form action={(fd) => receive(r.id, fd)} className="mt-2 space-y-2">
-                    <textarea name="response" rows={3} required placeholder="Paste the referee's reply…" className="input text-sm py-2" />
+                    <textarea name="response" rows={3} required placeholder="Paste the referee's reply…" className="input text-sm py-2" aria-label="Referee response" />
                     <div className="flex gap-2">
                       <button type="submit" disabled={pending} className="btn-primary text-xs">Save response</button>
                       <button type="button" onClick={() => setLogging(null)} className="btn-ghost text-xs">Cancel</button>
@@ -87,9 +87,9 @@ export function ReferencesPanel({
         <button type="button" onClick={() => setOpen(true)} className="btn-ghost text-xs w-full">+ Request reference</button>
       ) : (
         <form action={request} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
-          <input name="refereeName" required placeholder="Referee name" className="input text-sm" />
-          <input name="refereeEmail" type="email" required placeholder="Referee email" className="input text-sm" />
-          <input name="relationship" placeholder="Relationship (e.g. Former manager)" className="input text-sm" />
+          <input name="refereeName" required placeholder="Referee name" className="input text-sm" aria-label="Referee name" />
+          <input name="refereeEmail" type="email" required placeholder="Referee email" className="input text-sm" aria-label="Referee email" />
+          <input name="relationship" placeholder="Relationship (e.g. Former manager)" className="input text-sm" aria-label="Relationship to referee" />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">{pending ? "Sending…" : "Send request"}</button>
             <button type="button" onClick={() => setOpen(false)} className="btn-ghost text-xs">Cancel</button>
