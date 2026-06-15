@@ -8,6 +8,7 @@ import { PageHeader, JobStatusBadge, Badge, ListRow, EmptyState } from "@/compon
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Avatar } from "@/components/avatar";
 import { RecentTracker } from "@/components/recently-viewed";
+import { safeExternalUrl } from "@/lib/utils";
 import { addContactAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export default async function ClientDetail({ params }: { params: Promise<{ id: s
         <div className="lg:col-span-2 space-y-4">
           <Section title="Profile">
             <Field label="Website">
-              {c.website ? <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">{c.website}</a> : "—"}
+              {safeExternalUrl(c.website) ? <a href={safeExternalUrl(c.website)} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">{c.website}</a> : (c.website || "—")}
             </Field>
             <Field label="Primary contact">{c.primaryContactName || "—"}</Field>
             <Field label="Email">{c.primaryContactEmail || "—"}</Field>
