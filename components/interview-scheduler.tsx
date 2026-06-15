@@ -171,18 +171,18 @@ export function InterviewScheduler({
         </button>
       ) : (
         <form action={submit} className="space-y-2 rounded-lg border border-hairline p-3 bg-canvas">
-          <input name="title" required placeholder="e.g. Technical round 1" className="input text-sm" defaultValue="Interview" />
+          <input name="title" required placeholder="e.g. Technical round 1" className="input text-sm" defaultValue="Interview" aria-label="Interview title" />
           <div className="grid grid-cols-[1fr_5rem] gap-2">
-            <input name="roundLabel" placeholder="Round label (optional, e.g. Tech round 1)" className="input text-sm" />
-            <input name="roundIndex" type="number" min={1} max={20} placeholder="Round #" title="Round number" className="input text-sm" />
+            <input name="roundLabel" placeholder="Round label (optional, e.g. Tech round 1)" className="input text-sm" aria-label="Round label" />
+            <input name="roundIndex" type="number" min={1} max={20} placeholder="Round #" title="Round number" className="input text-sm" aria-label="Round number" />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <select name="mode" className="input text-sm" defaultValue="video">
+            <select name="mode" className="input text-sm" defaultValue="video" aria-label="Interview mode">
               <option value="video">Video</option>
               <option value="phone">Phone</option>
               <option value="onsite">On-site</option>
             </select>
-            <select name="durationMins" className="input text-sm" defaultValue="45">
+            <select name="durationMins" className="input text-sm" defaultValue="45" aria-label="Duration">
               <option value="15">15 min</option>
               <option value="30">30 min</option>
               <option value="45">45 min</option>
@@ -190,10 +190,10 @@ export function InterviewScheduler({
               <option value="90">90 min</option>
             </select>
           </div>
-          <input name="start" type="datetime-local" required defaultValue={defaultStart()} className="input text-sm" />
-          <input name="location" placeholder="Location (for on-site)" className="input text-sm" />
+          <input name="start" type="datetime-local" required defaultValue={defaultStart()} className="input text-sm" aria-label="Start date and time" />
+          <input name="location" placeholder="Location (for on-site)" className="input text-sm" aria-label="Location" />
           {submissions.length > 0 && (
-            <select name="submissionId" className="input text-sm" defaultValue="">
+            <select name="submissionId" className="input text-sm" defaultValue="" aria-label="Link to a submission">
               <option value="">Link to a submission (optional)…</option>
               {submissions.map((s) => (
                 <option key={s.id} value={s.id}>{s.label}</option>
@@ -221,7 +221,7 @@ export function InterviewScheduler({
               </div>
             </div>
           )}
-          <textarea name="notes" rows={2} placeholder="Notes (optional)" className="input text-sm py-2" />
+          <textarea name="notes" rows={2} placeholder="Notes (optional)" className="input text-sm py-2" aria-label="Interview notes" />
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className="btn-primary text-xs flex-1">
               {pending ? "Scheduling…" : "Schedule"}
