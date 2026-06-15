@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 
 type ConfirmOpts = {
@@ -38,6 +38,22 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     setPending(null);
     setTyped("");
   };
+
+  // Escape cancels the dialog — matches slide-over/quick-add/command-palette;
+  // confirm was the only modal without it (keyboard users had to click Cancel).
+  useEffect(() => {
+    if (!pending) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        pending.resolve(false);
+        setPending(null);
+        setTyped("");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [pending]);
 
   const opts = pending?.opts;
   const typeOk = !opts?.typeToConfirm || typed.trim() === opts.typeToConfirm;
