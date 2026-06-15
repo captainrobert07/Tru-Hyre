@@ -310,3 +310,35 @@ user decide what to do with the loop, which no prior artifact addressed.
 This likely closes the PM lens's net-new work for the run — future PM rotations,
 if the loop continues, will be status refreshes (the iter-30/34/35 pattern)
 until a new feature wave creates genuinely new ground.
+
+---
+
+## Iteration 45 — deploy-quota incident (the loop hit a hard platform limit)
+
+**What happened.** Around iteration 43, main→prod auto-deploys silently stopped
+firing. Iteration 44 traced it: the Vercel **free-tier deployment quota (100/day)
+was exhausted** — the API rejected a prod deploy with
+`api-deployments-free-per-day`. The run burns ~2-3 deploys/iteration (branch
+preview + merge build + prod), so ~40 iterations/day saturates the cap.
+
+**Impact.** `main` stayed correct (all code merged), but production fell behind:
+prod served iter-42 (`b8b0819`) while main was 2 iterations ahead. My iter-43
+"prod green" line was wrong — it matched a stale deploy without checking the
+SHA; corrected in the iter-44 log. **Resolved iteration 45:** the quota reset,
+and one production deploy of current `main` (`c231e69`) caught prod up to all 44
+iterations at once. Verified prod sha == main HEAD.
+
+**The honesty lesson (process fix, not code).** "Verify green on Vercel" must
+mean **check the production deploy's commit SHA matches main**, not just "a
+green build exists." A green branch preview ≠ shipped to prod. Future
+deploy-verify steps in this loop (and in any /ship workflow) should assert the
+SHA, which would have caught this at iter 43 instead of iter 44.
+
+**What it means for the loop (reinforces the retro).** The cadence is not free —
+it consumes a finite daily platform budget, and at ~40 iters/day it self-limits.
+This is concrete evidence for `AUTOPILOT-RETRO.md`'s call: an unsupervised loop
+optimized for "one small unit per tick" eventually spends real resources
+(deploy quota, and the reviewer's attention) faster than it creates value.
+**Recommendation stands and is now cost-backed: pause the cron and redirect to
+the supervised queue (R1/R2/R3).** If the loop continues, it should batch (merge
+several iterations per prod deploy) rather than deploy every tick.
