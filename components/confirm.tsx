@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
+import { useFocusTrap } from "@/components/use-focus-trap";
 
 type ConfirmOpts = {
   title: string;
@@ -58,13 +59,16 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const opts = pending?.opts;
   const typeOk = !opts?.typeToConfirm || typed.trim() === opts.typeToConfirm;
 
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(!!pending, panelRef);
+
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
       {opts && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center px-4" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-ink_inverted/40 backdrop-blur-sm" onClick={() => close(false)} />
-          <div className="relative w-full max-w-md card p-6">
+          <div ref={panelRef} className="relative w-full max-w-md card p-6">
             <button
               onClick={() => close(false)}
               className="absolute top-3 right-3 size-8 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink hover:bg-canvas"
