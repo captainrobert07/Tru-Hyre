@@ -71,7 +71,7 @@ export function UserForm({
         </div>
         <div className="md:col-span-2">
           <label htmlFor="password" className="label">{isCreate ? "Password" : "Reset password (leave blank to keep)"}</label>
-          <input id="password" name="password" type="password" required={isCreate} minLength={8} className="input" />
+          <input id="password" name="password" type="password" autoComplete="new-password" required={isCreate} minLength={8} className="input" />
         </div>
       </div>
       <div className="flex gap-2 pt-2">

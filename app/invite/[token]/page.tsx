@@ -83,7 +83,7 @@ export default async function InvitePage({
           </div>
           <div>
             <label htmlFor="password" className="label">Choose a password</label>
-            <input id="password" name="password" type="password" required minLength={8} maxLength={120} className="input" />
+            <input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={120} className="input" />
             <p className="text-xs text-ink-muted mt-1">8+ characters.</p>
           </div>
           {error && (
