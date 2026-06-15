@@ -19,6 +19,7 @@ import { postJobToBoardAction } from "./posting-actions";
 import { approveJobAction } from "../actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Job" };
 
 export default async function JobDetail({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireStaff();

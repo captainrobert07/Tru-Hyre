@@ -10,6 +10,7 @@ import { TemplateEditor } from "./template-editor";
 import { CopyableToken } from "./copyable-token";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Edit email template" };
 
 export default async function EditEmailTemplate({
   params,

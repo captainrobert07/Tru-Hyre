@@ -11,6 +11,7 @@ import { RecentTracker } from "@/components/recently-viewed";
 import { addContactAction } from "../actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Client" };
 
 export default async function ClientDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff();
