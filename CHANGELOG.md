@@ -85,7 +85,7 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 26 specs** (Playwright): `hr_lite` ownership isolation,
+- **E2E suite grew 3 → 27 specs** (Playwright): `hr_lite` ownership isolation,
   public careers self-apply, client/vendor portal cross-tenant isolation,
   feature-flag gating (`public_api` never serves data unauthenticated), public
   token-route security, the landing page (+ compliance guard), auth session
@@ -96,9 +96,10 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   (bounced from every org-wide/admin path), active-nav `aria-current` on desktop
   + mobile, the public careers not-found boundary (closed/missing reqs stay
   private), the branded 404 recovery links, the public vendor-signup contract
-  (+ its anti-spam honeypot), and regression locks for the XSS, focus-trap,
-  reduced-motion, and skip-link fixes. The whole public/unauthenticated surface
-  is now covered.
+  (+ its anti-spam honeypot), the `/api/cron/sla` auth gate (unauth + spoofed
+  Bearer both rejected, sweep never runs), and regression locks for the XSS,
+  focus-trap, reduced-motion, and skip-link fixes. The whole public /
+  unauthenticated surface — plus the cron entry point — is now covered.
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw
@@ -117,7 +118,7 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - `AUTOPILOT-STRATEGY.md` — an executive summary (BLUF) over five angles:
   feature-portfolio triage, adoption/switching-cost, build-vs-buy defensibility,
   the rollout-wedge plan, and an ROI model — plus a consolidated risk register
-  (R1-R8, likelihood × severity × status).
+  (R1-R12, likelihood × severity × status; R6/R9/R12 CLOSED, R7 instrumented).
 - `AUTOPILOT-PM.md` — doc-honesty audits, an Azure AD SSO proposal, and a single
   prioritized action board reconciling all findings (P0 data-loss gates → P1
   adoption → P2 posture), kept status-refreshed.

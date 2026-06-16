@@ -1,12 +1,14 @@
 # Autopilot handoff — start here
 
 One page to resume this work without reading the 11 `AUTOPILOT-*.md` logs.
-**Refreshed at iteration 100** (was iter 60). Everything the ~100-iteration
-quality run shipped is live: typography, crash instrumentation, connector/Drive
-timeouts, AI cost cap, cron isolation, dark-mode, the **stored-XSS fix** (R9,
-the highest-severity self-found issue), a full **accessibility track** (5 WCAG
-criteria: label sweep, focus-trap, reduced-motion, skip-link/landmark,
-active-nav — desktop + mobile), perf N+1 collapses, and a **22-spec E2E suite**.
+**Refreshed at iteration 135** (first written iter 60). Everything the run
+shipped is live: typography, crash instrumentation, connector/Drive timeouts,
+AI cost cap, cron isolation, dark-mode, the **stored-XSS fix** (R9) + a second
+self-found compliance fix (**PII-out-of-logs**, R12), a full **accessibility
+track** (5 WCAG criteria: label sweep, focus-trap, reduced-motion,
+skip-link/landmark, active-nav — desktop + mobile), perf N+1 collapses,
+double-submit guards on every duplicate-record form, branded 404/error pages,
+and a **27-spec E2E suite** covering the whole public/unauth surface + cron.
 
 **Prod-state caveat (read this):** `main` is occasionally *ahead* of prod by a
 few commits when the Vercel free-tier deploy quota is exhausted (see Operational
@@ -102,7 +104,7 @@ board P0→P1, P2 #13.)
 - **Verify means SHA:** "green on Vercel" = the *production* deploy's commit SHA
   matches `main`, not merely "a build went green." (Learned the hard way iter 43.)
 - **Deeper context:** `AUTOPILOT-RETRO.md` (state of run), `AUTOPILOT-STRATEGY.md`
-  (risk register **R1-R10** + ROI + pilot scorecard + the **iter-99 saturation
+  (risk register **R1-R12** + ROI + pilot scorecard + the **iter-99 saturation
   verdict**), `AUTOPILOT-PM.md` (action board, P0→P2 #13), `AUTOPILOT-INDEX.md`
   (doc map). If resuming the loop: the lens rotation + tail of `AUTOPILOT-LOG.md`
   tell you which lens is next; but per iter 99, prefer a supervised session on

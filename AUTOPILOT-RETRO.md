@@ -64,5 +64,7 @@ were proposed, not blind-shipped.
 
 ## One-line bottom line
 The autonomous run did its job and is now at saturation; **the remaining value
-is the three supervised items, and the highest-leverage move is to work one of
-them with a human in the loop rather than spin another rotation.**
+is the four supervised items — R1 (TRUNCATE) → R2+R11 (atomic merge + stage-history,
+one `db.batch` session) → R3 (SSO) as the eng spine, plus R10 (deploy-tier) as a
+parallel sponsor decision — and the highest-leverage move is to work them with a
+human in the loop rather than spin another rotation.**
