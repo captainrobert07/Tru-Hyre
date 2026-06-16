@@ -366,3 +366,32 @@ full statement array across all moved rows and batch once. Add a test asserting
 error. This also retires R2's sibling concern with one shared pattern.
 
 **No code changed this iteration (proposal only — supervised).**
+
+---
+
+## Iteration 128 — server-action auth-guard completeness audit (clean)
+
+Re-ran the iter-68 IDOR sweep as a *complete* census, since ~20 action files
+were added since. Enumerated all 40 `*actions*.ts` files under `app/(app)` and
+counted exported server actions vs guard calls (the full set:
+`requireUser` / `requireStaff` / `requireStaffOrLite` / `requireAdmin` /
+`requireClient` / `requireVendor` / `requireCandidate` / `await auth()`,
+from `lib/rbac.ts`).
+
+**Result: 40/40 files have guards ≥ exports — zero unguarded mutating actions.**
+Most files show guards > exports because an action both authenticates (a
+`requireX`) *and* re-checks per-row ownership (e.g. `saved-view-actions`:
+`requireUser()` then `where(... userId = me.id)`; `notifications`: `requireUser()`
+then `where(... userId = user.id)`). Spot-checked the two that a naive
+`requireStaff|requireAdmin`-only grep flags as "0 guards" — both are correctly
+guarded by `requireUser()` + ownership scoping (the grep just missed the
+helper name).
+
+**Why it matters:** this is the evidence behind "safe to put real candidate PII
+in" — no server action mutates without an authenticated, role-checked, and
+(where applicable) owner-scoped session. Complements R3 (SSO is the *front-door*
+gate; this confirms the *back-door* — direct action invocation — is already
+sealed). No code changed; no fix to manufacture. Holds with R9/R12 as the
+self-found-security evidence column.
+
+**No code changed this iteration (clean completeness audit).**
