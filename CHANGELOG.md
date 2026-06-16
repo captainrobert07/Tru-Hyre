@@ -60,6 +60,12 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   (WCAG 2.3.3); no effect on the default experience.
 - **Set-password autocomplete.** Invite + admin user-form password fields use
   `autocomplete="new-password"` so password managers offer/save correctly.
+- **Keyboard/SR navigation wayfinding.** A skip-to-content link + a `<main>`
+  landmark let keyboard users bypass the nav on every page (WCAG 2.4.1/1.3.1),
+  and the current page is now marked with `aria-current="page"` + an active
+  style across **all four nav surfaces** — desktop pill nav, desktop "More"
+  overflow, mobile bottom nav, and mobile "More" sheet (WCAG 2.4.3). One shared
+  `isNavActive` rule so the surfaces can't disagree on "current page."
 
 ### Added
 - **Production error instrumentation.** `instrumentation.ts` (`onRequestError`)
@@ -68,14 +74,17 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 19 specs** (Playwright): `hr_lite` ownership isolation,
+- **E2E suite grew 3 → 23 specs** (Playwright): `hr_lite` ownership isolation,
   public careers self-apply, client/vendor portal cross-tenant isolation,
   feature-flag gating (`public_api` never serves data unauthenticated), public
   token-route security, the landing page (+ compliance guard), auth session
   lifecycle (login → real signOut → gone), a broad 32-route render smoke net +
   a portal render net, an internal-API auth gate, a saved-view write round-trip,
-  candidate search/filter, the quick-add menu, and regression locks for the
-  XSS, focus-trap, and reduced-motion fixes.
+  candidate search/filter, the quick-add menu, the candidate-preview focus trap,
+  the bulk-action dropdown open/reveal, `hr_lite`'s route-level RBAC boundary
+  (bounced from every org-wide/admin path), active-nav `aria-current` on desktop
+  + mobile, and regression locks for the XSS, focus-trap, reduced-motion, and
+  skip-link fixes.
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw
