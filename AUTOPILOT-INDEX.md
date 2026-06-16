@@ -10,10 +10,10 @@ ignore). Without it, a new reader can't tell a current proposal from a shipped
 
 | Doc | What it is | Why you'd open it |
 |---|---|---|
-| **AUTOPILOT-HANDOFF.md** | One-page resume brief | **Start here.** The 3 remaining supervised items (R1 TRUNCATE, R2 atomic merge, R3 SSO) with file, fix, effort, risk — everything to pick one up without reading the logs. |
-| **AUTOPILOT-PM.md** | Product-manager log | The full prioritized action board (P0→P1→P2), SSO proposal, status refreshes, and honesty audits. The detailed decision log behind the handoff brief. |
-| **AUTOPILOT-DEV.md** | Senior-dev log | The two supervised-only fix proposals: `fix-types.ts` TRUNCATE data-loss landmine, and non-atomic `mergeCandidatesAction`. Both need a supervised session. |
-| **AUTOPILOT-STRATEGY.md** | Market-strategist log | Exec summary (BLUF) + five angles (feature triage, adoption, build-vs-buy, rollout wedge, ROI) + a risk register (R1-R8), a falsification/kill-criteria pass, and a fill-in pilot scorecard. Strategic context for the roadmap. |
+| **AUTOPILOT-HANDOFF.md** | One-page resume brief | **Start here.** The **4** remaining items, all needing a human (R1 TRUNCATE, R2 atomic merge, R3 SSO, R10 deploy-tier upgrade) — file, fix, effort, risk, recommended order — everything to pick one up without reading the logs. |
+| **AUTOPILOT-PM.md** | Product-manager log | The full prioritized action board (P0→P1→P2 incl. #13 deploy-tier), SSO proposal, status refreshes, and honesty audits. The detailed decision log behind the handoff brief. |
+| **AUTOPILOT-DEV.md** | Senior-dev log | The two supervised-only code-fix proposals (`fix-types.ts` TRUNCATE data-loss landmine, non-atomic `mergeCandidatesAction`) + the clean-audit log (runtime-crash, XSS-sink, type/numeric/input classes all swept clean). |
+| **AUTOPILOT-STRATEGY.md** | Market-strategist log | Exec summary (BLUF) + five angles (feature triage, adoption, build-vs-buy, rollout wedge, ROI) + a risk register (**R1-R10**, incl. the deploy-tier ceiling), a falsification/kill-criteria pass, a fill-in pilot scorecard, and the **iter-99 saturation verdict** (when to stop the autonomous run). Strategic context for the roadmap. |
 | **AUTOPILOT-RETRO.md** | Run retrospective | The honest "where this stands" call: what shipped, the saturation inflection, and the wind-down recommendation (redirect to the supervised queue). Read with PM.md. |
 | **AUTOPILOT-LOG.md** | Per-iteration live log | The chronological record of every quality-run iteration (one line each). The "what happened" feed. |
 | **AUTOPILOT-24H.md** | The run brief ("brain") | The operating instructions the quality run re-reads each iteration. Process, not findings. |
