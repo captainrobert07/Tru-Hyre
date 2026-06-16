@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm";
+import { DropdownCaret } from "@/components/dropdown-caret";
 import { useListKeyboard } from "@/components/use-list-keyboard";
 import { JobStatusBadge } from "@/components/primitives";
 import { bulkJobAction } from "./bulk-actions";
@@ -85,9 +86,9 @@ export function JobsBulkTable({ rows }: { rows: Row[] }) {
           <button onClick={clear} className="text-xs text-ink-soft hover:text-ink px-2">Clear</button>
 
           <div className="ml-auto flex flex-wrap gap-1.5">
-            <details className="relative">
+            <details className="relative group">
               <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">
-                Set status ▾
+                Set status <DropdownCaret />
               </summary>
               <div className="absolute right-0 top-full mt-2 w-44 card p-1 z-50">
                 {STATUS_VALUES.map((s) => (

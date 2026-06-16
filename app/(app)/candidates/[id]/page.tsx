@@ -8,6 +8,7 @@ import { getFeatureStates } from "@/lib/features";
 import { suggestJobsForCandidate } from "@/lib/match";
 import { PageHeader, StageBadge, Badge, StatCard } from "@/components/primitives";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { DropdownCaret } from "@/components/dropdown-caret";
 import { RecentTracker } from "@/components/recently-viewed";
 import { SubmitButton } from "@/components/submit-button";
 import { PendingShimmer } from "@/components/pending-shimmer";
@@ -962,7 +963,7 @@ function Section({
           )}
           {hint && <span className="text-[11px] text-ink-muted font-normal">{hint}</span>}
         </span>
-        <span className="text-ink-muted transition-transform group-open:rotate-180" aria-hidden>▾</span>
+        <DropdownCaret />
       </summary>
       <div className="mt-3">{children}</div>
     </details>

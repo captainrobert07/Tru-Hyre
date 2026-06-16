@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye } from "lucide-react";
+import { DropdownCaret } from "@/components/dropdown-caret";
 import { useConfirm } from "@/components/confirm";
 import { SlideOver } from "@/components/slide-over";
 import { StageBadge, Badge } from "@/components/primitives";
@@ -164,8 +165,8 @@ export function CandidatesTable({
             )}
 
             {bulkActionsEnabled && (
-            <details className="relative">
-              <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Move to stage ▾</summary>
+            <details className="relative group">
+              <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Move to stage <DropdownCaret /></summary>
               <div className="absolute right-0 top-full mt-2 w-48 card p-1 z-50">
                 {STAGES.map((s) => (
                   <button key={s} type="button" disabled={pending} onClick={() => onSetStage(s)} className="w-full text-left px-3 h-8 rounded-md text-xs hover:bg-canvas capitalize">
@@ -177,8 +178,8 @@ export function CandidatesTable({
             )}
 
             {bulkActionsEnabled && (
-            <details className="relative">
-              <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Assign vendor ▾</summary>
+            <details className="relative group">
+              <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Assign vendor <DropdownCaret /></summary>
               <div className="absolute right-0 top-full mt-2 w-56 card p-1 z-50 max-h-72 overflow-y-auto">
                 <button type="button" disabled={pending} onClick={() => onAssignVendor(null)} className="w-full text-left px-3 h-8 rounded-md text-xs hover:bg-canvas text-ink-soft">— Unassign —</button>
                 {vendors.map((v) => (
@@ -195,8 +196,8 @@ export function CandidatesTable({
             )}
 
             {bulkEmailEnabled && templates.length > 0 && (
-              <details className="relative">
-                <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Email ▾</summary>
+              <details className="relative group">
+                <summary className="list-none cursor-pointer text-xs px-3 h-8 rounded-full bg-canvas hover:bg-surface inline-flex items-center gap-1 select-none">Email <DropdownCaret /></summary>
                 <div className="absolute right-0 top-full mt-2 w-56 card p-1 z-50 max-h-72 overflow-y-auto">
                   {templates.map((t) => (
                     <button key={t.slug} type="button" disabled={pending} onClick={() => onBulkEmail(t.slug)} className="w-full text-left px-3 h-8 rounded-md text-xs hover:bg-canvas truncate">
