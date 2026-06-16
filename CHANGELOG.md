@@ -20,7 +20,13 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Outbound connectors had no fetch timeout.** Slack/HRIS/Zapier/webhook/SMS
   sends are awaited synchronously on the stage-change path; a hung endpoint
   stalled the recruiter's action until the platform 504. Added
-  `AbortSignal.timeout(8000)` to all six outbound fetches.
+  `AbortSignal.timeout(8000)` to all six outbound fetches — and later to the
+  admin integration **"Test"** reachability ping (the one outbound fetch the
+  first pass missed), so testing a hung URL fails fast instead of 504ing.
+- **Candidate PII no longer logged on unconfigured sends.** The email/SMS paths
+  logged the recipient (email/phone + subject/body) whenever the optional
+  integration wasn't set up — a real prod state. Now log a message-only
+  "not configured" warning (data-minimization; matches the no-PII-in-logs rule).
 - **Gray `Badge` tone broke in dark mode.** It was the lone raw-palette holdout
   (`bg-slate-100`), rendering a glaring near-white pill on the dark canvas in
   4 places. Switched to theme tokens that flip via `.dark`.
@@ -66,6 +72,11 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   style across **all four nav surfaces** — desktop pill nav, desktop "More"
   overflow, mobile bottom nav, and mobile "More" sheet (WCAG 2.4.3). One shared
   `isNavActive` rule so the surfaces can't disagree on "current page."
+- **Mobile browser-chrome theme color.** A media-aware `themeColor` (light
+  `#f4f5f7` / dark `#0d1119`, the canvas tokens) so the phone address/status bar
+  matches the app in both themes instead of staying default white over the dark
+  canvas. Branded custom **404** and **error** pages (recovery links + app
+  chrome) replace the framework's bare defaults across ~20 `notFound()` sites.
 
 ### Added
 - **Production error instrumentation.** `instrumentation.ts` (`onRequestError`)
@@ -74,7 +85,7 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 23 specs** (Playwright): `hr_lite` ownership isolation,
+- **E2E suite grew 3 → 26 specs** (Playwright): `hr_lite` ownership isolation,
   public careers self-apply, client/vendor portal cross-tenant isolation,
   feature-flag gating (`public_api` never serves data unauthenticated), public
   token-route security, the landing page (+ compliance guard), auth session
@@ -83,8 +94,11 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   candidate search/filter, the quick-add menu, the candidate-preview focus trap,
   the bulk-action dropdown open/reveal, `hr_lite`'s route-level RBAC boundary
   (bounced from every org-wide/admin path), active-nav `aria-current` on desktop
-  + mobile, and regression locks for the XSS, focus-trap, reduced-motion, and
-  skip-link fixes.
+  + mobile, the public careers not-found boundary (closed/missing reqs stay
+  private), the branded 404 recovery links, the public vendor-signup contract
+  (+ its anti-spam honeypot), and regression locks for the XSS, focus-trap,
+  reduced-motion, and skip-link fixes. The whole public/unauthenticated surface
+  is now covered.
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw
