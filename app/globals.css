@@ -45,6 +45,17 @@
   ::selection {
     @apply bg-brand-100 text-brand-900;
   }
+  /* Hide the native <details> disclosure triangle everywhere. The app styles its
+     own disclosures (custom DropdownCaret / chevrons); most summaries already set
+     list-none, but a few didn't and leaked the browser's default ▶ marker. This
+     global reset covers both engines (Firefox list-marker + WebKit/Blink's
+     ::-webkit-details-marker) so no summary can regress to showing it. */
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
 }
 
 @layer components {
