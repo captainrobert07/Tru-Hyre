@@ -20,8 +20,13 @@ export type DupPair = {
 
 type RawPair = {
   reason: string;
-  a_id: number; a_name: string; a_email: string | null; a_created: Date;
-  b_id: number; b_name: string; b_email: string | null; b_created: Date;
+  // neon-http returns timestamp columns as ISO strings from a raw db.execute
+  // (not parsed Date objects — that's the convention everywhere else, e.g.
+  // metrics.ts). Typing these as Date was a lie about the runtime shape: the
+  // `new Date(...)` wrapper below only works *because* they're strings. Keep the
+  // type honest so nobody trusts it and drops the parse.
+  a_id: number; a_name: string; a_email: string | null; a_created: string;
+  b_id: number; b_name: string; b_email: string | null; b_created: string;
 };
 
 export async function scanDuplicates(limit = 100): Promise<DupPair[]> {
