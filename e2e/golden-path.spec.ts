@@ -3,11 +3,18 @@ import { login, SEEDS } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
-test("admin lands on dashboard", async ({ page }) => {
+test("admin lands on dashboard and its KPI cards render", async ({ page }) => {
   await login(page, SEEDS.admin);
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByText(/Pipeline at a glance/i)).toBeVisible();
+  // The PageHeader <h1> is a personalized greeting ("Hi, {firstName}"), not a
+  // literal "Dashboard" — the old assertions ("Dashboard" heading + "Pipeline
+  // at a glance") were stale and tested copy that no longer exists.
+  await expect(page.getByRole("heading", { name: /^Hi,/ })).toBeVisible({ timeout: 15_000 });
+  // Contract for the heaviest aggregate page (~12 queries): its KPI cards
+  // actually render, not a blank/crashed shell. "Coverage ratio" is a stable,
+  // distinctive dashboard stat (active candidates ÷ open positions).
+  await expect(page.getByText(/Coverage ratio/i)).toBeVisible();
+  await expect(page.getByText(/Offer acceptance/i)).toBeVisible();
 });
 
 test("hr can browse candidates list", async ({ page }) => {
