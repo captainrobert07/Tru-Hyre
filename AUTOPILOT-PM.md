@@ -160,6 +160,7 @@ production data raises the stakes. Fix the landmines before loading the truck.
 | 10 | **Instrument displacement** (spreadsheet-death date / time-in-tool) | Measure real adoption, not vanity counts | STRATEGY iter 9 |
 | 11 | **Modal focus-trap + focus-restore** (eng/UI) — **DONE (3/4 + 1 excluded)** | Shared `useFocusTrap` hook applied to SlideOver (71), confirm (73), quick-add (76) — all verified live. command-palette **intentionally excluded** (iter 78): it's cmdk-managed (owns its input autofocus + arrow-nav); the generic hook would regress that. WCAG 2.4.3 gap (iter 68) closed for the hand-rolled modals. | DEV 68 → hook 71 → confirm 73 → quick-add 76 → cmdk-excluded 78; test 72 |
 | 12 | **Accessibility hardening track** (UI/eng/test) — **DONE (5 WCAG criteria, all verified live + regression-locked)** | The run's second headline after the XSS fix. Beyond the focus-trap (#11): **4.1.2** label sweep — 0 label-less inputs app-wide (aria-labels across candidate sidebar, contact forms, scheduler, offers, references, composer, scorecard, settings); **2.3.3** `prefers-reduced-motion` global collapse (iter 81); **2.4.1/1.3.1** skip-to-content link + `<main>` landmark (iter 86); **2.4.3** active-nav indicator + `aria-current="page"` (iter 88); plus `autocomplete="new-password"` on the 3 password fields. Every item has an E2E lock (safe-url, reduced-motion, skip-link, focus specs). | label sweep early-run; reduced-motion 81/test 82; skip-link 86/test 87; active-nav 88; autocomplete 83 |
+| 13 | **Upgrade the deploy tier before go-live** (sponsor/ops, not eng) | Vercel free tier caps at 100 deploys/day; once hit it returns `payment_required` and blocks ALL prod deploys for ~24h — observed live + sustained this session (STRATEGY R10). For an internal tool that must be hotfix-deployable in EU business hours, that's an MTTR/availability risk during an incident, not just dev velocity. Cheapest board item to retire: a plan-tier line item (paid Vercel or Allianz-hosted runner), no code. | STRATEGY R10 (iter 94); deploy-quota incidents PM iter 45 |
 
 ### Explicitly DEFER / DON'T do
 - **No feature #56.** The portfolio is already wider than an internal team needs
@@ -170,7 +171,9 @@ production data raises the stakes. Fix the landmines before loading the truck.
 ### The one-sentence answer to "what do I do first?"
 **Fix the two data-loss landmines (P0 #1-2), then chase SSO (P1 #4) — that
 sequence makes the tool safe to put real Allianz data into, then approvable to
-roll out. Everything else waits.**
+roll out. Everything else waits** — except **P2 #13 (deploy-tier upgrade)**,
+which a sponsor can clear in parallel with one plan-tier decision and which
+should be done before go-live so an incident hotfix can't be quota-locked.
 
 **No code changed this iteration (PM reconciliation/analysis lens).**
 
