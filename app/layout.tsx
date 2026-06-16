@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { Inter, Instrument_Serif } from "next/font/google";
@@ -25,6 +25,18 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
   description: APP_TAGLINE,
+};
+
+// Theme-color for the mobile browser chrome (address/status bar). The PWA
+// manifest's theme_color only applies when installed standalone; this covers
+// the normal in-browser visit. Media-aware so the chrome matches the app in
+// both themes (values are the --canvas tokens from globals.css: light #f4f5f7,
+// dark #0d1119) — without it the bar stays white, jarring above the dark canvas.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1119" },
+  ],
 };
 
 // Runs before paint to apply the saved/system theme — avoids a flash of the
