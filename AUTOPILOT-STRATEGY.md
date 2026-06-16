@@ -417,15 +417,19 @@ board did for tasks). Status reflects what THIS run has already closed.
 | R9 | Stored XSS via user-supplied URLs (candidate linkedinUrl/githubUrl, client website rendered into `href`; `javascript:` fires in the viewer's authenticated session) | Medium (public careers form is an unauth write path) | High (session compromise of a recruiter/admin) | **CLOSED** | Fixed + live iter 51: `safeExternalUrl()` (lib/utils) gates href to http(s) only; regression-locked iter 52. |
 | R10 | Hosting-tier deploy ceiling: Vercel free tier caps at 100 deploys/day; once hit it returns `payment_required` and **blocks all production deploys for ~24h** — observed live and sustained this session (iters 83/86/88, again 92/93). For an internal tool that must be hotfix-deployable during EU business hours, a 24h prod-deploy lockout during an incident is an availability risk, not just a dev-velocity annoyance. | Medium (recurs whenever an active dev day exceeds 100 deploys) | Medium (can't ship an urgent fix for up to 24h; no user-facing outage by itself, but extends MTTR on any real incident) | **OPEN (operational)** | Move to a paid Vercel plan (or Allianz-hosted runner) before go-live so prod deploys aren't rate-capped; until then, batch changes per-branch and reserve the daily quota for prod-critical merges. Cheap to fix at sponsor level; it's a plan-tier line item, not eng work. |
 | R11 | Stage-change ↔ `stage_history` non-atomicity: every stage transition does an un-wrapped pair (update `candidates.stage` → insert the history row), in 3 places (bulk-actions, single-candidate, kanban). A failure between the two leaves a moved candidate with no/partial history → the audit trail silently drifts. Same class as R2 (neon-http, no interactive tx). | Low (needs failure mid-pair; bulk loop widens the window) | Medium (audit/history integrity, not user data loss) | **OPEN (supervised)** | `db.batch([...])` per call site (atomic on neon-http; statements are pre-buildable) + a "stage moved ⇒ history row exists" test. Supervised — `db.batch` has no precedent in the codebase yet. AUTOPILOT-DEV.md iter 113. |
+| R12 | Candidate PII in production logs: the email/SMS send paths logged the recipient (email + subject; phone + message body) whenever the optional integration was unconfigured — a real prod state, firing on every stage-change/bulk/interview/sequence send. GDPR data-minimization concern for an EU insurer (logs are a data store). | Medium (fires on any prod deploy with email/SMS not configured) | Medium (candidate contact PII in logs; not a breach, but a data-minimization / retention exposure) | **CLOSED** | Fixed + live iter 118: both sites now `console.warn("…not configured")` — message only, no recipient data, matching the no-PII-in-logs `console.error` convention. |
 
 ### How to read this
 - **Two CRITICAL/High-severity OPEN items are data-loss (R1, R2)** — both
   supervised-only, both the P0 of the PM board. Nothing else competes with them.
 - **The highest-likelihood OPEN risk is R3 (SSO)** — not a data risk but the
   adoption gate; it's High×High and the #1 increment for a reason.
-- **R6, R9 are CLOSED and R7 INSTRUMENTED by this run** — concrete evidence the
-  unsupervised quality work retired real risk, not just polish. R9 (stored XSS)
-  was the highest-severity issue the run *found* on its own, not just hardened.
+- **R6, R9, R12 are CLOSED and R7 INSTRUMENTED by this run** — concrete evidence
+  the unsupervised quality work retired real risk, not just polish. R9 (stored
+  XSS) was the highest-severity issue the run *found* on its own; R12 (candidate
+  PII in prod logs, iter 118) is a second self-found compliance fix — both are
+  GDPR-relevant for an EU insurer and strengthen the "safe for real PII" case
+  that R3/R5 sign-off depends on.
 - **R4 (key-person) is the quiet one** — its mitigation is the doc discipline
   this run has been compounding, which is why those doc iterations had teeth.
 - **R10 (deploy ceiling) is new and operational, not theoretical** — it was
