@@ -22,7 +22,10 @@ async function resolveGmail(): Promise<{ user?: string; pass?: string; from: str
 export async function sendEmail(input: SendInput): Promise<SendResult> {
   const { user, pass, from } = await resolveGmail();
   if (!user || !pass) {
-    console.log("[email] (dev) skipping send →", { to: input.to, subject: input.subject });
+    // No recipient/subject in the log: this fires whenever SMTP is unconfigured,
+    // which can be a real prod state (the Gmail integration is optional) — not
+    // just dev. Matches the console.error convention here (message only, no PII).
+    console.warn("[email] skipping send — Gmail/SMTP not configured");
     return { delivered: false, reason: "no_smtp_credentials" };
   }
   const transport = nodemailer.createTransport({

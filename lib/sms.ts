@@ -23,7 +23,10 @@ export async function sendSms(to: string, body: string): Promise<SmsResult> {
   const r = await getIntegration("sms");
   const url = r.values.url, auth = r.values.auth, from = r.values.from;
   if (!r.enabled || !url || !auth || !from) {
-    console.log("[sms] (dev) skipping send →", { to, body: body.slice(0, 40) });
+    // No phone/body in the log: SMS is an optional integration, so this fires in
+    // real prod when it's not configured — logging the recipient number + body
+    // would leak candidate PII to the logs. Message-only, matching console.error.
+    console.warn("[sms] skipping send — SMS provider not configured");
     return { delivered: false, reason: "no_provider" };
   }
   if (!to) return { delivered: false, reason: "no_recipient" };
