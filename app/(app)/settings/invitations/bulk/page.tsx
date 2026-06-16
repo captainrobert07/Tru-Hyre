@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/rbac";
 import { PageHeader } from "@/components/primitives";
+import { SubmitButton } from "@/components/submit-button";
 import { bulkInviteAction, listAccountOptions } from "../../actions";
 
 export const metadata = { title: "Bulk invite" };
@@ -53,7 +54,7 @@ export default async function BulkInvitePage() {
           </div>
         </div>
         <div className="flex gap-2 pt-2">
-          <button type="submit" className="btn-primary">Send invitations</button>
+          <SubmitButton pendingLabel="Sending…">Send invitations</SubmitButton>
           <Link href="/settings/invitations" className="btn-ghost">Cancel</Link>
         </div>
       </form>

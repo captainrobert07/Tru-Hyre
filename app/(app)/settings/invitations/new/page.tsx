@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/rbac";
 import { PageHeader } from "@/components/primitives";
+import { SubmitButton } from "@/components/submit-button";
 import { createInvitationAction, listAccountOptions } from "../../actions";
 
 export const metadata = { title: "New invitation" };
@@ -43,7 +44,7 @@ export default async function NewInvitationPage() {
           </div>
         </div>
         <div className="flex gap-2 pt-2">
-          <button type="submit" className="btn-primary">Send invitation</button>
+          <SubmitButton pendingLabel="Sending…">Send invitation</SubmitButton>
           <Link href="/settings/invitations" className="btn-ghost">Cancel</Link>
         </div>
         <p className="text-xs text-ink-muted">An invitation token is generated server-side. Email delivery hooks in Phase 4 — for now copy the token from the audit log.</p>
