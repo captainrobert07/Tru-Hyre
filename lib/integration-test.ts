@@ -74,7 +74,15 @@ async function testWebhookUrl(key: string, field: string, label: string): Promis
   if (!url) return { ok: false, message: `${label} URL missing.` };
   try {
     // Lightweight reachability ping (does not assume the endpoint accepts our body).
-    const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "truhyre.test" }) });
+    // 8s timeout (matches the outbound-connector fix, iters 8/28): this fires from
+    // the admin's "Test" button against a user-entered URL — without it, a hung or
+    // slow endpoint spins the button until the platform function timeout (504).
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "truhyre.test" }),
+      signal: AbortSignal.timeout(8000),
+    });
     return { ok: res.status < 500, message: `Endpoint reachable (HTTP ${res.status}).` };
   } catch (e) {
     return { ok: false, message: `Unreachable: ${(e as Error).message.slice(0, 100)}` };
