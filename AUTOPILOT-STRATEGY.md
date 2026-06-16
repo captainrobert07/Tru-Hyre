@@ -582,3 +582,47 @@ risk-register statuses and the scorecard with measured numbers once a pilot
 runs — not add more pre-pilot theory.
 
 **No code changed this iteration (analysis/QA pass).**
+
+---
+
+## Iteration 99 — saturation verdict on the autonomous run (a strategic finding about the run itself)
+
+A strategist's job is to name when the current activity has stopped paying for
+itself. After **99 logged iterations**, the evidence says the *autonomous*
+phase has reached saturation — this is the "when should the loop stop" call the
+doc's build kill-criteria (iter 39) didn't cover.
+
+**The evidence (from this run's own log + register):**
+- **The product code is hardened and the docs are complete.** Three Senior-Dev
+  audits (iters 53, 93, 98) found the runtime-crash, input, and numeric-edge
+  classes clean; the strategy doc is complete/consistent/self-critical (iter 49);
+  the PM board is reconciled (iters 90, 95).
+- **Meta-work now dominates.** 8 of the last 16 iterations were analysis /
+  doc-only / no-op (board reconciliations, audits with no fix, a 7th strategist
+  no-op-equivalent). The loop is increasingly maintaining its own artifacts
+  rather than changing the product.
+- **The unsupervised backlog is drained; the real backlog is gated.** Every
+  high-value item left is **supervised-only by the run's own safety rails**:
+  R1 (TRUNCATE-on-deploy), R2 (atomic merge), R3 (Azure AD SSO), R10 (deploy-tier
+  upgrade). The loop is correctly forbidden from shipping all four.
+- **The platform is now actively fighting the loop.** The Vercel free-tier
+  deploy ceiling (R10) has exhausted *twice this session* and toggles within
+  hours — so even the small code units the loop *can* do increasingly can't be
+  prod-verified in-window. Diminishing returns are now structural, not temporary.
+
+**Verdict:** the autonomous run has delivered its value — a measurable quality
+pass (XSS fix, 5-criteria a11y track, 22-spec E2E suite, perf/N+1 collapses,
+production instrumentation) plus a complete decision-ready strategy/PM surface.
+The marginal iteration now produces polish or meta-work, not material risk
+reduction. **The highest-leverage next move is human/sponsor action on the four
+gated items — not another autonomous lap.** Recommended: pause the cron and
+convene a supervised session on R1/R2 (data-loss gates) → R3 (SSO) with R10 as a
+parallel one-line plan-tier decision. Resume the loop only when there's real
+pilot data to update the scorecard against, or a new feature mandate.
+
+This is not a request to stop mid-instruction — the loop continues as directed.
+It's the strategist recording, durably and where the sponsor will see it, that
+the *expected value per iteration* has crossed below the cost, and what to do
+about it.
+
+**No code changed this iteration (strategic analysis — the run's own ROI).**
