@@ -326,3 +326,43 @@ audit (93/98/103), consistent with the iter-99 saturation verdict.
 
 **Only change this iteration: a JSX provenance comment (bundle-identical — comments
 are stripped at build) + this DEV-log entry.**
+
+---
+
+## Iteration 113 — stage-change ↔ stage_history non-atomicity (PROPOSED, supervised)
+
+A repeated data-consistency gap of the **same class as R2** (non-atomic
+multi-write on neon-http), found by widening the iter-108 error/mutation sweep.
+
+**What.** Every stage transition does two sequential writes that must both land
+or neither: update `candidates.stage`, then insert the matching `stage_history`
+row (which records that candidate's *own* `fromStage`). They're not wrapped, so
+a process death / DB error *between* them leaves a candidate whose stage moved
+with **no history row** (or, in the bulk loop, a partially-applied batch). The
+audit trail silently drifts from reality.
+
+Sites (all the same shape):
+- `candidates/bulk-actions.ts:69-76` — per-row in a loop over the selection
+  (worst case: N candidates moved, history written for only the first k).
+- `candidates/[id]/actions.ts:~272, ~403` — single-candidate stage changes.
+- `jobs/[id]/kanban/actions.ts:41-42` — drag-to-stage on the kanban board.
+
+**Severity:** Medium (audit/history integrity, not user data loss). **Likelihood:**
+Low (needs a failure mid-pair) but the bulk path widens the window per click.
+
+**Why NOT blind-shipped.** Same rule as R1/R2: atomicity change on multiple
+mutation paths, and the driver is **neon-http** — no interactive
+`db.transaction()`. The fix is `db.batch([...])` (Drizzle neon-http supports it,
+atomic), which is genuinely applicable here because each statement can be
+pre-built (the per-row `fromStage` is known before the batch). But: `db.batch`
+is used **nowhere in the codebase yet** (no precedent), the bulk loop needs the
+per-row values assembled into one statement array, and the destructive/partial
+path needs a test. That's a supervised session, not an unattended lap.
+
+**Proposed fix.** Per call site, replace the update+insert pair with a single
+`await db.batch([updateStmt, insertHistoryStmt])`; for the bulk loop, build the
+full statement array across all moved rows and batch once. Add a test asserting
+"stage moved ⇒ a matching history row exists" survives a simulated mid-write
+error. This also retires R2's sibling concern with one shared pattern.
+
+**No code changed this iteration (proposal only — supervised).**
