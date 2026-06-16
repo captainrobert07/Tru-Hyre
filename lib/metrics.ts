@@ -473,10 +473,12 @@ export async function getSubmissionForecast(): Promise<ForecastRow> {
   const trailingFourWeeks = buckets.slice().reverse(); // oldest -> newest
   const weeklyAvg = trailingFourWeeks.reduce((a, b) => a + b, 0) / 4;
 
-  // Project for the rest of the calendar month.
+  // Project the FULL calendar-month total from the trailing weekly pace — this
+  // matches the dashboard "Forecast" card ("projected submissions this calendar
+  // month"). (Was carrying a stale "rest of the month" comment + an unused
+  // dayOfMonth; the math never used it, so the number was always whole-month.)
   const today = new Date();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const dayOfMonth = today.getDate();
   const projectedThisMonth = Math.round((weeklyAvg / 7) * daysInMonth);
 
   return {
