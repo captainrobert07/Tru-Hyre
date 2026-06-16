@@ -432,10 +432,16 @@ board did for tasks). Status reflects what THIS run has already closed.
   observed live this session, repeatedly blocking prod reconciliation. It's the
   cheapest item on the board to retire (a plan-tier upgrade, not eng work) and
   should be closed before go-live so an incident hotfix can't be quota-locked.
+- **R11 (stage-history non-atomicity) is R2's sibling** — found iter 113, same
+  neon-http "no interactive tx" root cause, three call sites. Lower severity
+  (audit-trail drift, not user data loss) but it should be fixed in the **same
+  supervised `db.batch` session as R2**, since both establish the one batching
+  pattern the codebase currently lacks. Bundle them.
 
 ### Recommendation (decisions for breakfast, not auto-built)
-- **Gate "real Allianz data goes in" on R1 + R2 being closed.** That's the
-  single hard line; everything else can run in parallel.
+- **Gate "real Allianz data goes in" on R1 + R2 being closed** (and fold R11
+  into the R2 session — same fix shape). That's the single hard line;
+  everything else can run in parallel.
 - **Track this register, not the prose.** When a supervised item lands, flip its
   status here — it's the one-glance health view for whoever owns the call.
 
@@ -605,7 +611,11 @@ doc's build kill-criteria (iter 39) didn't cover.
 - **The unsupervised backlog is drained; the real backlog is gated.** Every
   high-value item left is **supervised-only by the run's own safety rails**:
   R1 (TRUNCATE-on-deploy), R2 (atomic merge), R3 (Azure AD SSO), R10 (deploy-tier
-  upgrade). The loop is correctly forbidden from shipping all four.
+  upgrade), and R11 (stage-history atomicity, found iter 113 — bundle with R2).
+  The loop is correctly forbidden from shipping the data/auth/deploy ones. Note
+  that even *after* the saturation call, fresh-surface audits keep surfacing
+  real gated items (R11) — which reinforces, not weakens, the verdict: the value
+  left is in *finding* supervised work, not shipping more unattended.
 - **The platform is now actively fighting the loop.** The Vercel free-tier
   deploy ceiling (R10) has exhausted *twice this session* and toggles within
   hours — so even the small code units the loop *can* do increasingly can't be
