@@ -105,7 +105,11 @@ export async function GET(
   return new NextResponse(webStream, { headers });
   } catch (e) {
     if ((e as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw e;
+    // Log the real error (instrumentation.ts captures the full stack); return a
+    // GENERIC body — never echo (e).message to the caller. This route serves
+    // candidate PII; a raw exception string can leak internals (DB/Drive paths,
+    // ids). Matches the error-boundary fix (iter 108) + the other API routes.
     console.error("[/api/files] error", e);
-    return new NextResponse(`Server error: ${(e as Error).message}`, { status: 500 });
+    return new NextResponse("Server error", { status: 500 });
   }
 }
