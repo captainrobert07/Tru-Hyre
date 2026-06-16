@@ -18,16 +18,21 @@ import { isNavActive } from "@/lib/utils";
 export function NavLink({
   href,
   className,
+  activeClassName = "active",
   children,
 }: {
   href: string;
   className: string;
+  /** Class(es) appended when this link is the current route. Defaults to
+   *  `"active"` (the pill nav's `.nav-pill-item.active` rule). Pass a row-style
+   *  active treatment for the overflow dropdown, which isn't a pill. */
+  activeClassName?: string;
   children: ReactNode;
 }) {
   const pathname = usePathname() || "/";
   const active = isNavActive(pathname, href);
   return (
-    <Link href={href} className={active ? `${className} active` : className} aria-current={active ? "page" : undefined}>
+    <Link href={href} className={active ? `${className} ${activeClassName}` : className} aria-current={active ? "page" : undefined}>
       {children}
     </Link>
   );

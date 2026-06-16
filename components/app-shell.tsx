@@ -117,15 +117,16 @@ export function AppShell({
               <summary className="nav-pill-item list-none cursor-pointer select-none">More</summary>
               <div className="absolute right-0 top-full mt-2 w-48 card p-1.5 z-50">
                 {overflow.map((n) => (
-                  <Link
+                  <NavLink
                     key={n.href}
                     href={n.href}
                     className="flex items-center gap-2 px-3 h-9 rounded-lg text-sm text-ink-soft hover:text-ink hover:bg-canvas"
+                    activeClassName="!bg-canvas !text-ink font-medium"
                   >
                     <span className="text-ink-muted">{n.icon}</span>
                     {n.label}
                     <NotificationDot count={dotFor(n.href)} />
-                  </Link>
+                  </NavLink>
                 ))}
               </div>
             </details>

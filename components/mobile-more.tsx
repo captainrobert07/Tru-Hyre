@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { MoreHorizontal, X } from "lucide-react";
+import { isNavActive } from "@/lib/utils";
 
 type Item = { href: string; label: string; icon: ReactNode };
 
 export function MobileMore({ items, unreadCount = 0 }: { items: Item[]; unreadCount?: number }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname() || "/";
 
   return (
     <>
@@ -34,17 +37,23 @@ export function MobileMore({ items, unreadCount = 0 }: { items: Item[]; unreadCo
               </button>
             </div>
             <nav className="px-2 py-2">
-              {items.map((it) => (
-                <Link
-                  key={it.href}
-                  href={it.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-3 h-11 rounded-lg text-sm text-ink hover:bg-canvas"
-                >
-                  <span className="text-ink-muted">{it.icon}</span>
-                  {it.label}
-                </Link>
-              ))}
+              {items.map((it) => {
+                const active = isNavActive(pathname, it.href);
+                return (
+                  <Link
+                    key={it.href}
+                    href={it.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 h-11 rounded-lg text-sm ${
+                      active ? "bg-canvas text-ink font-medium" : "text-ink hover:bg-canvas"
+                    }`}
+                  >
+                    <span className={active ? "text-brand-600" : "text-ink-muted"}>{it.icon}</span>
+                    {it.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         </div>
