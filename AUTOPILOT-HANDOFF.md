@@ -16,7 +16,9 @@ The last user-facing code shipped clean to prod; check the tail of
 `AUTOPILOT-LOG.md` for any line flagged `prod-deferred-quota` to see exactly
 what's pending a deploy.
 
-## The autonomous run has saturated. Four items remain — all need a human.
+## The autonomous run has saturated. Four workstreams remain — all need a human.
+
+(Five register items: R1, R2 **+ R11 bundled with it**, R3, R10.)
 
 The strategist recorded a **saturation verdict at iteration 99**
 (`AUTOPILOT-STRATEGY.md`): the code is hardened, the docs are complete, and the
@@ -52,6 +54,12 @@ against current code at iter 100.
   merge-integrity test (loser gone + all children point at winner). Details:
   `AUTOPILOT-DEV.md` iter 13.
 - **Effort:** human ~2-3h / supervised CC ~30m + a destructive-path test.
+- **Bundle R11 here.** The stage-change → `stage_history` write pair is
+  non-atomic the same way, in 3 sites (`bulk-actions.ts`, `[id]/actions.ts`,
+  `kanban/actions.ts`). Same `db.batch` fix; lower severity (audit-trail drift,
+  not user data loss). Do it in this session — it's the one that introduces
+  batching to the codebase, so the second use is nearly free. Details:
+  `AUTOPILOT-DEV.md` iter 113 (register R11).
 
 ### R3 — Azure AD (Entra ID) SSO  (the #1 adoption gate)
 - **What:** no SSO → a regulated insurer won't run recruiting on email/password,

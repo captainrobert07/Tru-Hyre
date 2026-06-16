@@ -138,11 +138,14 @@ features. Effort is dual-scaled (human team / supervised CC session).
 |---|---|---|---|---|
 | 1 | **Defuse `fix-types.ts` TRUNCATE** | Irreversible silent prod data-loss landmine on the deploy path; arms on any schema regression | human ~1h / CC ~20m + verify | AUTOPILOT-DEV.md iter 3 |
 | 2 | **Atomic candidate merge** | Irreversible admin merge is non-atomic → partial corruption on mid-run death; needs neon-http `db.batch` (not `db.transaction`) | human ~2-3h / CC ~30m + destructive-path test | AUTOPILOT-DEV.md iter 13 |
+| 2b | **Atomic stage-change ↔ stage_history** (bundle with #2) | The stage update + history-insert pair is non-atomic in 3 sites (bulk/single/kanban) → audit-trail drift on mid-write failure. Same `db.batch` fix shape as #2 — do them in one session that establishes the pattern. Lower severity (history integrity, not user data loss). | human ~1-2h / CC ~30m + a "moved ⇒ history exists" test | AUTOPILOT-DEV.md iter 113 (R11) |
 | 3 | **Read the digest crash logs** | `instrumentation.ts` (shipped iter 1) now captures the real stack of digest:3495001251 — wait for it to fire, then one-line fix the actual throw | passive → ~15m when it fires | iter 1 + investigation |
 
 P0 rationale: 1 and 2 are both "irreversible data loss with no undo." They're
 low-likelihood today but the cost per occurrence is unrecoverable, and real
 production data raises the stakes. Fix the landmines before loading the truck.
+2b rides with 2 — same neon-http `db.batch` pattern, lower severity, but cheap
+to fold into the one session that introduces batching to the codebase.
 
 ### P1 — adoption gates (nothing scales without these; pilot-purgatory exits)
 | # | Item | Why P1 | Effort | Source |
