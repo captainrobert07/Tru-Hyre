@@ -415,6 +415,7 @@ board did for tasks). Status reflects what THIS run has already closed.
 | R7 | Production digest crash (digest:3495001251) recurs unexplained | Unknown | Medium (user-facing 500) | **INSTRUMENTED** | `instrumentation.ts` live since iter 1 — next occurrence yields the real stack. Passive until it fires. |
 | R8 | Over-broad feature surface (55 features) dilutes the internal tool | Medium | Low-Medium (maintenance + confusion) | **OPEN (decision)** | Hide gold-plating from `/settings/features` for the internal build (iter 4 / PM board P2 #9). |
 | R9 | Stored XSS via user-supplied URLs (candidate linkedinUrl/githubUrl, client website rendered into `href`; `javascript:` fires in the viewer's authenticated session) | Medium (public careers form is an unauth write path) | High (session compromise of a recruiter/admin) | **CLOSED** | Fixed + live iter 51: `safeExternalUrl()` (lib/utils) gates href to http(s) only; regression-locked iter 52. |
+| R10 | Hosting-tier deploy ceiling: Vercel free tier caps at 100 deploys/day; once hit it returns `payment_required` and **blocks all production deploys for ~24h** — observed live and sustained this session (iters 83/86/88, again 92/93). For an internal tool that must be hotfix-deployable during EU business hours, a 24h prod-deploy lockout during an incident is an availability risk, not just a dev-velocity annoyance. | Medium (recurs whenever an active dev day exceeds 100 deploys) | Medium (can't ship an urgent fix for up to 24h; no user-facing outage by itself, but extends MTTR on any real incident) | **OPEN (operational)** | Move to a paid Vercel plan (or Allianz-hosted runner) before go-live so prod deploys aren't rate-capped; until then, batch changes per-branch and reserve the daily quota for prod-critical merges. Cheap to fix at sponsor level; it's a plan-tier line item, not eng work. |
 
 ### How to read this
 - **Two CRITICAL/High-severity OPEN items are data-loss (R1, R2)** — both
@@ -426,6 +427,10 @@ board did for tasks). Status reflects what THIS run has already closed.
   was the highest-severity issue the run *found* on its own, not just hardened.
 - **R4 (key-person) is the quiet one** — its mitigation is the doc discipline
   this run has been compounding, which is why those doc iterations had teeth.
+- **R10 (deploy ceiling) is new and operational, not theoretical** — it was
+  observed live this session, repeatedly blocking prod reconciliation. It's the
+  cheapest item on the board to retire (a plan-tier upgrade, not eng work) and
+  should be closed before go-live so an incident hotfix can't be quota-locked.
 
 ### Recommendation (decisions for breakfast, not auto-built)
 - **Gate "real Allianz data goes in" on R1 + R2 being closed.** That's the
