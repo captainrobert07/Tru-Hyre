@@ -365,6 +365,12 @@ genuinely high-value result, not just polish.
   rendered into `href` without scheme validation → `javascript:` XSS in the
   viewer's session. `safeExternalUrl()` gates to http(s); regression-locked.
   This is the one item here that *moved real risk*, not just tidiness.
+  - **Update (iter 119):** R9 now has a sibling — **R12 (candidate PII in prod
+    logs), self-found + CLOSED iter 118.** The email/SMS send paths logged
+    recipient email/phone + subject/body whenever the optional integration was
+    unconfigured (a real prod state). Two self-found **GDPR-relevant** fixes now
+    (XSS + data-minimization) — together the strongest evidence for the
+    "safe for real candidate PII" decision that R3/R5 sign-off gates on.
 - **Reliability/correctness:** N+1 collapse on bulk-tag (43), activity-timeline
   stable React key (38).
 - **UI/a11y:** completed the a11y form-label sweep — 0 label-less inputs app-wide
