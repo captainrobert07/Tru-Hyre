@@ -250,3 +250,45 @@ be focus-restore-on-close (not a full trap), and only if a real trigger element
 is introduced — low priority.
 
 **No code changed this iteration (reasoned exclusion + assessment).**
+
+---
+
+## Iteration 93 — runtime-crash audit (clean)
+
+A targeted sweep for the production-crash classes that don't show up at build
+time (the kind that produced the unexplained digest:3495001251 we shipped
+`instrumentation.ts` to catch). Under a deploy-quota freeze this window, the
+honest Senior Developer move was a verify-by-reading audit rather than a
+code change that can't be deploy-verified.
+
+**Classes checked, all clean:**
+
+- **neon-http interactive transactions.** `grep .transaction(` across
+  app/lib/db → **zero** call sites. The driver doesn't support interactive
+  `db.transaction`; the merge path correctly uses `db.batch([...])` (the only
+  builder-array site, R2, already tracked as a supervised proposal). No latent
+  runtime throw here.
+- **Floating promises / unawaited writes.** The three `.map(async …)` sites
+  (`bulk-email-actions.ts:43`, `settings/integrations/page.tsx:18`,
+  `lib/webhooks.ts:21`) are each wrapped in `await Promise.all(...)`. The
+  `merge-actions.ts` `db.update(...)` lines that match an "unawaited" grep are
+  builder objects *inside* a `db.batch([...])` array — correct, not floating.
+- **Null/NaN numeric formatting** (`.toFixed` / `.toLocaleString` throw on
+  null/undefined). Every site is guarded: `dashboard` `coverage.ratio` is
+  `openPositions > 0 ? round(…) : 0` (always finite); `avgTimeToSubmit/Offer`
+  gate on `> 0`; `candidates-table` `fmt` and `compare` `fmtMoney` both do a
+  null check + `Number.isNaN` guard; the compare `ids` parser filters on
+  `Number.isFinite(n) && n > 0`.
+- **`db.execute` result-shape mismatch.** neon-http returns an object with a
+  `.rows` field, not a directly-mappable array. Every raw-SQL consumer uses the
+  defensive `(rows.rows || rows)` unwrap (metrics.ts ×4, match.ts:86,
+  semantic-search.ts:121). The one bare `rows.map(...)` (match.ts:117) reads
+  from `db.select()` (the query builder, which returns a real array), not from
+  `db.execute` — correct.
+
+**Verdict:** the runtime-crash surface is well-hardened; no shippable fix
+surfaced and none was manufactured. The remaining real risk is unchanged and
+already documented: R1 (`fix-types.ts` TRUNCATE-on-deploy) and R2 (non-atomic
+merge), both supervised-only.
+
+**No code changed this iteration (clean audit).**
