@@ -42,6 +42,8 @@ yarn-error.log*
 playwright-report/
 test-results/
 
-# Local scratch
-_doh_proxy.py
-e2e/_probe.py
+# Local scratch — HTTP-probe scripts predating the Playwright suite. The real
+# E2E suite is e2e/*.spec.ts; any *.py under e2e/ is local-only debugging and
+# must never be tracked (it embeds the seed password + misrepresents the suite).
+*_doh_proxy.py
+e2e/*.py
