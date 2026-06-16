@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SubmitButton } from "@/components/submit-button";
 
 type Initial = {
   name?: string;
@@ -51,7 +52,7 @@ export function ClientForm({
         </div>
       </div>
       <div className="flex gap-2 pt-2">
-        <button type="submit" className="btn-primary">Save</button>
+        <SubmitButton pendingLabel="Saving…">Save</SubmitButton>
         <Link href="/clients" className="btn-ghost">Cancel</Link>
       </div>
     </form>

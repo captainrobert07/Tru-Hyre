@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SubmitButton } from "@/components/submit-button";
 
 type Initial = {
   email?: string;
@@ -75,7 +76,7 @@ export function UserForm({
         </div>
       </div>
       <div className="flex gap-2 pt-2">
-        <button type="submit" className="btn-primary">{isCreate ? "Create user" : "Save changes"}</button>
+        <SubmitButton pendingLabel={isCreate ? "Creating…" : "Saving…"}>{isCreate ? "Create user" : "Save changes"}</SubmitButton>
         <Link href="/settings/users" className="btn-ghost">Cancel</Link>
       </div>
     </form>
