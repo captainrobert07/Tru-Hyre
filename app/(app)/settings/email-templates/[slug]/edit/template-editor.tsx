@@ -106,6 +106,13 @@ export function TemplateEditor({
         <div className="text-[10px] text-ink-muted mb-2">Renders with: Priya Sharma · C-2026-001 · screening → interview · Senior Backend Engineer</div>
         <div className="bg-surface border border-hairline rounded-lg p-4 max-h-[260px] overflow-y-auto">
           <div className="text-xs text-ink-soft mb-2">Subject — <span className="text-ink font-medium">{previewSubject}</span></div>
+          {/* Safe sink: previewHtml is the admin's OWN authored template body
+              (this is an admin-only editor), and renderTemplate(..., "html")
+              htmlEscape()s every interpolated {{token}} value — so sample-context
+              data can't inject. Same render path as the real outbound email
+              (bulk-email / email-actions / stage-change / sequences), which is
+              where escaping actually matters. Don't copy this pattern to a sink
+              fed by cross-user data. */}
           <div className="text-xs prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
         </div>
         <details className="mt-2">

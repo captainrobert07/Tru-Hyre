@@ -292,3 +292,37 @@ already documented: R1 (`fix-types.ts` TRUNCATE-on-deploy) and R2 (non-atomic
 merge), both supervised-only.
 
 **No code changed this iteration (clean audit).**
+
+---
+
+## Iteration 103 — XSS-sink audit (clean) + provenance comment
+
+Swept the two un-audited XSS-adjacent classes (the iter-51 fix only covered
+user-URL `href`s). Both clean:
+
+- **`dangerouslySetInnerHTML` sinks** — only two in the whole app:
+  - `app/layout.tsx:39` — a static `THEME_SCRIPT` constant (no user data). Safe.
+  - `template-editor.tsx:109` — renders `previewHtml`, which is the admin's OWN
+    authored template body in an admin-only editor. `renderTemplate(..., "html")`
+    (`lib/email-templates.ts:42`) `htmlEscape()`s every interpolated `{{token}}`
+    value, so the sample-context data can't inject. **Crucially, the four real
+    outbound-email paths use the identical render call** (bulk-email-actions:53,
+    email-actions:119, email-on-stage-change:73, sequences:75) — so a candidate
+    name containing `<script>` is escaped before it can ride into any recipient's
+    email. The surface that actually matters is closed.
+  - Added a provenance comment at the sink so a future dev (or a security linter,
+    which flags the bare pattern) doesn't "fix" the safe preview and break the
+    feature, or copy the pattern to a cross-user-fed sink. (A generic
+    PostToolUse security-guidance warning did fire on the pattern — confirmed a
+    true negative against the traced data flow.)
+- **Index-as-key `.map`s** — 18 sites, all over static / append-only lists
+  (import errors, breadcrumbs, kit questions, match reasons, chart bars). None
+  reorder or splice, so index keys are harmless here (the iter-38 React-key bug
+  was a genuinely reorderable list; these aren't).
+
+**Verdict:** the untrusted-input → HTML surface is comprehensively escaped at the
+chokepoint; no shippable fix, none manufactured. Third consecutive clean dev
+audit (93/98/103), consistent with the iter-99 saturation verdict.
+
+**Only change this iteration: a JSX provenance comment (bundle-identical — comments
+are stripped at build) + this DEV-log entry.**
