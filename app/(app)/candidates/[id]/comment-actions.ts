@@ -52,16 +52,19 @@ export async function addCandidateCommentAction(candidateId: number, formData: F
   });
 
   // Notify mentioned users — title only, no body (which may contain
-  // sensitive notes). They click through to read.
-  for (const userId of mentionedIds) {
-    if (userId === Number(me.id)) continue;
-    await db.insert(notifications).values({
+  // sensitive notes). They click through to read. One batched multi-row insert
+  // (was N sequential inserts; the rows differ only by userId).
+  const notifyRows = mentionedIds
+    .filter((userId) => userId !== Number(me.id))
+    .map((userId) => ({
       userId,
-      kind: "system",
+      kind: "system" as const,
       title: `${me.fullName || me.email} mentioned you on ${cand.fullName}`,
       body: null,
       url: `/candidates/${candidateId}`,
-    });
+    }));
+  if (notifyRows.length > 0) {
+    await db.insert(notifications).values(notifyRows);
   }
 
   await logAudit({
