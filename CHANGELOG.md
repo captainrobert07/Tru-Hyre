@@ -50,6 +50,15 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   `githubUrl` and client `website` were rendered into `href` without scheme
   validation, so a `javascript:` URL fired in the viewer's authenticated session.
   Added `safeExternalUrl()` (http(s)-only) at all render sites; regression-locked.
+- **No candidate PII leaked via error messages.** The React error boundary and
+  the `/api/files` PII-streaming route both echoed the raw `error.message` to
+  the client; now both return a generic message (the real stack still goes to
+  the logs / `instrumentation.ts`). Closes the last raw-error-egress paths.
+- **File-access authorization regression-locked.** `/api/files/[fileId]` (serves
+  resume PDFs + client packets) enforces per-role + owner-scope rules; an E2E
+  spec now proves a client/vendor/anon caller can't fetch an arbitrary file id.
+  Plus a full server-action auth-guard census (40/40 actions authenticated +
+  owner-scoped) — the back-door complement to the SSO front-door.
 
 ### Accessibility
 - **Screen-reader labels on label-less forms.** Date inputs, selects, and
@@ -85,7 +94,7 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 27 specs** (Playwright): `hr_lite` ownership isolation,
+- **E2E suite grew 3 → 29 specs** (Playwright): `hr_lite` ownership isolation,
   public careers self-apply, client/vendor portal cross-tenant isolation,
   feature-flag gating (`public_api` never serves data unauthenticated), public
   token-route security, the landing page (+ compliance guard), auth session
@@ -97,9 +106,11 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   + mobile, the public careers not-found boundary (closed/missing reqs stay
   private), the branded 404 recovery links, the public vendor-signup contract
   (+ its anti-spam honeypot), the `/api/cron/sla` auth gate (unauth + spoofed
-  Bearer both rejected, sweep never runs), and regression locks for the XSS,
-  focus-trap, reduced-motion, and skip-link fixes. The whole public /
-  unauthenticated surface — plus the cron entry point — is now covered.
+  Bearer both rejected, sweep never runs), the `/api/files` per-role access
+  boundary (client/vendor/anon can't fetch an arbitrary file id), the `/reports`
+  aggregate-page content render, and regression locks for the XSS, focus-trap,
+  reduced-motion, and skip-link fixes. The whole public / unauthenticated
+  surface — plus the cron + file-streaming entry points — is now covered.
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw
