@@ -395,3 +395,29 @@ sealed). No code changed; no fix to manufacture. Holds with R9/R12 as the
 self-found-security evidence column.
 
 **No code changed this iteration (clean completeness audit).**
+
+---
+
+## Iteration 143 — React client-hook audit (clean)
+
+Swept the client-side hook surface for the two real bug classes (stale closures
+from empty/missing deps; unhandled promise rejections in async handlers). All
+clean:
+
+- **Empty-dep `useEffect(…, [])`** (command-palette keydown, onboarding-banner
+  localStorage read, theme-toggle DOM init): all genuinely mount-only — they use
+  functional state updaters (`setOpen(v => !v)`) or read-once side effects, never
+  a stale prop/state value. Correctly empty.
+- **Non-empty-dep effects** (confirm `[pending]`, command-palette `[open]`/
+  `[query]`, slide-over `[open, onClose]`, recently-viewed `[path, label, kind]`,
+  toast-listener `[sp, path, router]`, inline-edit `[defaultValue]`/`[savedFlash]`):
+  each reads only values present in its deps + stable setters. No missing dep.
+- **Async event handlers**: the one `onClick={async …}` (copyable-token clipboard
+  write) is already try/caught. No unhandled-rejection / silent-failure paths.
+
+**Verdict:** hook usage is careful throughout — no stale-closure, missing-dep, or
+unhandled-rejection bugs. No fix; none manufactured. Fourth clean dev audit class
+(after runtime-crash 93, XSS-sink 103, auth-guard 128) — consistent with the
+saturation picture; the product's client-side correctness surface is solid.
+
+**No code changed this iteration (clean audit).**
