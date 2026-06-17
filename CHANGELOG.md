@@ -94,7 +94,7 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
 - **Loading skeletons** for the two heaviest server routes (`jobs/[id]`,
   `reports/custom`, ~12 queries each) that previously showed a blank screen on
   navigation.
-- **E2E suite grew 3 → 29 specs** (Playwright): `hr_lite` ownership isolation,
+- **E2E suite grew 3 → 30 specs** (Playwright): `hr_lite` ownership isolation,
   public careers self-apply, client/vendor portal cross-tenant isolation,
   feature-flag gating (`public_api` never serves data unauthenticated), public
   token-route security, the landing page (+ compliance guard), auth session
@@ -108,9 +108,11 @@ supervised proposals rather than shipped blind (see `AUTOPILOT-DEV.md`).
   (+ its anti-spam honeypot), the `/api/cron/sla` auth gate (unauth + spoofed
   Bearer both rejected, sweep never runs), the `/api/files` per-role access
   boundary (client/vendor/anon can't fetch an arbitrary file id), the `/reports`
-  aggregate-page content render, and regression locks for the XSS, focus-trap,
+  aggregate-page content render, the candidate-portal access boundary
+  (non-candidate roles bounced), and regression locks for the XSS, focus-trap,
   reduced-motion, and skip-link fixes. The whole public / unauthenticated
-  surface — plus the cron + file-streaming entry points — is now covered.
+  surface — plus the cron + file-streaming entry points and all three portal
+  access boundaries — is now covered.
 
 ### Changed
 - **Design-token consistency.** Brand mark + empty-state icon moved from raw

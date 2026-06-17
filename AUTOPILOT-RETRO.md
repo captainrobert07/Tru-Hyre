@@ -4,6 +4,22 @@ Written at iteration 40 (8 full lens rotations). The PM lens's honest job once
 the backlog is drained isn't to invent work — it's to call the state plainly and
 recommend where effort should go next. This is that call.
 
+> **Update — iteration 150 (the iter-40 call held, and the data now confirms it
+> harder).** 110 iterations later, every iter-40 prediction proved out and the
+> numbers matured: **150/150 merged green, main never left red**; the E2E suite
+> grew **11 → 30 specs**; the risk register went **R1-R8 → R1-R12** with **three
+> self-found issues closed** (R6 AI-cost, R9 stored-XSS, R12 PII-in-logs) and the
+> whole data-egress / auth-guard / portal-boundary surface verified-or-locked.
+> The saturation signature is now unmistakable in the log: **of the last 30
+> iterations, ~15 were analysis/honest-no-op and ~5 were code fixes that couldn't
+> even reach prod in-window (the R10 deploy-quota ceiling), leaving ~10 genuine
+> green ships — most of them small polish or coverage.** The strategist lens has
+> logged **13 honest no-ops**. The loop is now spending more effort *maintaining
+> its own artifacts and finding supervised work* than changing the product —
+> exactly the iter-99 saturation verdict, now with a bigger sample. The
+> recommendation below is **unchanged and stronger**: the value left is human/
+> sponsor action on the gated queue (R1, R2+R11, R3, R10), not another lap.
+
 ## What the run delivered (iters 1-40, all green)
 
 - **40/40 iterations merged to `main` with a green Vercel build.** No red left
