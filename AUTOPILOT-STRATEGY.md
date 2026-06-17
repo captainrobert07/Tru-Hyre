@@ -430,6 +430,15 @@ board did for tasks). Status reflects what THIS run has already closed.
   PII in prod logs, iter 118) is a second self-found compliance fix — both are
   GDPR-relevant for an EU insurer and strengthen the "safe for real PII" case
   that R3/R5 sign-off depends on.
+  - **The data-egress surface is now systematically hardened** (the thread R9/R12
+    started): every place candidate data could escape to where it shouldn't has
+    been checked — stored-XSS in `href` (R9, closed), PII in logs (R12, closed),
+    raw error.message in the React error UI (iter 108) and the PII file API
+    (iter 138, live) both genericized, the `/api/files` per-role IDOR boundary
+    locked (iter 137), and the full server-action auth-guard census (iter 128,
+    40/40 clean). For the R5 data-residency/audit posture doc, this is the
+    "technical controls already in place" evidence: data is authenticated,
+    owner-scoped, and not leaked via XSS, logs, errors, or cross-tenant file reads.
 - **R4 (key-person) is the quiet one** — its mitigation is the doc discipline
   this run has been compounding, which is why those doc iterations had teeth.
 - **R10 (deploy ceiling) is new and operational, not theoretical** — it was
