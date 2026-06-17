@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ClipboardList, X } from "lucide-react";
 import { useConfirm } from "@/components/confirm";
+import { EmptyState } from "@/components/primitives";
 
 export type KitItem = {
   id: number;
@@ -118,10 +119,11 @@ export function InterviewKitManager({
       )}
 
       {kits.length === 0 && editing === null ? (
-        <div className="card p-8 text-center text-sm text-ink-soft">
-          <ClipboardList size={28} className="mx-auto mb-2 text-ink-muted" />
-          No interview kits yet. Create one to give interviewers a consistent set of focus areas and questions.
-        </div>
+        <EmptyState
+          icon={<ClipboardList size={28} />}
+          title="No interview kits yet"
+          description="Create one to give interviewers a consistent set of focus areas and questions."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {kits.map((kit) => (
